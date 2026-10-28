@@ -33,6 +33,28 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     val isConnected: Boolean
         get() = try { manager.isConnected } catch (_: Throwable) { false }
 
+    /**
+     * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
+     * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 4 detik.
+     */
+    fun probe(): Boolean {
+        if (!isConnected) return false
+        var stream: io.github.muntashirakon.adb.AdbStream? = null
+        val watchdog = Thread {
+            try { Thread.sleep(4_000); stream?.close() } catch (_: InterruptedException) { } catch (_: Throwable) { }
+        }.apply { isDaemon = true; start() }
+        return try {
+            val s = manager.openStream("shell:echo ok")
+            stream = s
+            readAll(s.openInputStream()).contains("ok")
+        } catch (_: Throwable) {
+            false
+        } finally {
+            watchdog.interrupt()
+            try { stream?.close() } catch (_: Throwable) { }
+        }
+    }
+
     fun pair(addr: String, code: String): Boolean {
         if (addr.isEmpty() || code.isEmpty()) {
             log("Isi IP dan Port pairing dan kode pairing terlebih dahulu.")

@@ -24,6 +24,8 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import java.io.File
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledFuture
+import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
@@ -35,7 +37,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtLog: TextView
     private lateinit var logScroll: ScrollView
     private lateinit var txtConn: TextView
-    private lateinit var txtSteps: TextView
     private lateinit var txtStatus: TextView
     private lateinit var txtApkTitle: TextView
     private lateinit var txtApkEmpty: TextView
@@ -49,9 +50,14 @@ class MainActivity : AppCompatActivity() {
     private val checked = mutableSetOf<ApkItem>()
     private lateinit var adb: AdbController
     @Volatile private var busy = false
-    private var paired = false
-    private var connectedAddr: String? = null
-    private var ownerDone = false
+    @Volatile private var connectedAddr: String? = null
+    private var connectedSince = 0L
+    private var lostAddr: String? = null
+
+    // Pemantau status koneksi (live): jalan hanya saat layar terlihat.
+    private val poller = Executors.newSingleThreadScheduledExecutor()
+    private var pollTask: ScheduledFuture<*>? = null
+    private var lastProbe = 0L
 
     private val pickApks = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNullOrEmpty()) return@registerForActivityResult
@@ -78,7 +84,6 @@ class MainActivity : AppCompatActivity() {
         txtLog = findViewById(R.id.txtLog)
         logScroll = findViewById(R.id.logScroll)
         txtConn = findViewById(R.id.txtConn)
-        txtSteps = findViewById(R.id.txtSteps)
         txtStatus = findViewById(R.id.txtStatus)
         txtApkTitle = findViewById(R.id.txtApkTitle)
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
@@ -146,15 +151,27 @@ class MainActivity : AppCompatActivity() {
             val cAddr = addr(edtConnIp.text.toString(), edtConnPort.text.toString())
             val list = apks.toList()
             run("Jalankan semua") {
-                if (pAddr.isNotEmpty() && pCode.isNotEmpty()) {
-                    if (!doPair(pAddr, pCode)) return@run false
+                if (adb.isConnected && connectedAddr == cAddr) {
+                    runOnUiThread { log("[Pair & Connect] dilewati (sudah terhubung ke $cAddr).") }
                 } else {
-                    log("[Pair] dilewati (IP / Port / kode pairing kosong).")
+                    if (pAddr.isNotEmpty() && pCode.isNotEmpty()) {
+                        if (doPair(pAddr, pCode)) {
+                            // Beri waktu HP target menutup dialog pairing & membuka port connect.
+                            Thread.sleep(1500)
+                        } else {
+                            // Kode pairing sekali pakai: bila HP sudah pernah di-pair, pair ulang pasti gagal.
+                            // Jangan berhenti; coba connect (kunci ADB tersimpan).
+                            runOnUiThread { log("Peringatan: pairing gagal, mencoba lanjut Connect (mungkin sudah pernah di-pair).") }
+                        }
+                    } else {
+                        runOnUiThread { log("[Pair] dilewati (IP / Port / kode pairing kosong).") }
+                    }
+                    if (!doConnect(cAddr)) {
+                        runOnUiThread { log("Connect gagal. Jika belum pernah pair: buka dialog pairing baru di HP target (kode baru), isi ulang, lalu coba lagi.") }
+                        return@run false
+                    }
                 }
-                if (!doConnect(cAddr)) return@run false
-                val ok = adb.installAndOwner(list)
-                if (ok) { ownerDone = true }
-                ok
+                adb.installAndOwner(list)
             }
         }
         btnCopyLog.setOnClickListener {
@@ -174,36 +191,83 @@ class MainActivity : AppCompatActivity() {
         log("Isi IP dan Port lalu klik tombol.")
     }
 
+    override fun onStart() {
+        super.onStart()
+        pollTask?.cancel(false)
+        pollTask = poller.scheduleWithFixedDelay({ pollConnection() }, 0, 1, TimeUnit.SECONDS)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        pollTask?.cancel(false)
+        pollTask = null
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         worker.shutdown()
+        poller.shutdownNow()
+    }
+
+    // ---------- Status koneksi live ----------
+
+    /** Jalan di thread pemantau tiap 1 detik. */
+    private fun pollConnection() {
+        try {
+            val wasBusy = busy
+            var alive = adb.isConnected
+            val now = System.currentTimeMillis()
+            // Probe sungguhan tiap ±8 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
+            if (alive && !wasBusy && now - lastProbe >= 8_000) {
+                lastProbe = now
+                alive = adb.probe()
+            }
+            runOnUiThread { applyLiveState(alive, wasBusy) }
+        } catch (_: Throwable) { }
+    }
+
+    private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean) {
+        if (isFinishing) return
+        val addr = connectedAddr
+        // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
+        if (addr != null && !alive && !polledWhileBusy && !busy) {
+            log("Koneksi ke $addr terputus.")
+            lostAddr = addr
+            connectedAddr = null
+            connectedSince = 0L
+        }
+        refreshHeader()
     }
 
     // ---------- Langkah (jalan di thread kerja) ----------
 
     private fun doPair(addr: String, code: String): Boolean {
         val ok = adb.pair(addr, code)
-        if (ok) { paired = true; runOnUiThread { refreshHeader() } }
+        if (ok) runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doConnect(addr: String): Boolean {
         val ok = adb.connect(addr)
-        connectedAddr = if (ok) addr else connectedAddr
+        if (ok) {
+            connectedAddr = addr
+            connectedSince = System.currentTimeMillis()
+            lostAddr = null
+            lastProbe = connectedSince
+        }
         runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; ownerDone = false }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null }
         runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doSetOwner(): Boolean {
         val ok = adb.setDeviceOwner()
-        if (ok) ownerDone = true
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -237,16 +301,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun refreshHeader() {
         val addr = connectedAddr
+        val lost = lostAddr
         val on = addr != null && adb.isConnected
-        txtConn.text = if (on) "Terhubung · $addr" else "Belum terhubung · Pair lalu Connect untuk mulai"
-        statusDot.backgroundTintList = ColorStateList.valueOf(if (on) Color.rgb(74, 222, 128) else Color.rgb(148, 163, 184))
-        fun mark(done: Boolean, label: String) = (if (done) "✓ " else "○ ") + label
-        txtSteps.text = listOf(
-            mark(paired || on, "Pair"),
-            mark(on, "Connect"),
-            mark(apks.isNotEmpty(), "APK"),
-            mark(ownerDone, "Jalankan")
-        ).joinToString("   ")
+        when {
+            on -> {
+                val s = ((System.currentTimeMillis() - connectedSince) / 1000).coerceAtLeast(0)
+                val dur = if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s % 3600 / 60, s % 60)
+                          else "%02d:%02d".format(s / 60, s % 60)
+                txtConn.text = "Terhubung · $addr · $dur"
+                statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(74, 222, 128))
+            }
+            lost != null -> {
+                txtConn.text = "Terputus · $lost · Connect ulang"
+                statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(248, 113, 113))
+            }
+            else -> {
+                txtConn.text = "Belum terhubung · Pair lalu Connect untuk mulai"
+                statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(148, 163, 184))
+            }
+        }
     }
 
     private fun refreshApkList() {
