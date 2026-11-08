@@ -1,0 +1,3 @@
+# Add SDK location here if building locally, e.g.:
+# sdk.dir=/Users/nama/Library/Android/sdk
+# (On GitHub Actions the SDK is provided automatically — file ini tidak wajib.)
