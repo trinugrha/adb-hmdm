@@ -308,7 +308,7 @@ fun App() {
                         Text(if (apks.isEmpty()) "Pilih file APK" else "${apks.size} APK dipilih — ganti?")
                     }
                     apks.forEach { u -> Text("• ${queryNameSize(ctx, u).first}", fontSize = 12.sp) }
-                    progress?.let { (t, f) -> Text(t, fontSize = 12.sp); LinearProgressIndicator(progress = f, modifier = Modifier.fillMaxWidth()) }
+                    progress?.let { (t, f) -> Text(t, fontSize = 12.sp); LinearProgressIndicator(progress = { f }, modifier = Modifier.fillMaxWidth()) }
                     Button(enabled = connected && !busy && apks.isNotEmpty(), onClick = { runJob("install") { installAll() } }) { Text("Pasang Semua APK") }
                 }}
 

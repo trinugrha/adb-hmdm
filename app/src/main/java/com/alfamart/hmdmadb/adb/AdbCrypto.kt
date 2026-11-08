@@ -14,7 +14,7 @@ object AdbCrypto {
     private const val K_PRIV = "rsa_priv"
     private const val K_PUB = "rsa_pub"
 
-    data class Keys(val private: java.security.PrivateKey, val public: java.security.PublicKey)
+    data class Keys(val privKey: java.security.PrivateKey, val pubKey: java.security.PublicKey)
 
     fun getOrCreate(ctx: Context): Keys {
         val p = ctx.getSharedPreferences(PREF, Context.MODE_PRIVATE)
@@ -49,7 +49,7 @@ object AdbCrypto {
     /** Payload ADB_AUTH_RSAPUBLICKEY: "guid\0 rsa-ssh pubkey\0" (format yang dipakai adb). */
     fun publicKeyPayload(ctx: Context): ByteArray {
         val keys = getOrCreate(ctx)
-        val raw = keys.public.encoded
+        val raw = keys.pubKey.encoded
         val b64 = Base64.encodeToString(raw, Base64.NO_WRAP)
         return ("android-host\x00ssh-rsa $b64 android-host@hmdm\x00".toByteArray(Charsets.UTF_8))
     }

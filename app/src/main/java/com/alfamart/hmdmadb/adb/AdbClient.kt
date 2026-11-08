@@ -123,7 +123,7 @@ class AdbClient(private val appCtx: Context) {
                 }
                 m.command == A_AUTH && m.arg0 == AUTH_TOKEN -> {
                     return try {
-                        val sig = AdbCrypto.sign(keys.private, m.payload)
+                        val sig = AdbCrypto.sign(keys.privKey, m.payload)
                         writeMsg(A_AUTH, AUTH_SIGNATURE, 0, sig)
                     } catch (e: Exception) {
                         writeMsg(A_AUTH, AUTH_RSAPUBLICKEY, 0, AdbCrypto.publicKeyPayload(appCtx))
