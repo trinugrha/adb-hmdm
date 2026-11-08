@@ -263,10 +263,11 @@
                                 android:insetBottom="0dp"
                                 android:text="Pair"
                                 android:textSize="12sp"
-                                app:cornerRadius="10dp"
+                                app:cornerRadius="8dp"
                                 app:icon="@drawable/ic_pair"
                                 app:iconGravity="textStart"
                                 app:iconSize="14dp"
+                                app:iconPadding="6dp"
                                 app:iconTint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
@@ -394,7 +395,13 @@
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
                                 android:text="Putuskan"
-                                android:textSize="12sp" />
+                                android:textSize="12sp"
+                                app:cornerRadius="8dp"
+                                app:icon="@drawable/ic_close"
+                                app:iconGravity="textStart"
+                                app:iconSize="14dp"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/accent" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnConnect"
@@ -403,9 +410,11 @@
                                 android:layout_weight="1"
                                 android:text="Connect"
                                 android:textSize="12sp"
+                                app:cornerRadius="8dp"
                                 app:icon="@drawable/ic_link"
                                 app:iconGravity="textStart"
                                 app:iconSize="14dp"
+                                app:iconPadding="6dp"
                                 app:iconTint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
@@ -510,9 +519,11 @@
                             android:layout_marginTop="8dp"
                             android:text="Tambah APK"
                             android:textSize="12sp"
+                            app:cornerRadius="8dp"
                             app:icon="@drawable/ic_apk"
                             app:iconGravity="textStart"
                             app:iconSize="14dp"
+                            app:iconPadding="6dp"
                             app:iconTint="@color/accent" />
 
                         <LinearLayout
@@ -525,13 +536,20 @@
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnRemoveApk"
-                                style="@style/Widget.Hmdm.Button.Danger"
+                                style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
                                 android:layout_height="40dp"
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
                                 android:text="Hapus"
-                                android:textSize="12sp" />
+                                android:textColor="@color/danger"
+                                android:textSize="12sp"
+                                app:cornerRadius="8dp"
+                                app:icon="@drawable/ic_delete"
+                                app:iconGravity="textStart"
+                                app:iconSize="14dp"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/danger" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnClearApk"
@@ -540,7 +558,13 @@
                                 android:layout_height="40dp"
                                 android:layout_weight="1"
                                 android:text="Kosongkan"
-                                android:textSize="12sp" />
+                                android:textSize="12sp"
+                                app:cornerRadius="8dp"
+                                app:icon="@drawable/ic_clear"
+                                app:iconGravity="textStart"
+                                app:iconSize="14dp"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/accent" />
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -609,7 +633,13 @@
                                 android:layout_marginEnd="6dp"
                                 android:layout_weight="1"
                                 android:text="Install"
-                                android:textSize="12sp" />
+                                android:textSize="12sp"
+                                app:cornerRadius="8dp"
+                                app:icon="@drawable/ic_download"
+                                app:iconGravity="textStart"
+                                app:iconSize="14dp"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/accent" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOwner"
@@ -618,7 +648,13 @@
                                 android:layout_height="40dp"
                                 android:layout_weight="1"
                                 android:text="Set Owner"
-                                android:textSize="12sp" />
+                                android:textSize="12sp"
+                                app:cornerRadius="8dp"
+                                app:icon="@drawable/ic_shield"
+                                app:iconGravity="textStart"
+                                app:iconSize="14dp"
+                                app:iconPadding="6dp"
+                                app:iconTint="@color/accent" />
                         </LinearLayout>
 
                         <com.google.android.material.button.MaterialButton
@@ -629,9 +665,11 @@
                             android:layout_marginTop="8dp"
                             android:text="Jalankan Semua"
                             android:textSize="12sp"
+                            app:cornerRadius="8dp"
                             app:icon="@drawable/ic_play"
                             app:iconGravity="textStart"
                             app:iconSize="14dp"
+                            app:iconPadding="6dp"
                             app:iconTint="#FFFFFF" />
 
                         <TextView
