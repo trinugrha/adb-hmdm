@@ -52,18 +52,20 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:fontFamily="@font/plus_jakarta_sans"
                             android:text="HMDM Installer"
                             android:textColor="@color/header_text"
-                            android:textSize="16sp"
+                            android:textSize="17sp"
                             android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="1dp"
+                            android:fontFamily="@font/plus_jakarta_sans"
                             android:text="Wireless ADB · Device Owner"
                             android:textColor="@color/header_subtext"
-                            android:textSize="11sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
 
                     <TextView
@@ -104,6 +106,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
+                        android:fontFamily="@font/plus_jakarta_sans"
                         android:maxLines="2"
                         android:ellipsize="end"
                         android:text="Belum terhubung"
@@ -171,7 +174,7 @@
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="HP target: Opsi Developer → Wireless debugging → Pair device with pairing code." />
 
                         <View
@@ -184,13 +187,15 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.textfield.TextInputLayout
                                 style="@style/Widget.Hmdm.TextInput"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1.5"
                                 android:hint="IP pairing">
 
@@ -226,7 +231,8 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
@@ -234,7 +240,7 @@
                                 style="@style/Widget.Hmdm.TextInput"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
                                 android:hint="Kode pairing">
 
@@ -251,10 +257,13 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnPair"
                                 android:layout_width="0dp"
-                                android:layout_height="44dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
                                 android:text="Pair"
                                 android:textSize="13sp"
+                                app:cornerRadius="10dp"
                                 app:icon="@drawable/ic_pair"
                                 app:iconGravity="textStart"
                                 app:iconSize="16dp"
@@ -315,7 +324,7 @@
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Gunakan IP dan port dari layar utama Wireless debugging." />
 
                         <View
@@ -328,13 +337,15 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.textfield.TextInputLayout
                                 style="@style/Widget.Hmdm.TextInput"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginEnd="6dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1.5"
                                 android:hint="IP connect">
 
@@ -370,15 +381,17 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnDisconnect"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
                                 android:text="Putuskan"
                                 android:textSize="13sp" />
@@ -386,7 +399,7 @@
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnConnect"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Connect"
                                 android:textSize="13sp"
@@ -467,7 +480,7 @@
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
                             android:text="Dipasang berurutan dari atas. Centang untuk memilih yang dihapus." />
 
                         <LinearLayout
@@ -493,26 +506,29 @@
                             android:id="@+id/btnAddApk"
                             style="@style/Widget.Hmdm.Button.Outlined"
                             android:layout_width="match_parent"
-                            android:layout_height="42dp"
+                            android:layout_height="48dp"
                             android:layout_marginTop="8dp"
                             android:text="Tambah APK"
                             android:textSize="13sp"
                             app:icon="@drawable/ic_apk"
                             app:iconGravity="textStart"
-                            app:iconSize="16dp" />
+                            app:iconSize="18dp"
+                            app:iconTint="@color/accent" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
+                            android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnRemoveApk"
                                 style="@style/Widget.Hmdm.Button.Danger"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
                                 android:text="Hapus"
                                 android:textSize="13sp" />
@@ -521,7 +537,7 @@
                                 android:id="@+id/btnClearApk"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Kosongkan"
                                 android:textSize="13sp" />
@@ -581,14 +597,16 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
+                            android:baselineAligned="false"
+                            android:gravity="center_vertical"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnInstallOnly"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
-                                android:layout_marginEnd="6dp"
+                                android:layout_height="48dp"
+                                android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
                                 android:text="Install"
                                 android:textSize="13sp" />
@@ -597,7 +615,7 @@
                                 android:id="@+id/btnOwner"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="42dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Set Owner"
                                 android:textSize="13sp" />
@@ -607,8 +625,8 @@
                             android:id="@+id/btnAll"
                             style="@style/Widget.Hmdm.Button.CTA"
                             android:layout_width="match_parent"
-                            android:layout_height="46dp"
-                            android:layout_marginTop="6dp"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="8dp"
                             android:text="Jalankan Semua"
                             android:textSize="13sp"
                             app:icon="@drawable/ic_play"

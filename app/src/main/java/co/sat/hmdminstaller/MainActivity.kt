@@ -394,6 +394,9 @@ class MainActivity : AppCompatActivity() {
             val sub = TextView(this).apply {
                 text = "${item.sizeText} · APK"
                 textSize = 10f
+                try {
+                    typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.plus_jakarta_sans)
+                } catch (_: Throwable) { }
                 setTextColor(Color.rgb(100, 116, 139))
             }
             col.addView(name)
