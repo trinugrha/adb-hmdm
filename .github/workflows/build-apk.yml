@@ -36,7 +36,7 @@ jobs:
           wget -q https://services.gradle.org/distributions/gradle-8.9-bin.zip
           unzip -q gradle-8.9-bin.zip -d "$HOME"
           echo "$HOME/gradle-8.9/bin" >> "$GITHUB_PATH"
-          gradle --version
+          "$HOME/gradle-8.9/bin/gradle" --version
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
