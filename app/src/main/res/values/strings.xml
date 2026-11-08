@@ -1,6 +1,0 @@
-<resources>
-    <string name="app_name">Web ADB HMDM v2.5 Android</string>
-    <string name="owner_receiver">com.hmdm.launcher/.AdminReceiver</string>
-    <string name="owner_pkg">com.hmdm.launcher</string>
-    <string name="kaspersky_pkg">com.kaspersky.kes</string>
-</resources>
