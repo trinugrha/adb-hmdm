@@ -50,11 +50,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var apkList: LinearLayout
     private lateinit var buttons: List<MaterialButton>
 
-    // Stepper
-    private lateinit var stepDots: List<TextView>
-    private lateinit var stepLabels: List<TextView>
-    private lateinit var stepLines: List<View>
-
     private val worker = Executors.newSingleThreadExecutor()
     private val apks = mutableListOf<ApkItem>()
     private val checked = mutableSetOf<ApkItem>()
@@ -102,18 +97,6 @@ class MainActivity : AppCompatActivity() {
         progress = findViewById(R.id.progress)
         apkList = findViewById(R.id.apkList)
 
-        stepDots = listOf(
-            findViewById(R.id.stepDot1), findViewById(R.id.stepDot2),
-            findViewById(R.id.stepDot3), findViewById(R.id.stepDot4)
-        )
-        stepLabels = listOf(
-            findViewById(R.id.stepLabel1), findViewById(R.id.stepLabel2),
-            findViewById(R.id.stepLabel3), findViewById(R.id.stepLabel4)
-        )
-        stepLines = listOf(
-            findViewById(R.id.stepLine12), findViewById(R.id.stepLine23),
-            findViewById(R.id.stepLine34)
-        )
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
         val btnConnect: MaterialButton = findViewById(R.id.btnConnect)
@@ -349,61 +332,9 @@ class MainActivity : AppCompatActivity() {
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(148, 163, 184))
             }
         }
-        updateSteps(on)
-    }
-
-    /** Stepper 4 tahap: 1 Pair → 2 Connect → 3 APK → 4 Run */
-    private fun updateSteps(connected: Boolean) {
-        val hasApk = apks.isNotEmpty()
-        val everConnected = connected || lostAddr != null
-        // state: 0 idle, 1 active, 2 done
-        val s1 = if (everConnected || connected) 2 else 1
-        val s2 = if (connected) 2 else if (everConnected || pairFilled()) 1 else 0
-        val s3 = if (hasApk) 2 else if (connected) 1 else 0
-        val s4 = if (connected && hasApk) 1 else 0
-        val states = listOf(s1, s2, s3, s4)
-        val accent = Color.rgb(29, 78, 216)
-        val green = Color.rgb(22, 163, 74)
-        val muted = Color.rgb(100, 116, 139)
-        states.forEachIndexed { i, st ->
-            val dot = stepDots[i]
-            val label = stepLabels[i]
-            when (st) {
-                2 -> {
-                    dot.setBackgroundResource(R.drawable.bg_step_done)
-                    dot.setTextColor(Color.WHITE)
-                    dot.text = "${i + 1}"
-                    label.setTextColor(green)
-                }
-                1 -> {
-                    dot.setBackgroundResource(R.drawable.bg_step_active)
-                    dot.setTextColor(Color.WHITE)
-                    dot.text = "${i + 1}"
-                    label.setTextColor(accent)
-                }
-                else -> {
-                    dot.setBackgroundResource(R.drawable.bg_step_idle)
-                    dot.setTextColor(muted)
-                    dot.text = "${i + 1}"
-                    label.setTextColor(muted)
-                }
-            }
-        }
-        // garis penghubung menyala bila tahap kiri sudah selesai
-        val lineOn = Color.rgb(29, 78, 216)
-        val lineOff = Color.rgb(226, 232, 240)
-        val lineStates = listOf(s1 == 2, s2 == 2, s3 == 2)
-        lineStates.forEachIndexed { i, done ->
-            stepLines[i].setBackgroundColor(if (done) lineOn else lineOff)
-        }
         txtApkCount.text = "${apks.size}"
     }
 
-    private fun pairFilled(): Boolean {
-        return try {
-            edtPairIp.text.toString().isNotBlank() && edtPairPort.text.toString().isNotBlank()
-        } catch (_: Throwable) { false }
-    }
 
     private fun dp(v: Int): Int = (v * resources.displayMetrics.density).toInt()
 
@@ -414,17 +345,17 @@ class MainActivity : AppCompatActivity() {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.CENTER_VERTICAL
                 setBackgroundResource(R.drawable.bg_apk_row)
-                setPadding(dp(10), dp(10), dp(6), dp(10))
+                setPadding(dp(8), dp(6), dp(4), dp(6))
                 val lp = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
                 )
-                lp.topMargin = if (i == 0) 0 else dp(8)
+                lp.topMargin = if (i == 0) 0 else dp(6)
                 layoutParams = lp
             }
             val num = TextView(this).apply {
                 text = "%02d".format(i + 1)
-                textSize = 12f
+                textSize = 10.5f
                 try {
                     typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.jetbrains_mono)
                     setTypeface(typeface, Typeface.BOLD)
@@ -436,9 +367,9 @@ class MainActivity : AppCompatActivity() {
             val icon = ImageView(this).apply {
                 setBackgroundResource(R.drawable.bg_icon_green)
                 setImageResource(R.drawable.ic_apk)
-                setPadding(dp(8), dp(8), dp(8), dp(8))
-                val lp = LinearLayout.LayoutParams(dp(38), dp(38))
-                lp.marginStart = dp(10)
+                setPadding(dp(6), dp(6), dp(6), dp(6))
+                val lp = LinearLayout.LayoutParams(dp(30), dp(30))
+                lp.marginStart = dp(8)
                 layoutParams = lp
             }
             row.addView(icon)
@@ -446,12 +377,12 @@ class MainActivity : AppCompatActivity() {
             val col = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
                 val lp = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                lp.marginStart = dp(10)
+                lp.marginStart = dp(8)
                 layoutParams = lp
             }
             val name = TextView(this).apply {
                 text = item.name
-                textSize = 13.5f
+                textSize = 12f
                 try {
                     typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.plus_jakarta_sans)
                     setTypeface(typeface, Typeface.BOLD)
@@ -462,7 +393,7 @@ class MainActivity : AppCompatActivity() {
             }
             val sub = TextView(this).apply {
                 text = "${item.sizeText} · APK"
-                textSize = 11f
+                textSize = 10f
                 setTextColor(Color.rgb(100, 116, 139))
             }
             col.addView(name)
