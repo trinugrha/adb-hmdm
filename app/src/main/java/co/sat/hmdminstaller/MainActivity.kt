@@ -425,9 +425,11 @@ class MainActivity : AppCompatActivity() {
             val num = TextView(this).apply {
                 text = "%02d".format(i + 1)
                 textSize = 12f
-                typeface = Typeface.MONOSPACE
+                try {
+                    typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.jetbrains_mono)
+                    setTypeface(typeface, Typeface.BOLD)
+                } catch (_: Throwable) { setTypeface(Typeface.MONOSPACE, Typeface.BOLD) }
                 setTextColor(Color.rgb(100, 116, 139))
-                setTypeface(typeface, Typeface.BOLD)
             }
             row.addView(num)
 
@@ -450,7 +452,10 @@ class MainActivity : AppCompatActivity() {
             val name = TextView(this).apply {
                 text = item.name
                 textSize = 13.5f
-                setTypeface(typeface, Typeface.BOLD)
+                try {
+                    typeface = androidx.core.content.res.ResourcesCompat.getFont(context, R.font.plus_jakarta_sans)
+                    setTypeface(typeface, Typeface.BOLD)
+                } catch (_: Throwable) { setTypeface(Typeface.DEFAULT_BOLD) }
                 try { setTextColor(getColor(R.color.text)) } catch (_: Throwable) { setTextColor(Color.rgb(11, 20, 50)) }
                 maxLines = 1
                 ellipsize = TextUtils.TruncateAt.END

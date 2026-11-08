@@ -11,6 +11,10 @@
         <item name="colorOutline">@color/outline</item>
         <item name="colorError">@color/danger</item>
 
+        <item name="android:fontFamily">@font/plus_jakarta_sans</item>
+        <item name="fontFamily">@font/plus_jakarta_sans</item>
+        <item name="android:typeface">normal</item>
+
         <item name="android:windowBackground">@color/bg</item>
         <item name="android:statusBarColor">@color/side</item>
         <item name="android:windowLightStatusBar">false</item>
