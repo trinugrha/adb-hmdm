@@ -465,7 +465,7 @@
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="Daftar APK" />
+                                    android:text="Install APK" />
                             </LinearLayout>
 
                             <TextView

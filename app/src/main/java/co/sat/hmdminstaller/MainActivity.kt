@@ -416,7 +416,7 @@ class MainActivity : AppCompatActivity() {
             apkList.addView(row)
         }
         txtApkEmpty.visibility = if (apks.isEmpty()) View.VISIBLE else View.GONE
-        txtApkTitle.text = if (apks.isEmpty()) "Daftar APK" else "Daftar APK (${apks.size})"
+        txtApkTitle.text = if (apks.isEmpty()) "Install APK" else "Install APK (${apks.size})"
         refreshHeader()
     }
 
