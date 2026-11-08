@@ -17,16 +17,16 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- ===== HEADER HERO ===== -->
+            <!-- ===== HEADER ===== -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_header"
                 android:orientation="vertical"
                 android:paddingStart="20dp"
-                android:paddingTop="22dp"
+                android:paddingTop="20dp"
                 android:paddingEnd="20dp"
-                android:paddingBottom="52dp">
+                android:paddingBottom="48dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -35,17 +35,17 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="54dp"
-                        android:layout_height="54dp"
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
                         android:background="@drawable/bg_logo"
                         android:contentDescription="@null"
-                        android:padding="13dp"
+                        android:padding="12dp"
                         android:src="@drawable/ic_logo" />
 
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="13dp"
+                        android:layout_marginStart="12dp"
                         android:layout_weight="1"
                         android:orientation="vertical">
 
@@ -54,15 +54,14 @@
                             android:layout_height="wrap_content"
                             android:text="HMDM Installer"
                             android:textColor="@color/header_text"
-                            android:textSize="21sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.01" />
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Wireless ADB · Device Owner Tool"
+                            android:text="Wireless ADB · Device Owner"
                             android:textColor="@color/header_subtext"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -71,35 +70,32 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:background="@drawable/bg_version_chip"
-                        android:paddingStart="11dp"
-                        android:paddingTop="6dp"
-                        android:paddingEnd="11dp"
-                        android:paddingBottom="6dp"
-                        android:text="v3.0 PRO"
+                        android:paddingStart="10dp"
+                        android:paddingTop="5dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="5dp"
+                        android:text="v3.0"
                         android:textColor="#FFFFFF"
-                        android:textSize="10.5sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.06" />
+                        android:textSize="11sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
-                <!-- Status pill -->
                 <LinearLayout
-                    android:id="@+id/statusPill"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="18dp"
+                    android:layout_marginTop="16dp"
                     android:background="@drawable/bg_pill"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
                     android:paddingStart="14dp"
-                    android:paddingTop="11dp"
+                    android:paddingTop="12dp"
                     android:paddingEnd="14dp"
-                    android:paddingBottom="11dp">
+                    android:paddingBottom="12dp">
 
                     <View
                         android:id="@+id/statusDot"
-                        android:layout_width="11dp"
-                        android:layout_height="11dp"
+                        android:layout_width="10dp"
+                        android:layout_height="10dp"
                         android:background="@drawable/bg_dot" />
 
                     <TextView
@@ -109,48 +105,33 @@
                         android:layout_marginStart="10dp"
                         android:layout_weight="1"
                         android:maxLines="2"
+                        android:ellipsize="end"
                         android:text="Belum terhubung"
                         android:textColor="@color/header_text"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:background="@drawable/bg_version_chip"
-                        android:paddingStart="9dp"
-                        android:paddingTop="4dp"
-                        android:paddingEnd="9dp"
-                        android:paddingBottom="4dp"
-                        android:text="● LIVE"
-                        android:textColor="#BBF7D0"
-                        android:textSize="9.5sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.08" />
+                        android:textSize="13sp" />
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- ===== STEPPER (overlap header) ===== -->
+            <!-- ===== STEPPER ===== -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.Hmdm.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_marginTop="-34dp"
-                android:layout_marginEnd="14dp"
-                app:cardElevation="6dp">
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="-28dp"
+                android:layout_marginEnd="16dp"
+                app:cardElevation="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:paddingStart="8dp"
+                    android:paddingStart="12dp"
                     android:paddingTop="14dp"
-                    android:paddingEnd="8dp"
-                    android:paddingBottom="12dp"
-                    android:gravity="center_vertical">
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
 
-                    <!-- Step 1 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -159,8 +140,8 @@
                         android:orientation="vertical">
                         <TextView
                             android:id="@+id/stepDot1"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:background="@drawable/bg_step_active"
                             android:gravity="center"
                             android:text="1"
@@ -172,19 +153,18 @@
                             style="@style/Hmdm.StepLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:text="PAIR" />
+                            android:layout_marginTop="6dp"
+                            android:text="Pair" />
                     </LinearLayout>
 
                     <View
                         android:id="@+id/stepLine12"
                         android:layout_width="0dp"
                         android:layout_height="2dp"
-                        android:layout_weight="0.6"
-                        android:layout_marginBottom="18dp"
+                        android:layout_weight="0.7"
+                        android:layout_marginBottom="22dp"
                         android:background="@drawable/bg_divider" />
 
-                    <!-- Step 2 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -193,8 +173,8 @@
                         android:orientation="vertical">
                         <TextView
                             android:id="@+id/stepDot2"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:background="@drawable/bg_step_idle"
                             android:gravity="center"
                             android:text="2"
@@ -206,19 +186,18 @@
                             style="@style/Hmdm.StepLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:text="CONNECT" />
+                            android:layout_marginTop="6dp"
+                            android:text="Connect" />
                     </LinearLayout>
 
                     <View
                         android:id="@+id/stepLine23"
                         android:layout_width="0dp"
                         android:layout_height="2dp"
-                        android:layout_weight="0.6"
-                        android:layout_marginBottom="18dp"
+                        android:layout_weight="0.7"
+                        android:layout_marginBottom="22dp"
                         android:background="@drawable/bg_divider" />
 
-                    <!-- Step 3 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -227,8 +206,8 @@
                         android:orientation="vertical">
                         <TextView
                             android:id="@+id/stepDot3"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:background="@drawable/bg_step_idle"
                             android:gravity="center"
                             android:text="3"
@@ -240,7 +219,7 @@
                             style="@style/Hmdm.StepLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
+                            android:layout_marginTop="6dp"
                             android:text="APK" />
                     </LinearLayout>
 
@@ -248,11 +227,10 @@
                         android:id="@+id/stepLine34"
                         android:layout_width="0dp"
                         android:layout_height="2dp"
-                        android:layout_weight="0.6"
-                        android:layout_marginBottom="18dp"
+                        android:layout_weight="0.7"
+                        android:layout_marginBottom="22dp"
                         android:background="@drawable/bg_divider" />
 
-                    <!-- Step 4 -->
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -261,8 +239,8 @@
                         android:orientation="vertical">
                         <TextView
                             android:id="@+id/stepDot4"
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
                             android:background="@drawable/bg_step_idle"
                             android:gravity="center"
                             android:text="4"
@@ -274,8 +252,8 @@
                             style="@style/Hmdm.StepLabel"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="5dp"
-                            android:text="RUN" />
+                            android:layout_marginTop="6dp"
+                            android:text="Run" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -284,7 +262,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <!-- ===== 1. PAIR ===== -->
                 <com.google.android.material.card.MaterialCardView
@@ -305,10 +283,10 @@
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:background="@drawable/bg_icon_blue"
-                                android:padding="11dp"
+                                android:padding="10dp"
                                 android:src="@drawable/ic_pair" />
 
                             <LinearLayout
@@ -322,43 +300,28 @@
                                     style="@style/Hmdm.SectionLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="STEP 01 · PAIRING" />
+                                    android:text="LANGKAH 1" />
 
                                 <TextView
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
-                                    android:text="ADB Pair" />
+                                    android:text="Pair Perangkat" />
                             </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_icon_blue"
-                                android:paddingStart="10dp"
-                                android:paddingTop="5dp"
-                                android:paddingEnd="10dp"
-                                android:paddingBottom="5dp"
-                                android:text="WIFI"
-                                android:textColor="@color/accent"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:letterSpacing="0.06" />
                         </LinearLayout>
 
                         <TextView
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="Di HP target: Opsi Developer → Wireless debugging → “Pair device with pairing code”. Masukkan IP + port + kode yang muncul." />
+                            android:layout_marginTop="8dp"
+                            android:text="HP target: Opsi Developer → Wireless debugging → Pair device with pairing code." />
 
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:layout_marginTop="12dp"
-                            android:background="@drawable/bg_divider" />
+                            android:background="@color/stroke" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -371,8 +334,8 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginEnd="8dp"
-                                android:layout_weight="1.6"
-                                android:hint="IP pairing  •  192.168.x.x">
+                                android:layout_weight="1.5"
+                                android:hint="IP pairing">
 
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/edtPairIp"
@@ -381,10 +344,7 @@
                                     android:fontFamily="monospace"
                                     android:digits="0123456789.:"
                                     android:inputType="number"
-                                    android:minHeight="0dp"
-                                    android:paddingTop="10dp"
-                                    android:paddingBottom="10dp"
-                                    android:textSize="13.5sp"
+                                    android:textSize="14sp"
                                     android:singleLine="true" />
                             </com.google.android.material.textfield.TextInputLayout>
 
@@ -401,10 +361,7 @@
                                     android:layout_height="wrap_content"
                                     android:fontFamily="monospace"
                                     android:inputType="number"
-                                    android:minHeight="0dp"
-                                    android:paddingTop="10dp"
-                                    android:paddingBottom="10dp"
-                                    android:textSize="13.5sp"
+                                    android:textSize="14sp"
                                     android:singleLine="true" />
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>
@@ -412,7 +369,7 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="8dp"
                             android:gravity="center_vertical"
                             android:orientation="horizontal">
 
@@ -422,7 +379,7 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
-                                android:hint="Kode pairing  •  6 digit">
+                                android:hint="Kode pairing">
 
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/edtPairCode"
@@ -430,23 +387,19 @@
                                     android:layout_height="wrap_content"
                                     android:fontFamily="monospace"
                                     android:inputType="number"
-                                    android:minHeight="0dp"
-                                    android:paddingTop="10dp"
-                                    android:paddingBottom="10dp"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold"
-                                    android:singleLine="true"
-                                    android:letterSpacing="0.12" />
+                                    android:textSize="14sp"
+                                    android:singleLine="true" />
                             </com.google.android.material.textfield.TextInputLayout>
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnPair"
                                 android:layout_width="0dp"
-                                android:layout_height="52dp"
+                                android:layout_height="56dp"
                                 android:layout_weight="1"
                                 android:text="Pair"
                                 app:icon="@drawable/ic_pair"
                                 app:iconGravity="textStart"
+                                app:iconSize="18dp"
                                 app:iconTint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
@@ -472,10 +425,10 @@
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:background="@drawable/bg_icon_green"
-                                android:padding="11dp"
+                                android:padding="10dp"
                                 android:src="@drawable/ic_link" />
 
                             <LinearLayout
@@ -489,44 +442,29 @@
                                     style="@style/Hmdm.SectionLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="STEP 02 · CONNECTION"
+                                    android:text="LANGKAH 2"
                                     android:textColor="@color/success" />
 
                                 <TextView
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
-                                    android:text="ADB Connect" />
+                                    android:text="Hubungkan ADB" />
                             </LinearLayout>
-
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:background="@drawable/bg_icon_green"
-                                android:paddingStart="10dp"
-                                android:paddingTop="5dp"
-                                android:paddingEnd="10dp"
-                                android:paddingBottom="5dp"
-                                android:text="TCP"
-                                android:textColor="@color/success"
-                                android:textSize="10sp"
-                                android:textStyle="bold"
-                                android:letterSpacing="0.06" />
                         </LinearLayout>
 
                         <TextView
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="Gunakan IP + port dari layar utama Wireless debugging (bukan port pairing)." />
+                            android:layout_marginTop="8dp"
+                            android:text="Gunakan IP dan port dari layar utama Wireless debugging." />
 
                         <View
                             android:layout_width="match_parent"
                             android:layout_height="1dp"
                             android:layout_marginTop="12dp"
-                            android:background="@drawable/bg_divider" />
+                            android:background="@color/stroke" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -539,8 +477,8 @@
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_marginEnd="8dp"
-                                android:layout_weight="1.6"
-                                android:hint="IP connect  •  192.168.x.x">
+                                android:layout_weight="1.5"
+                                android:hint="IP connect">
 
                                 <com.google.android.material.textfield.TextInputEditText
                                     android:id="@+id/edtConnIp"
@@ -549,10 +487,7 @@
                                     android:fontFamily="monospace"
                                     android:digits="0123456789.:"
                                     android:inputType="number"
-                                    android:minHeight="0dp"
-                                    android:paddingTop="10dp"
-                                    android:paddingBottom="10dp"
-                                    android:textSize="13.5sp"
+                                    android:textSize="14sp"
                                     android:singleLine="true" />
                             </com.google.android.material.textfield.TextInputLayout>
 
@@ -569,10 +504,7 @@
                                     android:layout_height="wrap_content"
                                     android:fontFamily="monospace"
                                     android:inputType="number"
-                                    android:minHeight="0dp"
-                                    android:paddingTop="10dp"
-                                    android:paddingBottom="10dp"
-                                    android:textSize="13.5sp"
+                                    android:textSize="14sp"
                                     android:singleLine="true" />
                             </com.google.android.material.textfield.TextInputLayout>
                         </LinearLayout>
@@ -580,26 +512,27 @@
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="8dp"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnDisconnect"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="46dp"
+                                android:layout_height="48dp"
                                 android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
-                                android:text="Disconnect" />
+                                android:text="Putuskan" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnConnect"
                                 android:layout_width="0dp"
-                                android:layout_height="46dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Connect"
                                 app:icon="@drawable/ic_link"
                                 app:iconGravity="textStart"
+                                app:iconSize="18dp"
                                 app:iconTint="#FFFFFF" />
                         </LinearLayout>
                     </LinearLayout>
@@ -625,10 +558,10 @@
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:background="@drawable/bg_icon_amber"
-                                android:padding="11dp"
+                                android:padding="10dp"
                                 android:src="@drawable/ic_box" />
 
                             <LinearLayout
@@ -642,7 +575,7 @@
                                     style="@style/Hmdm.SectionLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="STEP 03 · PACKAGE"
+                                    android:text="LANGKAH 3"
                                     android:textColor="@color/warning" />
 
                                 <TextView
@@ -650,7 +583,6 @@
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
                                     android:text="Daftar APK" />
                             </LinearLayout>
 
@@ -659,13 +591,15 @@
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:background="@drawable/bg_icon_amber"
+                                android:gravity="center"
+                                android:minWidth="36dp"
                                 android:paddingStart="10dp"
-                                android:paddingTop="5dp"
+                                android:paddingTop="6dp"
                                 android:paddingEnd="10dp"
-                                android:paddingBottom="5dp"
+                                android:paddingBottom="6dp"
                                 android:text="0"
                                 android:textColor="@color/warning"
-                                android:textSize="12sp"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -673,7 +607,7 @@
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
+                            android:layout_marginTop="8dp"
                             android:text="Dipasang berurutan dari atas. Centang untuk memilih yang dihapus." />
 
                         <LinearLayout
@@ -687,23 +621,24 @@
                             android:id="@+id/txtApkEmpty"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
+                            android:layout_marginTop="12dp"
                             android:background="@drawable/bg_empty"
                             android:gravity="center"
-                            android:padding="24dp"
-                            android:text="📦  Belum ada APK.\nKlik “Tambah APK” untuk memilih file."
+                            android:padding="20dp"
+                            android:text="Belum ada APK. Ketuk “Tambah APK”."
                             android:textColor="@color/muted"
-                            android:textSize="13sp"
-                            android:lineSpacingMultiplier="1.3" />
+                            android:textSize="13sp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAddApk"
                             style="@style/Widget.Hmdm.Button.Outlined"
                             android:layout_width="match_parent"
-                            android:layout_height="46dp"
+                            android:layout_height="48dp"
                             android:layout_marginTop="12dp"
-                            android:text="+ Tambah APK"
-                            app:icon="@drawable/ic_apk" />
+                            android:text="Tambah APK"
+                            app:icon="@drawable/ic_apk"
+                            app:iconGravity="textStart"
+                            app:iconSize="18dp" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -715,7 +650,7 @@
                                 android:id="@+id/btnRemoveApk"
                                 style="@style/Widget.Hmdm.Button.Danger"
                                 android:layout_width="0dp"
-                                android:layout_height="44dp"
+                                android:layout_height="48dp"
                                 android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
                                 android:text="Hapus" />
@@ -724,7 +659,7 @@
                                 android:id="@+id/btnClearApk"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="44dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Kosongkan" />
                         </LinearLayout>
@@ -751,10 +686,10 @@
                             android:orientation="horizontal">
 
                             <ImageView
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
                                 android:background="@drawable/bg_icon_red"
-                                android:padding="11dp"
+                                android:padding="10dp"
                                 android:src="@drawable/ic_play" />
 
                             <LinearLayout
@@ -768,44 +703,41 @@
                                     style="@style/Hmdm.SectionLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:text="STEP 04 · EXECUTE"
+                                    android:text="LANGKAH 4"
                                     android:textColor="@color/cta" />
 
                                 <TextView
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="1dp"
-                                    android:text="Jalankan" />
+                                    android:text="Eksekusi" />
                             </LinearLayout>
                         </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
+                            android:layout_marginTop="12dp"
                             android:orientation="horizontal">
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnInstallOnly"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="46dp"
+                                android:layout_height="48dp"
                                 android:layout_marginEnd="8dp"
                                 android:layout_weight="1"
-                                android:text="Install APK"
-                                android:textSize="12.5sp"
-                                android:maxLines="1" />
+                                android:text="Install"
+                                android:textSize="14sp" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnOwner"
                                 style="@style/Widget.Hmdm.Button.Outlined"
                                 android:layout_width="0dp"
-                                android:layout_height="46dp"
+                                android:layout_height="48dp"
                                 android:layout_weight="1"
                                 android:text="Set Owner"
-                                android:textSize="12.5sp"
-                                android:maxLines="1" />
+                                android:textSize="14sp" />
                         </LinearLayout>
 
                         <com.google.android.material.button.MaterialButton
@@ -814,17 +746,20 @@
                             android:layout_width="match_parent"
                             android:layout_height="52dp"
                             android:layout_marginTop="8dp"
-                            android:text="⚡  Jalankan Semua"
-                            android:textSize="15sp" />
+                            android:text="Jalankan Semua"
+                            android:textSize="15sp"
+                            app:icon="@drawable/ic_play"
+                            app:iconGravity="textStart"
+                            app:iconSize="20dp"
+                            app:iconTint="#FFFFFF" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"
                             android:background="@drawable/bg_note"
-                            android:lineSpacingMultiplier="1.25"
-                            android:padding="13dp"
-                            android:text="⚠️  Jalankan Semua: Pair → Connect → Install semua APK → Set Device Owner.\nDevice owner hanya berhasil di HP baru / habis factory reset tanpa akun Google."
+                            android:padding="12dp"
+                            android:text="Jalankan Semua: Pair → Connect → Install semua APK → Set Device Owner. Device owner hanya berhasil di HP baru / habis factory reset tanpa akun Google."
                             android:textColor="@color/text2"
                             android:textSize="12sp" />
                     </LinearLayout>
@@ -834,36 +769,40 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:orientation="vertical">
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_terminal_card"
+                    android:orientation="vertical"
+                    android:padding="0dp">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/bg_terminal_header"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:paddingStart="14dp"
+                        android:paddingStart="16dp"
                         android:paddingTop="12dp"
-                        android:paddingEnd="6dp"
+                        android:paddingEnd="8dp"
                         android:paddingBottom="12dp">
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_step_done" />
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
+                            android:background="@drawable/bg_dot"
+                            android:backgroundTint="#F87171" />
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
                             android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_step_idle" />
+                            android:background="@drawable/bg_dot"
+                            android:backgroundTint="#FBBF24" />
 
                         <View
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
+                            android:layout_width="8dp"
+                            android:layout_height="8dp"
                             android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_step_idle" />
+                            android:background="@drawable/bg_dot"
+                            android:backgroundTint="#4ADE80" />
 
                         <TextView
                             android:layout_width="0dp"
@@ -871,10 +810,10 @@
                             android:layout_marginStart="10dp"
                             android:layout_weight="1"
                             android:drawableStart="@drawable/ic_terminal"
-                            android:drawablePadding="7dp"
-                            android:text="ADB TERMINAL"
+                            android:drawablePadding="8dp"
+                            android:text="LOG PROSES"
                             android:textColor="#E2E8F0"
-                            android:textSize="11.5sp"
+                            android:textSize="11sp"
                             android:textStyle="bold"
                             android:letterSpacing="0.1" />
 
@@ -893,36 +832,42 @@
                             android:layout_width="wrap_content"
                             android:layout_height="36dp"
                             android:minWidth="0dp"
-                            android:text="Bersihkan"
+                            android:paddingStart="8dp"
+                            android:text="Hapus"
                             android:textColor="#64748B" />
                     </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="#1B2942" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@drawable/log_bg"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
-                        android:paddingStart="14dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="4dp">
+                        android:paddingStart="16dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="6dp">
 
                         <TextView
                             android:id="@+id/txtStatus"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Siap — isi IP &amp; port lalu mulai."
+                            android:maxLines="2"
+                            android:ellipsize="end"
+                            android:text="Siap. Isi IP dan port, lalu mulai."
                             android:textColor="#93C5FD"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold" />
+                            android:textSize="12.5sp" />
 
                         <ProgressBar
                             android:id="@+id/progress"
                             style="?android:attr/progressBarStyleSmall"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
                             android:layout_marginStart="8dp"
                             android:indeterminateTint="@color/accent"
                             android:visibility="gone" />
@@ -931,12 +876,10 @@
                     <ScrollView
                         android:id="@+id/logScroll"
                         android:layout_width="match_parent"
-                        android:layout_height="300dp"
-                        android:background="@drawable/log_bg"
-                        android:nestedScrollingEnabled="true"
-                        android:paddingStart="14dp"
-                        android:paddingTop="6dp"
-                        android:paddingEnd="14dp"
+                        android:layout_height="280dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="4dp"
+                        android:paddingEnd="16dp"
                         android:paddingBottom="16dp">
 
                         <TextView
@@ -944,46 +887,33 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:fontFamily="monospace"
-                            android:lineSpacingMultiplier="1.25"
+                            android:lineSpacingMultiplier="1.3"
                             android:textColor="@color/log_text"
                             android:textIsSelectable="true"
                             android:textSize="12sp" />
                     </ScrollView>
                 </LinearLayout>
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="20dp"
-                    android:layout_marginBottom="10dp"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:text="HMDM INSTALLER · v3.0"
+                    android:textColor="@color/text"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
 
-                    <View
-                        android:layout_width="42dp"
-                        android:layout_height="4dp"
-                        android:background="@drawable/bg_divider" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center"
-                        android:text="HMDM INSTALLER PRO · v3.0"
-                        android:textColor="@color/text"
-                        android:textSize="11.5sp"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.08" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:gravity="center"
-                        android:text="© 2026 PT. Sumber Alfaria Trijaya, Tbk — IT RZ01"
-                        android:textColor="@color/muted"
-                        android:textSize="11sp" />
-                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="8dp"
+                    android:gravity="center"
+                    android:text="PT. Sumber Alfaria Trijaya, Tbk — IT RZ01"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

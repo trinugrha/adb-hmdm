@@ -212,8 +212,8 @@ class MainActivity : AppCompatActivity() {
 
         refreshApkList()
         refreshHeader()
-        log("Selamat datang di HMDM Installer PRO.")
-        log("Isi IP + Port pairing, Pair → Connect → tambah APK → Jalankan Semua.")
+        log("HMDM Installer v3.0 siap.")
+        log("Isi IP + Port pairing, Pair, Connect, tambah APK, lalu Jalankan Semua.")
     }
 
     override fun onStart() {
@@ -304,7 +304,7 @@ class MainActivity : AppCompatActivity() {
     private fun run(title: String, work: () -> Boolean) {
         if (busy) return
         busy = true
-        setBusy(true, "⏳ Sedang berjalan: $title...")
+        setBusy(true, "Berjalan: $title...")
         worker.execute {
             var ok = false
             try { ok = work() } catch (e: Throwable) {
@@ -314,7 +314,7 @@ class MainActivity : AppCompatActivity() {
                 log(if (ok) "=== SELESAI: BERHASIL ===" else "=== GAGAL / BERHENTI ===")
                 log("")
                 busy = false
-                setBusy(false, if (ok) "✅ Selesai: $title" else "⛔ Gagal / berhenti: $title (lihat log)")
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal / berhenti: $title (lihat log)")
                 refreshHeader()
             }
         }
@@ -372,7 +372,7 @@ class MainActivity : AppCompatActivity() {
                 2 -> {
                     dot.setBackgroundResource(R.drawable.bg_step_done)
                     dot.setTextColor(Color.WHITE)
-                    dot.text = "✓"
+                    dot.text = "${i + 1}"
                     label.setTextColor(green)
                 }
                 1 -> {
@@ -494,9 +494,6 @@ class MainActivity : AppCompatActivity() {
             s.startsWith("===") ->
                 if (l.contains("berhasil")) Color.rgb(74, 222, 128) else Color.rgb(248, 113, 113)
             s.startsWith("> ") -> Color.rgb(96, 165, 250)
-            s.startsWith("✅") -> Color.rgb(74, 222, 128)
-            s.startsWith("⛔") || s.startsWith("⚠️") -> Color.rgb(251, 191, 36)
-            s.startsWith("⏳") -> Color.rgb(147, 197, 253)
             l.startsWith("ringkasan") -> Color.WHITE
             l.startsWith("peringatan") -> Color.rgb(251, 191, 36)
             l.contains("sudah ada") || l.contains("dilewati") -> Color.rgb(251, 191, 36)
