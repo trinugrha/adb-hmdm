@@ -1,34 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Brand -->
-    <color name="accent">#0F766E</color>
+    <color name="accent">#2447F5</color>
     <color name="on_accent">#FFFFFF</color>
-    <color name="accent_soft">#DDF4F0</color>
+    <color name="accent_soft">#E6EBFF</color>
+    <color name="logo_tile">#2447F5</color>
+    <color name="signal">#FFD54A</color>
 
     <!-- Surface -->
-    <color name="bg">#F4F6F9</color>
+    <color name="bg">#F4F3EF</color>
     <color name="surface">#FFFFFF</color>
-    <color name="stroke">#E5E9F0</color>
-    <color name="outline">#CBD5E1</color>
+    <color name="row_bg">#F7F6F2</color>
+    <color name="stroke">#E6E4DC</color>
+    <color name="outline">#CFCCC0</color>
 
     <!-- Text -->
-    <color name="text">#0F172A</color>
-    <color name="muted">#64748B</color>
+    <color name="text">#14161B</color>
+    <color name="muted">#6A6E79</color>
 
     <!-- Status -->
     <color name="danger">#DC2626</color>
-    <color name="danger_stroke">#FCA5A5</color>
 
-    <!-- Header -->
-    <color name="side">#0B2A33</color>
-    <color name="header_end">#0F766E</color>
-    <color name="header_text">#FFFFFF</color>
-    <color name="header_subtext">#B7E4DE</color>
+    <!-- Hero (selalu gelap) -->
+    <color name="hero">#0E1117</color>
+    <color name="hero_text">#FFFFFF</color>
+    <color name="hero_sub">#9AA3B2</color>
 
     <!-- Log terminal -->
-    <color name="log_bg">#0B1220</color>
-    <color name="log_stroke">#1E293B</color>
+    <color name="log_bg">#0B0F17</color>
+    <color name="log_stroke">#1C2433</color>
     <color name="log_text">#CBD5E1</color>
 
-    <color name="ic_bg">#0B2A33</color>
+    <color name="ic_bg">#0E1117</color>
 </resources>

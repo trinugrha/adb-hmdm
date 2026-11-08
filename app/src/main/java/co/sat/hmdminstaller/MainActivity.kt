@@ -37,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtLog: TextView
     private lateinit var logScroll: ScrollView
     private lateinit var txtConn: TextView
+    private lateinit var txtConnState: TextView
     private lateinit var txtStatus: TextView
     private lateinit var txtApkTitle: TextView
     private lateinit var txtApkEmpty: TextView
@@ -44,6 +45,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progress: ProgressBar
     private lateinit var apkList: LinearLayout
     private lateinit var buttons: List<MaterialButton>
+    private lateinit var btnAll: MaterialButton
+    private lateinit var stepBadges: List<TextView>
+    private lateinit var stepLines: List<View>
 
     private val worker = Executors.newSingleThreadExecutor()
     private val apks = mutableListOf<ApkItem>()
@@ -51,6 +55,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var adb: AdbController
     @Volatile private var busy = false
     @Volatile private var connectedAddr: String? = null
+    @Volatile private var paired = false
     private var connectedSince = 0L
     private var lostAddr: String? = null
 
@@ -84,6 +89,11 @@ class MainActivity : AppCompatActivity() {
         txtLog = findViewById(R.id.txtLog)
         logScroll = findViewById(R.id.logScroll)
         txtConn = findViewById(R.id.txtConn)
+        txtConnState = findViewById(R.id.txtConnState)
+        stepBadges = listOf(R.id.stepBadge1, R.id.stepBadge2, R.id.stepBadge3, R.id.stepBadge4)
+            .map { findViewById<TextView>(it) }
+        stepLines = listOf(R.id.stepLine1, R.id.stepLine2, R.id.stepLine3)
+            .map { findViewById<View>(it) }
         txtStatus = findViewById(R.id.txtStatus)
         txtApkTitle = findViewById(R.id.txtApkTitle)
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
@@ -99,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         val btnClearApk: MaterialButton = findViewById(R.id.btnClearApk)
         val btnInstallOnly: MaterialButton = findViewById(R.id.btnInstallOnly)
         val btnOwner: MaterialButton = findViewById(R.id.btnOwner)
-        val btnAll: MaterialButton = findViewById(R.id.btnAll)
+        btnAll = findViewById(R.id.btnAll)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnConnect, btnDisconnect, btnAddApk, btnRemoveApk,
@@ -243,7 +253,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun doPair(addr: String, code: String): Boolean {
         val ok = adb.pair(addr, code)
-        if (ok) runOnUiThread { refreshHeader() }
+        if (ok) { paired = true; runOnUiThread { refreshHeader() } }
         return ok
     }
 
@@ -299,6 +309,7 @@ class MainActivity : AppCompatActivity() {
         buttons.forEach { it.isEnabled = !on }
         progress.visibility = if (on) View.VISIBLE else View.GONE
         txtStatus.text = status
+        btnAll.text = if (on) "Sedang berjalan…" else "Jalankan Semua"
     }
 
     // ---------- UI helper ----------
@@ -312,30 +323,64 @@ class MainActivity : AppCompatActivity() {
                 val s = ((System.currentTimeMillis() - connectedSince) / 1000).coerceAtLeast(0)
                 val dur = if (s >= 3600) "%d:%02d:%02d".format(s / 3600, s % 3600 / 60, s % 60)
                           else "%02d:%02d".format(s / 60, s % 60)
-                txtConn.text = "Terhubung · $addr · $dur"
+                txtConnState.text = "Terhubung"
+                txtConn.text = "$addr · $dur"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(74, 222, 128))
             }
             lost != null -> {
-                txtConn.text = "Terputus · $lost · Connect ulang"
+                txtConnState.text = "Terputus"
+                txtConn.text = "$lost · Connect ulang"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(248, 113, 113))
             }
             else -> {
-                txtConn.text = "Belum terhubung · Pair lalu Connect untuk mulai"
+                txtConnState.text = "Belum terhubung"
+                txtConn.text = "Pair lalu Connect untuk mulai"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(148, 163, 184))
             }
+        }
+        updateSteps(on)
+    }
+
+    /** Rel langkah: selesai = terisi + centang, langkah berikutnya = bercincin aksen, sisanya netral. */
+    private fun updateSteps(connected: Boolean) {
+        val done = booleanArrayOf(paired || connected, connected, apks.isNotEmpty(), false)
+        val current = done.indexOfFirst { !it }.let { if (it < 0) done.size - 1 else it }
+        stepBadges.forEachIndexed { i, badge ->
+            when {
+                done[i] -> {
+                    badge.setBackgroundResource(R.drawable.bg_step_done)
+                    badge.setTextColor(getColor(R.color.on_accent))
+                    badge.text = "✓"
+                }
+                i == current -> {
+                    badge.setBackgroundResource(R.drawable.bg_step_active)
+                    badge.setTextColor(getColor(R.color.accent))
+                    badge.text = (i + 1).toString()
+                }
+                else -> {
+                    badge.setBackgroundResource(R.drawable.bg_step_pending)
+                    badge.setTextColor(getColor(R.color.muted))
+                    badge.text = (i + 1).toString()
+                }
+            }
+        }
+        stepLines.forEachIndexed { i, line ->
+            line.setBackgroundColor(getColor(if (done[i]) R.color.accent else R.color.stroke))
         }
     }
 
     private fun refreshApkList() {
         apkList.removeAllViews()
         apks.forEachIndexed { i, item ->
-            val cb = CheckBox(this)
-            cb.text = "%02d  %s  ·  %s".format(i + 1, item.name, item.sizeText)
-            cb.textSize = 14f
-            cb.setPadding(cb.paddingLeft, (8 * resources.displayMetrics.density).toInt(), cb.paddingRight, (8 * resources.displayMetrics.density).toInt())
+            val row = layoutInflater.inflate(R.layout.item_apk, apkList, false)
+            val cb = row.findViewById<CheckBox>(R.id.cbApk)
+            row.findViewById<TextView>(R.id.txtApkIdx).text = "%02d".format(i + 1)
+            row.findViewById<TextView>(R.id.txtApkName).text = item.name
+            row.findViewById<TextView>(R.id.txtApkSize).text = item.sizeText
             cb.isChecked = item in checked
             cb.setOnCheckedChangeListener { _, isChecked -> if (isChecked) checked.add(item) else checked.remove(item) }
-            apkList.addView(cb)
+            row.setOnClickListener { cb.toggle() }
+            apkList.addView(row)
         }
         txtApkEmpty.visibility = if (apks.isEmpty()) View.VISIBLE else View.GONE
         txtApkTitle.text = if (apks.isEmpty()) "Daftar APK" else "Daftar APK (${apks.size})"
