@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">HMDM Installer</string>
+    <string name="owner_warning"><b>Penting:</b> Hapus terlebih dahulu semua akun Google/Email &amp; akun pengguna lain di HP.</string>
+</resources>
