@@ -320,7 +320,7 @@ class MainActivity : AppCompatActivity() {
         currentFocus?.clearFocus()
     }
 
-    /** Sisa waktu sesi (ms) sebelum aplikasi terkunci otomatis. Hitung mundur diulang tiap ada sentuhan. */
+    /** Sisa waktu sesi (ms) sebelum aplikasi terkunci otomatis. Hitung mundur dimulai saat login dan TIDAK direset oleh sentuhan layar. */
     private fun sessionRemainingMs() = LOCK_TIMEOUT_MS - (SystemClock.elapsedRealtime() - lastActivityAt)
 
     /** Dipanggil tiap detik dari pemantau. Saat operasi (install dll) berjalan, timer ditahan penuh. */
@@ -333,11 +333,6 @@ class MainActivity : AppCompatActivity() {
         txtSession.text = if (sec >= 3600) "Sesi %d:%02d:%02d".format(sec / 3600, sec % 3600 / 60, sec % 60)
                           else "Sesi %02d:%02d".format(sec / 60, sec % 60)
         txtSession.setTextColor(if (sec <= 60) Color.rgb(251, 191, 36) else ContextCompat.getColor(this, R.color.header_subtext))
-    }
-
-    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
-        if (lockView == null) lastActivityAt = SystemClock.elapsedRealtime()
-        return super.dispatchTouchEvent(ev)
     }
 
     private fun removeLock() {
