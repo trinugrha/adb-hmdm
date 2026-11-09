@@ -200,7 +200,7 @@ class MainActivity : AppCompatActivity() {
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Hapus data Kaspersky?")
-                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di device akan dihapus.")
+                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di device akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ ->
                     run("Hapus Data Kaspersky") { adb.clearKasperskyData() }
@@ -210,7 +210,7 @@ class MainActivity : AppCompatActivity() {
         btnUninstallKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Uninstall Kaspersky?")
-                .setMessage("Menjalankan: pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\n\nAplikasi Kaspersky akan di-uninstall dari device.")
+                .setMessage("Menjalankan: pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\n\nPastikan Langkah 2 (Aplikasi Admin Kaspersky) sudah dinonaktifkan, kalau tidak uninstall akan ditolak.")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Uninstall") { _, _ ->
                     run("Uninstall Kaspersky") { adb.uninstallKaspersky() }

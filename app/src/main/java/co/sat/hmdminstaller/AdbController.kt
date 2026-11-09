@@ -282,7 +282,15 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         }
         out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
         if (!out.contains("Success", ignoreCase = true)) {
-            log("Uninstall Kaspersky gagal. Pastikan $KASPERSKY_PACKAGE terpasang di device.")
+            when {
+                out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
+                    log("Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan).")
+                out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
+                    log("Uninstall diblokir kebijakan Device Owner atau Profile Owner.")
+                out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
+                    log("Aplikasi tidak ditemukan: Kaspersky sudah tidak terpasang.")
+                else -> log("Uninstall Kaspersky gagal. Pastikan $KASPERSKY_PACKAGE terpasang di device.")
+            }
             return false
         }
         log("Kaspersky berhasil di-uninstall.")

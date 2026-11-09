@@ -26,4 +26,13 @@
     <color name="warn_bg">#2A1315</color>
     <color name="warn_stroke">#7F1D1D</color>
     <color name="warn_text">#FCA5A5</color>
+
+    <!-- Kaspersky: lencana & kotak peringatan -->
+    <color name="badge_danger_bg">#3B1620</color>
+    <color name="badge_amber_bg">#3A2D10</color>
+    <color name="amber_bg">#2A2110</color>
+    <color name="amber_stroke">#5C4414</color>
+    <color name="amber_text">#FCD34D</color>
+    <color name="danger_fill">#FB7185</color>
+    <color name="on_danger_fill">#2A0A10</color>
 </resources>

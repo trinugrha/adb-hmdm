@@ -753,9 +753,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Uninstall aplikasi Kaspersky (com.kaspersky.kes) dari perangkat. Ikuti urutan langkah berikut." />
+                        android:text="Uninstall aplikasi Kaspersky (com.kaspersky.kes) dari perangkat. Ikuti urutan langkah berikut agar uninstall tidak ditolak." />
 
-                    <!-- Langkah 1 -->
+                    <!-- Langkah 1: hapus data -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -768,7 +768,9 @@
                             style="@style/Hmdm.Badge"
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:text="1" />
+                            android:background="@drawable/bg_badge_danger"
+                            android:text="1"
+                            android:textColor="@color/danger" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -789,21 +791,24 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Hubungkan perangkat, lalu klik tombol di bawah dan tunggu sampai selesai." />
+                                android:text="Hubungkan perangkat, lalu klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data Kaspersky berhasil dihapus.&quot;"
+                                android:textSize="13sp" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnClearKaspersky"
-                                style="@style/Widget.Hmdm.Button.Outlined"
+                                style="@style/Widget.Hmdm.Button.DangerFilled"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
                                 android:layout_marginTop="10dp"
                                 android:minHeight="0dp"
                                 android:text="Hapus Data Kaspersky"
-                                android:textSize="13sp" />
+                                app:icon="@drawable/ic_delete"
+                                app:iconGravity="textStart"
+                                app:iconPadding="8dp" />
                         </LinearLayout>
                     </LinearLayout>
 
-                    <!-- Langkah 2 -->
+                    <!-- Langkah 2: nonaktifkan admin (manual di HP) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -816,7 +821,51 @@
                             style="@style/Hmdm.Badge"
                             android:layout_width="28dp"
                             android:layout_height="28dp"
-                            android:text="2" />
+                            android:background="@drawable/bg_badge_amber"
+                            android:text="2"
+                            android:textColor="@color/amber_text" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                style="@style/Hmdm.CardTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Matikan Security / Aplikasi Admin Kaspersky di HP"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                style="@style/Hmdm.CardHint"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:lineSpacingMultiplier="1.1"
+                                android:text="@string/kaspersky_step2"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Langkah 3: uninstall -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/bg_status_box"
+                        android:orientation="horizontal"
+                        android:padding="14dp">
+
+                        <TextView
+                            style="@style/Hmdm.Badge"
+                            android:layout_width="28dp"
+                            android:layout_height="28dp"
+                            android:background="@drawable/bg_badge_danger"
+                            android:text="3"
+                            android:textColor="@color/danger" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -837,17 +886,20 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="Setelah data terhapus, klik tombol di bawah untuk uninstall aplikasi." />
+                                android:text="Klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Kaspersky berhasil di-uninstall.&quot;"
+                                android:textSize="13sp" />
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnUninstallKaspersky"
-                                style="@style/Widget.Hmdm.Button.Danger"
+                                style="@style/Widget.Hmdm.Button.DangerFilled"
                                 android:layout_width="match_parent"
                                 android:layout_height="40dp"
                                 android:layout_marginTop="10dp"
                                 android:minHeight="0dp"
                                 android:text="Uninstall Kaspersky"
-                                android:textSize="13sp" />
+                                app:icon="@drawable/ic_block"
+                                app:iconGravity="textStart"
+                                app:iconPadding="8dp" />
                         </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
