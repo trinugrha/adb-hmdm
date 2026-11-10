@@ -6,6 +6,7 @@
     android:orientation="vertical">
 
     <ScrollView
+        android:id="@+id/pageScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -994,6 +995,42 @@
                     android:text="Bersihkan" 
                             android:minHeight="0dp"
                             android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Progress install (tampil hanya saat memasang APK) -->
+            <LinearLayout
+                android:id="@+id/progBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:background="@color/accent_soft"
+                android:orientation="vertical"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <TextView
+                    android:id="@+id/txtProgName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/barInstall"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:max="1000"
+                    android:progressTint="@color/accent"
+                    android:indeterminateTint="@color/accent" />
+
+                <TextView
+                    android:id="@+id/txtProgInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textSize="12sp" />
             </LinearLayout>
 
             <ScrollView

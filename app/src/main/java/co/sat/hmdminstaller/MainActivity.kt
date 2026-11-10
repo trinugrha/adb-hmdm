@@ -454,46 +454,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ---------- Dialog progress install ----------
+    // ---------- Progress install (inline di halaman, di atas log) ----------
 
-    private var progDlg: AlertDialog? = null
-    private var progName: TextView? = null
-    private var progBar: ProgressBar? = null
-    private var progInfo: TextView? = null
+    private var progShown = false
 
     private fun showInstallProgress(idx: Int, total: Int, name: String, sent: Long, size: Long) {
         if (isFinishing || !busy) return
-        if (progDlg == null) {
-            val pad = (20 * resources.displayMetrics.density).toInt()
-            val box = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(pad, pad, pad, pad) }
-            val n = TextView(this).apply { textSize = 14f }
-            val bar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-                max = 1000
-                progressTintList = ColorStateList.valueOf(ContextCompat.getColor(this@MainActivity, R.color.accent))
-            }
-            val info = TextView(this).apply { textSize = 13f; setPadding(0, pad / 2, 0, 0) }
-            box.addView(n)
-            box.addView(bar, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = pad / 2 })
-            box.addView(info)
-            progName = n; progBar = bar; progInfo = info
-            progDlg = AlertDialog.Builder(this).setTitle("Memasang APK").setView(box).setCancelable(false).create().also { it.show() }
+        val box = findViewById<View>(R.id.progBox)
+        val bar = findViewById<ProgressBar>(R.id.barInstall)
+        val n = findViewById<TextView>(R.id.txtProgName)
+        val info = findViewById<TextView>(R.id.txtProgInfo)
+        if (!progShown) {
+            progShown = true
+            box.visibility = View.VISIBLE
+            // Gulir halaman sekali agar progress terlihat.
+            box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
         }
-        progName?.text = "APK $idx dari $total: $name"
+        n.text = "Memasang APK $idx dari $total: $name"
         val mb = 1048576.0
         if (size > 0 && sent >= size) {
-            progBar?.isIndeterminate = true
-            progInfo?.text = "Terkirim %.1f MB. Menunggu HP target memasang...".format(size / mb)
+            bar.isIndeterminate = true
+            info.text = "Terkirim %.1f MB. Menunggu HP target memasang...".format(size / mb)
         } else {
-            progBar?.isIndeterminate = false
+            bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
-            progBar?.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            progInfo?.text = "%d%%  (%.1f / %.1f MB)".format(pct, sent / mb, size / mb)
+            bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
+            info.text = "%d%%  (%.1f / %.1f MB)".format(pct, sent / mb, size / mb)
         }
     }
 
     private fun hideInstallProgress() {
-        try { progDlg?.dismiss() } catch (e: Throwable) { }
-        progDlg = null; progName = null; progBar = null; progInfo = null
+        if (!progShown) return
+        progShown = false
+        findViewById<View>(R.id.progBox)?.visibility = View.GONE
     }
 
     private fun setBusy(on: Boolean, status: String) {
