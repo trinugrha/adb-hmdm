@@ -12,6 +12,8 @@ import android.provider.OpenableColumns
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+import android.text.style.StyleSpan
+import android.graphics.Typeface
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import android.view.View
@@ -90,16 +92,12 @@ class MainActivity : AppCompatActivity() {
             val name = displayName(uri)
             when {
                 !name.endsWith(".apk", ignoreCase = true) -> skipped++
-                !seen.add(name.lowercase()) -> {
-                    log("APK sudah ada di daftar, tidak ditambahkan lagi: $name")
-                    skipped++
-                }
+                !seen.add(name.lowercase()) -> skipped++
                 else -> todo.add(uri to name)
             }
         }
         if (skipped > 0) log("$skipped file dilewati (bukan .apk / duplikat).")
         if (todo.isEmpty()) return@registerForActivityResult
-        log("Daftar APK direset. Menyalin ${todo.size} APK baru...")
         // Penyalinan file (bisa puluhan-ratusan MB) di thread latar.
         io.execute {
             // Hapus file APK lama dari cache dulu (sebelum menyalin, agar nama yang sama tidak ikut terhapus).
@@ -114,7 +112,6 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 apks.clear()
                 apks.addAll(items)
-                if (items.isNotEmpty()) log("Dipilih ${items.size} APK.")
                 if (failed > 0) log("Gagal menyalin $failed file.")
                 refreshApkList()
             }
@@ -221,7 +218,7 @@ class MainActivity : AppCompatActivity() {
             val list = apks.toList()
             run("Jalankan semua") {
                 if (adb.isConnected && connectedAddr == cAddr) {
-                    runOnUiThread { log("[Pair & Connect] dilewati (sudah terhubung ke $cAddr).") }
+                    // Sudah terhubung ke alamat yang sama: lewati pair & connect.
                 } else {
                     if (pAddr.isNotEmpty() && pCode.isNotEmpty()) {
                         if (doPair(pAddr, pCode)) {
@@ -232,8 +229,6 @@ class MainActivity : AppCompatActivity() {
                             // Jangan berhenti; coba connect (kunci ADB tersimpan).
                             runOnUiThread { log("Peringatan: pairing gagal, mencoba lanjut Connect (mungkin sudah pernah di-pair).") }
                         }
-                    } else {
-                        runOnUiThread { log("[Pair] dilewati (IP / Port / kode pairing kosong).") }
                     }
                     if (!doConnect(cAddr)) {
                         runOnUiThread { log("Connect gagal. Jika belum pernah pair: buka dialog pairing baru di HP target (kode baru), isi ulang, lalu coba lagi.") }
@@ -252,7 +247,6 @@ class MainActivity : AppCompatActivity() {
         }
         btnClearLog.setOnClickListener {
             txtLog.text = ""
-            log("Log dibersihkan.")
         }
 
         // ---- PIN ----
@@ -266,7 +260,6 @@ class MainActivity : AppCompatActivity() {
         restorePickedApks()
         refreshApkList()
         refreshHeader()
-        log("Pair & Connect dulu, pilih APK, lalu Pasang Semua APK / Set Device Owner.")
     }
 
     override fun onStart() {
@@ -416,7 +409,7 @@ class MainActivity : AppCompatActivity() {
         if (busy) return
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
-        log("[$title] dimulai...")
+        log("── $title ──────────────")
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
             synchronized(adb.probeLock) { }
@@ -427,7 +420,7 @@ class MainActivity : AppCompatActivity() {
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st } } catch (e: Throwable) { }
             runOnUiThread {
-                log(if (ok) "=== SELESAI: BERHASIL ===" else "=== GAGAL / BERHENTI ===")
+                log(if (ok) "=== SELESAI: $title - BERHASIL ===" else "=== GAGAL / BERHENTI: $title ===")
                 log("")
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal / berhenti: $title (lihat log)")
@@ -536,9 +529,21 @@ class MainActivity : AppCompatActivity() {
         refreshHeader()
     }
 
+    /** Satu entri log berwarna; pesan multi-baris dirapikan (baris lanjutan diberi indent). */
     private fun log(s: String) {
-        val sp = SpannableString(s + "\n")
-        sp.setSpan(ForegroundColorSpan(lineColor(s)), 0, sp.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        if (s.isBlank()) { txtLog.append("\n"); logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }; return }
+        val lines = s.trimEnd().lines()
+        val bold = s.startsWith("──") || s.startsWith("===")
+        val sb = StringBuilder()
+        lines.forEach { l -> sb.append(l.trimEnd()).append('\n') }
+        val sp = SpannableString(sb.toString())
+        var pos = 0
+        lines.forEach { l ->
+            val end = pos + l.trimEnd().length + 1
+            sp.setSpan(ForegroundColorSpan(lineColor(l)), pos, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            if (bold) sp.setSpan(StyleSpan(Typeface.BOLD), pos, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            pos = end
+        }
         txtLog.append(sp)
         logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
     }
@@ -548,6 +553,7 @@ class MainActivity : AppCompatActivity() {
         return when {
             s.startsWith("===") ->
                 if (l.contains("berhasil")) Color.rgb(74, 222, 128) else Color.rgb(248, 113, 113)
+            s.startsWith("──") -> Color.WHITE
             s.startsWith("> ") -> Color.rgb(56, 189, 248)
             l.startsWith("ringkasan") -> Color.WHITE
             l.startsWith("peringatan") -> Color.rgb(251, 191, 36)
@@ -580,7 +586,6 @@ class MainActivity : AppCompatActivity() {
         val dir = File(cacheDir, "picked")
         val files = dir.listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) } ?: return
         files.sortedBy { it.name.lowercase() }.forEach { apks.add(ApkItem(it.name, it)) }
-        if (files.isNotEmpty()) log("Dipulihkan ${files.size} APK dari sesi sebelumnya.")
     }
 
     private fun displayName(uri: Uri): String {

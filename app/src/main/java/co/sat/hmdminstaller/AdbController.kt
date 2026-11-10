@@ -223,11 +223,8 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         var ok = false
         for (attempt in 1..2) {
             if (ok) break
-            if (attempt > 1) {
-                log("Connect gagal, mencoba lagi (1x)...")
-                Thread.sleep(1500)
-            }
-            log("> adb connect $addr")
+            if (attempt > 1) Thread.sleep(1500)
+            if (attempt == 1) log("> adb connect $addr")
             try {
                 val result: Any? = manager.connect(host, port)
                 if (result == false || !manager.isConnected) {
@@ -271,7 +268,6 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         var ok = 0
         val failed = StringBuilder()
         apks.forEachIndexed { i, apk ->
-            log("")
             log("[${i + 1}/${apks.size}] ${apk.name}")
             if (!apk.file.exists()) {
                 log("File tidak ditemukan: ${apk.file}")
@@ -287,23 +283,15 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             onProgress?.invoke(curIdx, curTotal, curName, 0L, apk.file.length())
             var out = installTry(apk.file)
             if (!out.contains("Success", ignoreCase = true) && isTransient(out)) {
-                if (isConnected) {
-                    log("Stream tertutup, mencoba lagi (1x)...")
-                    Thread.sleep(1500)
-                } else {
-                    log("Koneksi putus di tengah install: ${out.trim().ifEmpty { "(tanpa pesan)" }}")
-                    tryReconnect()
-                }
+                if (isConnected) Thread.sleep(1500) else tryReconnect()
                 if (isConnected) out = installTry(apk.file)
             }
             out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
             if (out.contains("Success", ignoreCase = true)) ok++ else failed.appendLine("  - ${apk.name}")
         }
-        log("")
         log("Ringkasan install: $ok berhasil, ${apks.size - ok} gagal dari ${apks.size} APK.")
         if (failed.isNotEmpty()) {
-            log("Yang gagal:")
-            log(failed.toString().trimEnd())
+            log("Yang gagal:\n" + failed.toString().trimEnd())
             return false
         }
         return true
@@ -330,8 +318,8 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         val out = try { shell("pm clear $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
-        out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
         if (!out.contains("Success", ignoreCase = true)) {
+            out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
             log("Hapus data Kaspersky gagal. Pastikan $KASPERSKY_PACKAGE terpasang di device.")
             return false
         }
@@ -346,8 +334,8 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         val out = try { shell("pm uninstall -k --user 0 $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
-        out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
         if (!out.contains("Success", ignoreCase = true)) {
+            out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
             when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
                     log("Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan).")
