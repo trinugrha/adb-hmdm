@@ -59,6 +59,12 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     /** Dipakai agar probe dari thread pemantau tidak tumpang tindih dengan operasi di thread kerja. */
     val probeLock = Any()
 
+    /** Laporan kemajuan install: (nomor APK, jumlah APK, nama, byte terkirim, ukuran file). Dipanggil dari thread kerja. */
+    @Volatile var onProgress: ((Int, Int, String, Long, Long) -> Unit)? = null
+    @Volatile private var curIdx = 0
+    @Volatile private var curTotal = 0
+    @Volatile private var curName = ""
+
     // ---- Cegah Wi-Fi / CPU HP teknisi tidur saat operasi panjang (install APK besar) ----
     private var wifiLock: WifiManager.WifiLock? = null
     private var wakeLock: PowerManager.WakeLock? = null
@@ -277,6 +283,8 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 return@forEachIndexed
             }
             log("> adb install -r ${apk.name}")
+            curIdx = i + 1; curTotal = apks.size; curName = apk.name
+            onProgress?.invoke(curIdx, curTotal, curName, 0L, apk.file.length())
             var out = installTry(apk.file)
             if (!out.contains("Success", ignoreCase = true) && isTransient(out)) {
                 if (isConnected) {
@@ -447,12 +455,21 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             var writeError: java.io.IOException? = null
             try {
                 val os = stream.openOutputStream()
+                val total = file.length()
+                var sent = 0L
+                var lastReport = 0L
                 file.inputStream().use { input ->
                     val buf = ByteArray(32 * 1024)
                     while (true) {
                         val n = input.read(buf)
                         if (n < 0) break
                         os.write(buf, 0, n)
+                        sent += n
+                        val now = System.currentTimeMillis()
+                        if (now - lastReport >= 100 || sent >= total) {
+                            lastReport = now
+                            onProgress?.invoke(curIdx, curTotal, curName, sent, total)
+                        }
                     }
                 }
                 os.flush()
