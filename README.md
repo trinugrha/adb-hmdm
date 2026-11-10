@@ -15,7 +15,7 @@ buka tab Actions › "Build APK" › Run workflow, lalu unduh artifact `HMDM-Ins
 1. Pasang APK ini di HP teknisi (izinkan "install dari sumber tidak dikenal").
 2. HP target: Opsi Developer › Wireless debugging (satu Wi-Fi dengan HP teknisi) › "Pair device with pairing code".
 3. Isi IP, Port pairing, kode › **Pair**. Lalu isi IP + Port connect (layar utama Wireless debugging) › **Connect**.
-4. **1 · Instalasi Aplikasi**: ketuk area "Pilih File APK Di Sini" (bisa banyak file), lalu **Pasang Semua APK**.
+4. **1 · Instalasi Aplikasi**: ketuk area "Pilih File APK Di Sini" (bisa banyak file). Daftar aplikasi yang akan dipasang (nama + ukuran) tampil di bawahnya; ketuk ikon tempat sampah untuk membuang satu APK dari daftar. Lalu **Pasang Semua APK**.
 5. **2 · Atur Hak Akses**: pastikan semua akun Google/pengguna di HP target sudah dihapus, cek status Device Owner, lalu **Jalankan set-device-owner**.
 6. Atau pakai **Proses Otomatis** (Install APK + Set Owner sekaligus). Kartu **Uninstall Kaspersky** berisi 3 langkah: hapus data, matikan Aplikasi Admin Kaspersky di HP (manual), lalu uninstall.
 

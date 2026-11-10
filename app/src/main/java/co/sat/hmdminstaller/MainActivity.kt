@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtApkEmpty: TextView
     private lateinit var txtDropSub: TextView
     private lateinit var dropZone: View
+    private lateinit var apkListBox: android.widget.LinearLayout
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
@@ -136,6 +137,7 @@ class MainActivity : AppCompatActivity() {
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
         txtDropSub = findViewById(R.id.txtDropSub)
         dropZone = findViewById(R.id.dropZone)
+        apkListBox = findViewById(R.id.apkListBox)
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
@@ -472,6 +474,8 @@ class MainActivity : AppCompatActivity() {
         buttons.forEach { it.isEnabled = !on }
         dropZone.isEnabled = !on
         dropZone.alpha = if (on) 0.5f else 1f
+        apkListBox.alpha = if (on) 0.5f else 1f
+        for (i in 0 until apkListBox.childCount) apkListBox.getChildAt(i).findViewById<View>(R.id.apkRemoveTag)?.isEnabled = !on
         progress.visibility = if (on) View.VISIBLE else View.GONE
         txtStatus.text = status
     }
@@ -526,7 +530,78 @@ class MainActivity : AppCompatActivity() {
             txtDropSub.text = "Ketuk untuk memilih ulang (daftar sebelumnya diganti)"
             txtApkTitle.text = "Unggah File APK (${apks.size})"
         }
+        renderApkList()
         refreshHeader()
+    }
+
+    private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    /** Tampilkan daftar APK yang akan dipasang (urut sesuai nama) lengkap dengan ukuran & tombol hapus. */
+    private fun renderApkList() {
+        apkListBox.removeAllViews()
+        if (apks.isEmpty()) { apkListBox.visibility = View.GONE; return }
+        apkListBox.visibility = View.VISIBLE
+
+        apkListBox.addView(TextView(this).apply {
+            text = "DAFTAR APLIKASI YANG AKAN DIPASANG (${apks.size})"
+            textSize = 11f
+            setTypeface(typeface, Typeface.BOLD)
+            letterSpacing = 0.06f
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.muted))
+            setPadding(dp(2), 0, 0, dp(6))
+        })
+
+        apks.forEachIndexed { i, item ->
+            val row = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setBackgroundResource(R.drawable.bg_chip)
+                setPadding(dp(12), dp(8), dp(4), dp(8))
+                layoutParams = android.widget.LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { if (i > 0) topMargin = dp(6) }
+            }
+            row.addView(TextView(this).apply {
+                text = "${i + 1}"
+                textSize = 12f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent))
+                minWidth = dp(22)
+            })
+            val col = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                layoutParams = android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            col.addView(TextView(this).apply {
+                text = item.name
+                textSize = 13f
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text))
+                maxLines = 2
+                ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+            })
+            col.addView(TextView(this).apply {
+                text = item.sizeText
+                textSize = 11f
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.muted))
+            })
+            row.addView(col)
+            row.addView(android.widget.ImageButton(this).apply {
+                id = R.id.apkRemoveTag
+                setImageResource(R.drawable.ic_delete)
+                setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.danger))
+                background = null
+                contentDescription = "Hapus ${item.name} dari daftar"
+                isEnabled = !busy
+                layoutParams = android.widget.LinearLayout.LayoutParams(dp(40), dp(40))
+                setOnClickListener {
+                    if (busy) return@setOnClickListener
+                    apks.remove(item)
+                    if (!item.builtIn) io.execute { item.file.delete() }
+                    refreshApkList()
+                }
+            })
+            apkListBox.addView(row)
+        }
     }
 
     /** Satu entri log berwarna; pesan multi-baris dirapikan (baris lanjutan diberi indent). */
