@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">HMDM Installer</string>
+    <string name="owner_warning"><b>Penting:</b> Hapus terlebih dahulu semua akun Google/Email &amp; akun pengguna lain di HP.</string>
+    <string name="kaspersky_step2">Buka <b>Pengaturan &gt; Keamanan &gt; Aplikasi admin perangkat</b> (di beberapa merek: <b>Keamanan &amp; privasi &gt; Lainnya</b>), pilih <b>Kaspersky</b>, lalu <b>Nonaktifkan</b>. Jika tidak bisa dinonaktifkan, lepas perangkat dari konsol KES/MDM terlebih dahulu.</string>
+</resources>
