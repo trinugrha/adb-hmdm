@@ -37,7 +37,15 @@ sealed class OwnerState {
  * Padanan fungsi ADB di versi Windows: pair, connect, disconnect,
  * install -r, dan dpm set-device-owner. Dipanggil dari thread latar.
  */
-class AdbController(context: Context, private val log: (String) -> Unit) {
+class AdbController(context: Context, private val sink: (LogLevel, String) -> Unit) {
+
+    private fun logStep(s: String) = sink(LogLevel.STEP, s)
+    private fun logCmd(s: String) = sink(LogLevel.CMD, s)
+    private fun logOk(s: String) = sink(LogLevel.OK, s)
+    private fun logWarn(s: String) = sink(LogLevel.WARN, s)
+    private fun logErr(s: String) = sink(LogLevel.ERR, s)
+    private fun logDetail(s: String) = sink(LogLevel.DETAIL, s)
+    private fun logSummary(s: String) = sink(LogLevel.SUMMARY, s)
 
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
@@ -53,7 +61,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     /** Panggil dari thread latar saat aplikasi dibuka agar kunci siap sebelum dipakai. */
     fun warmUp() {
-        try { manager } catch (e: Throwable) { log("Peringatan: gagal menyiapkan kunci ADB: ${e.message ?: e.javaClass.simpleName}") }
+        try { manager } catch (e: Throwable) { logWarn("Kunci ADB belum siap: ${e.message ?: e.javaClass.simpleName}") }
     }
 
     /** Dipakai agar probe dari thread pemantau tidak tumpang tindih dengan operasi di thread kerja. */
@@ -99,12 +107,12 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     private fun tryReconnect(): Boolean {
         val addr = lastAddr ?: return false
-        log("Koneksi terputus, mencoba menyambung ulang ke $addr ...")
+        logWarn("Koneksi terputus, menyambung ulang ke $addr...")
         repeat(3) { i ->
             if (i > 0) Thread.sleep(2000)
             if (connect(addr)) return true
         }
-        log("Sambung ulang gagal. Pastikan Wireless debugging di HP target masih aktif & satu Wi-Fi.")
+        logErr("Sambung ulang gagal: pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi.")
         return false
     }
 
@@ -188,72 +196,77 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     fun pair(addr: String, code: String): Boolean {
         if (addr.isEmpty() || code.isEmpty()) {
-            log("Isi IP dan Port pairing dan kode pairing terlebih dahulu.")
+            logWarn("Isi IP:Port pairing dan kode pairing terlebih dahulu.")
             return false
         }
-        val (host, port) = split(addr) ?: run { log("Alamat pairing tidak valid: $addr"); return false }
-        log("> adb pair $addr ******")
+        val (host, port) = split(addr) ?: run { logErr("Alamat pairing tidak valid: $addr"); return false }
+        logCmd("adb pair $addr ******")
         return try {
             // Ditampung sebagai Any? agar aman baik pair() mengembalikan Boolean maupun void.
             val result: Any? = manager.pair(host, port, code)
             if (result == false) {
-                log("Pairing gagal: ditolak oleh device (cek kode / port pairing).")
+                logErr("Pairing gagal: ditolak device (cek kode dan port pairing).")
                 false
             } else {
-                log("Pairing berhasil ke $addr")
+                logOk("Pairing berhasil: $addr")
                 true
             }
         } catch (e: Throwable) {
-            log("Pairing gagal: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Pairing gagal: ${e.message ?: e.javaClass.simpleName}")
             false
         }
     }
 
     fun connect(addr: String): Boolean {
         if (addr.isEmpty()) {
-            log("Isi IP dan Port connect terlebih dahulu.")
+            logWarn("Isi IP:Port connect terlebih dahulu.")
             return false
         }
-        val (host, port) = split(addr) ?: run { log("Alamat connect tidak valid: $addr"); return false }
+        val (host, port) = split(addr) ?: run { logErr("Alamat connect tidak valid: $addr"); return false }
         // connect() di library langsung "sukses" bila masih ada koneksi lama (mis. ke IP/port lain),
         // jadi putuskan dulu agar benar-benar menyambung ke alamat yang diminta.
         if (isConnected) {
             try { manager.disconnect() } catch (e: Throwable) { }
         }
+        val maxAttempts = 2
         var ok = false
-        for (attempt in 1..2) {
-            if (ok) break
-            if (attempt > 1) Thread.sleep(1500)
-            if (attempt == 1) log("> adb connect $addr")
+        var reason = ""
+        logCmd("adb connect $addr")
+        for (attempt in 1..maxAttempts) {
+            if (attempt > 1) {
+                logWarn("Percobaan ${attempt - 1}/$maxAttempts gagal ($reason), mencoba lagi...")
+                Thread.sleep(1500)
+            }
             try {
                 val result: Any? = manager.connect(host, port)
                 if (result == false || !manager.isConnected) {
-                    log("Connect gagal: tidak terhubung")
+                    reason = "tidak terhubung"
                 } else if (probe()) {
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
                     lastAddr = addr
-                    log("Terhubung ke $addr")
+                    break
                 } else {
-                    log("Connect gagal: device tidak menjawab (belum di-pair / Wireless debugging mati / port salah)")
+                    reason = "device tidak menjawab; belum di-pair, Wireless debugging mati, atau port salah"
                     try { manager.disconnect() } catch (e: Throwable) { }
                 }
             } catch (e: Throwable) {
-                log("Connect gagal: ${e.message ?: e.javaClass.simpleName}")
+                reason = e.message ?: e.javaClass.simpleName
             }
         }
+        if (ok) logOk("Terhubung: $addr") else logErr("Connect gagal: $reason")
         return ok
     }
 
     fun disconnect(): Boolean {
-        log("> adb disconnect")
+        logCmd("adb disconnect")
         lastAddr = null
         return try {
             manager.disconnect()
-            log("Koneksi diputus.")
+            logOk("Koneksi diputus.")
             true
         } catch (e: Throwable) {
-            log("Disconnect gagal: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Disconnect gagal: ${e.message ?: e.javaClass.simpleName}")
             false
         }
     }
@@ -262,92 +275,100 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     fun install(apks: List<ApkItem>): Boolean {
         if (!ensureConnected()) return false
         if (apks.isEmpty()) {
-            log("Belum ada APK. Pilih file APK terlebih dahulu.")
+            logWarn("Belum ada APK. Pilih file APK terlebih dahulu.")
             return false
         }
         var ok = 0
-        val failed = StringBuilder()
+        val failed = mutableListOf<Pair<String, String>>() // nama APK -> alasan
         apks.forEachIndexed { i, apk ->
-            log("[${i + 1}/${apks.size}] ${apk.name}")
+            logStep("[${i + 1}/${apks.size}] ${apk.name} (${apk.sizeText})")
             if (!apk.file.exists()) {
-                log("File tidak ditemukan: ${apk.file}")
-                failed.appendLine("  - ${apk.name} (file tidak ditemukan)")
+                logErr("File tidak ditemukan di penyimpanan sementara.")
+                failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
             if (!isConnected && !tryReconnect()) {
-                failed.appendLine("  - ${apk.name} (koneksi terputus)")
+                failed += apk.name to "koneksi terputus"
                 return@forEachIndexed
             }
-            log("> adb install -r ${apk.name}")
+            logCmd("adb install -r ${apk.name}")
             curIdx = i + 1; curTotal = apks.size; curName = apk.name
             onProgress?.invoke(curIdx, curTotal, curName, 0L, apk.file.length())
+            val t0 = System.currentTimeMillis()
             var out = installTry(apk.file)
-            if (!out.contains("Success", ignoreCase = true) && isTransient(out)) {
+            if (!isSuccess(out) && isTransient(out)) {
+                logWarn("Pengiriman terputus, mencoba sekali lagi...")
                 if (isConnected) Thread.sleep(1500) else tryReconnect()
                 if (isConnected) out = installTry(apk.file)
             }
-            out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
-            if (out.contains("Success", ignoreCase = true)) ok++ else failed.appendLine("  - ${apk.name}")
+            if (isSuccess(out)) {
+                ok++
+                logOk("Terpasang · ${formatDuration(System.currentTimeMillis() - t0)}")
+            } else {
+                val reason = installFailureReason(out)
+                failed += apk.name to reason
+                logErr("Gagal: $reason")
+                logRaw(out)
+            }
         }
-        log("Ringkasan install: $ok berhasil, ${apks.size - ok} gagal dari ${apks.size} APK.")
-        if (failed.isNotEmpty()) {
-            log("Yang gagal:\n" + failed.toString().trimEnd())
-            return false
-        }
-        return true
+        logSummary("Ringkasan: $ok berhasil, ${failed.size} gagal dari ${apks.size} APK")
+        failed.forEach { (name, reason) -> logErr("$name: $reason") }
+        return failed.isEmpty()
     }
 
     fun setDeviceOwner(): Boolean {
         if (!ensureConnected()) return false
-        log("> adb shell dpm set-device-owner $OWNER_COMPONENT")
+        logCmd("adb shell dpm set-device-owner $OWNER_COMPONENT")
         val out = try { shell("dpm set-device-owner $OWNER_COMPONENT", doneWhen = { it.contains("Success") }) } catch (e: Throwable) {
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
-        out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
-        if (!out.contains("Success", ignoreCase = true)) {
-            log("Set device owner gagal. Pastikan device baru di-reset dan belum ada akun (Google/lainnya).")
-            return false
+        if (isSuccess(out)) {
+            logOk("Device owner aktif: ${OWNER_COMPONENT.substringBefore('/')}")
+            return true
         }
-        return true
+        logErr("Set device owner gagal: ${ownerFailureReason(out)}")
+        logRaw(out)
+        return false
     }
 
     /** Setara `adb shell pm clear com.kaspersky.kes`: hapus semua data aplikasi Kaspersky di device. */
     fun clearKasperskyData(): Boolean {
         if (!ensureConnected()) return false
-        log("> adb shell pm clear $KASPERSKY_PACKAGE")
+        logCmd("adb shell pm clear $KASPERSKY_PACKAGE")
         val out = try { shell("pm clear $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
-        if (!out.contains("Success", ignoreCase = true)) {
-            out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
-            log("Hapus data Kaspersky gagal. Pastikan $KASPERSKY_PACKAGE terpasang di device.")
+        if (!isSuccess(out)) {
+            logErr("Hapus data Kaspersky gagal: pastikan $KASPERSKY_PACKAGE terpasang di device.")
+            logRaw(out)
             return false
         }
-        log("Data Kaspersky berhasil dihapus.")
+        logOk("Data Kaspersky dihapus.")
         return true
     }
 
     /** Setara `adb shell pm uninstall -k --user 0 com.kaspersky.kes`: uninstall untuk user 0, data tetap disimpan (-k). */
     fun uninstallKaspersky(): Boolean {
         if (!ensureConnected()) return false
-        log("> adb shell pm uninstall -k --user 0 $KASPERSKY_PACKAGE")
+        logCmd("adb shell pm uninstall -k --user 0 $KASPERSKY_PACKAGE")
         val out = try { shell("pm uninstall -k --user 0 $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
-        if (!out.contains("Success", ignoreCase = true)) {
-            out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
-            when {
+        if (!isSuccess(out)) {
+            val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    log("Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan).")
+                    "Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)."
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
-                    log("Uninstall diblokir kebijakan Device Owner atau Profile Owner.")
+                    "diblokir kebijakan Device Owner atau Profile Owner."
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
-                    log("Aplikasi tidak ditemukan: Kaspersky sudah tidak terpasang.")
-                else -> log("Uninstall Kaspersky gagal. Pastikan $KASPERSKY_PACKAGE terpasang di device.")
+                    "Kaspersky sudah tidak terpasang."
+                else -> "pastikan $KASPERSKY_PACKAGE terpasang di device."
             }
+            logErr("Uninstall Kaspersky gagal: $reason")
+            logRaw(out)
             return false
         }
-        log("Kaspersky berhasil di-uninstall.")
+        logOk("Kaspersky di-uninstall.")
         return true
     }
 
@@ -362,8 +383,57 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     private fun ensureConnected(): Boolean {
         if (isConnected) return true
-        log("Belum terhubung ke device. Klik Connect terlebih dahulu.")
+        logWarn("Belum terhubung ke device. Klik Connect terlebih dahulu.")
         return false
+    }
+
+    private fun isSuccess(out: String) = out.contains("Success", ignoreCase = true)
+
+    private fun formatDuration(ms: Long): String =
+        if (ms < 1000) "$ms ms" else "%.1f dtk".format(java.util.Locale.US, ms / 1000.0)
+
+    /** Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis. */
+    private fun logRaw(out: String, max: Int = 6) {
+        val lines = out.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("Performing ") }
+        lines.take(max).forEach { logDetail(it.take(240)) }
+        if (lines.size > max) logDetail("... ${lines.size - max} baris lain tidak ditampilkan")
+    }
+
+    private val installReasons = mapOf(
+        "INSTALL_FAILED_ALREADY_EXISTS" to "sudah terpasang",
+        "INSTALL_FAILED_VERSION_DOWNGRADE" to "versi lebih rendah dari yang terpasang",
+        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "tanda tangan berbeda dengan versi terpasang (uninstall dulu)",
+        "INSTALL_FAILED_INSUFFICIENT_STORAGE" to "penyimpanan HP target penuh",
+        "INSTALL_FAILED_INVALID_APK" to "file APK rusak atau tidak valid",
+        "INSTALL_FAILED_NO_MATCHING_ABIS" to "arsitektur CPU tidak cocok",
+        "INSTALL_FAILED_OLDER_SDK" to "versi Android HP target terlalu lama",
+        "INSTALL_FAILED_USER_RESTRICTED" to "install dibatasi kebijakan device",
+        "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
+    )
+
+    /** Alasan singkat dari keluaran `cmd package install` yang gagal. */
+    private fun installFailureReason(out: String): String {
+        val code = Regex("INSTALL_[A-Z_]+").find(out)?.value
+        val friendly = code?.let { installReasons[it] }
+        return when {
+            friendly != null -> "$friendly ($code)"
+            code != null -> code
+            out.isBlank() -> "tidak ada balasan dari device"
+            else -> out.lines().firstOrNull { it.isNotBlank() }?.trim()?.removePrefix("Error:")?.trim()?.take(120)
+                ?: "tidak diketahui"
+        }
+    }
+
+    /** Alasan singkat dari keluaran `dpm set-device-owner` yang gagal. */
+    private fun ownerFailureReason(out: String): String {
+        val l = out.lowercase()
+        return when {
+            "already has a device owner" in l || "device owner is already set" in l -> "device sudah memiliki device owner."
+            "accounts" in l -> "masih ada akun (Google/lainnya) di device. Hapus akun atau reset device."
+            "provisioned" in l || "setup" in l -> "device sudah melewati setup awal. Reset ke pengaturan pabrik."
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di device."
+            else -> "pastikan device baru di-reset dan belum ada akun (Google/lainnya)."
+        }
     }
 
     /** Hasil `pm` dianggap lengkap setelah satu baris Success / Failure / Error selesai dibaca. */
@@ -418,7 +488,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
-                log("Peringatan: perintah '$cmd' tidak selesai dalam ${timeoutMs / 1000} detik, dilanjutkan.")
+                logWarn("Perintah '$cmd' tidak selesai dalam ${timeoutMs / 1000} detik, dilanjutkan.")
             }
         }
         error?.let { throw it }

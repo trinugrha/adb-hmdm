@@ -97,7 +97,7 @@ class MainActivity : AppCompatActivity() {
                 else -> todo.add(uri to name)
             }
         }
-        if (skipped > 0) log("$skipped file dilewati (bukan .apk / duplikat).")
+        if (skipped > 0) log(LogLevel.WARN, "$skipped file dilewati (bukan .apk atau duplikat).")
         if (todo.isEmpty()) return@registerForActivityResult
         // Penyalinan file (bisa puluhan-ratusan MB) di thread latar.
         io.execute {
@@ -113,7 +113,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 apks.clear()
                 apks.addAll(items)
-                if (failed > 0) log("Gagal menyalin $failed file.")
+                if (failed > 0) log(LogLevel.ERR, "Gagal menyalin $failed file APK.")
                 refreshApkList()
             }
         }
@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
-        adb = AdbController(this) { line -> runOnUiThread { log(line) } }
+        adb = AdbController(this) { level, line -> runOnUiThread { log(level, line) } }
         adb.onProgress = { idx, total, name, sent, size -> runOnUiThread { showInstallProgress(idx, total, name, sent, size) } }
 
         // Siapkan kunci ADB di thread latar (bukan UI thread).
@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.ownerPill).setOnClickListener {
             if (busy) return@setOnClickListener
-            if (!adb.isConnected) { log("Belum terhubung ke device. Connect dulu untuk cek status Device Owner."); return@setOnClickListener }
+            if (!adb.isConnected) { log(LogLevel.WARN, "Belum terhubung ke device. Connect dulu untuk cek status Device Owner."); return@setOnClickListener }
             run("Cek Device Owner") { true }
         }
         btnPair.setOnClickListener {
@@ -218,7 +218,7 @@ class MainActivity : AppCompatActivity() {
             val list = apks.toList()
             run("Install APK + Set Owner") {
                 if (!adb.isConnected) {
-                    runOnUiThread { log("Belum terhubung ke device. Lakukan Pair & Connect dulu, lalu jalankan lagi.") }
+                    runOnUiThread { log(LogLevel.WARN, "Belum terhubung ke device. Lakukan Pair dan Connect dulu, lalu jalankan lagi.") }
                     return@run false
                 }
                 adb.installAndOwner(list)
@@ -337,7 +337,7 @@ class MainActivity : AppCompatActivity() {
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log("Koneksi ke $addr terputus.")
+            log(LogLevel.ERR, "Koneksi ke $addr terputus.")
             lostAddr = addr
             connectedAddr = null
             connectedSince = 0L
@@ -395,19 +395,22 @@ class MainActivity : AppCompatActivity() {
         if (busy) return
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
-        log("── $title ──────────────")
+        val startedAt = System.currentTimeMillis()
+        log(LogLevel.HEAD, "$title · ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(startedAt))}")
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
             synchronized(adb.probeLock) { }
             var ok = false
             try { ok = work() } catch (e: Throwable) {
-                runOnUiThread { log("ERROR: ${e.message ?: e.javaClass.simpleName}") }
+                runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.message ?: e.javaClass.simpleName}") }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st } } catch (e: Throwable) { }
             runOnUiThread {
-                log(if (ok) "=== SELESAI: $title - BERHASIL ===" else "=== GAGAL / BERHENTI: $title ===")
-                log("")
+                val took = (System.currentTimeMillis() - startedAt).let { if (it < 1000) "$it ms" else "%.1f dtk".format(java.util.Locale.US, it / 1000.0) }
+                if (ok) log(LogLevel.END_OK, "Selesai: $title · $took")
+                else log(LogLevel.END_ERR, "Gagal / berhenti: $title · $took")
+                logBlank()
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal / berhenti: $title (lihat log)")
                 refreshHeader()
@@ -588,42 +591,36 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Satu entri log berwarna; pesan multi-baris dirapikan (baris lanjutan diberi indent). */
-    private fun log(s: String) {
-        if (s.isBlank()) { txtLog.append("\n"); logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }; return }
-        val lines = s.trimEnd().lines()
-        val bold = s.startsWith("──") || s.startsWith("===")
-        val sb = StringBuilder()
-        lines.forEach { l -> sb.append(l.trimEnd()).append('\n') }
-        val sp = SpannableString(sb.toString())
-        var pos = 0
-        lines.forEach { l ->
-            val end = pos + l.trimEnd().length + 1
-            sp.setSpan(ForegroundColorSpan(lineColor(l)), pos, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            if (bold) sp.setSpan(StyleSpan(Typeface.BOLD), pos, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            pos = end
-        }
+    /** Satu baris kosong sebagai pemisah antar proses. */
+    private fun logBlank() {
+        txtLog.append("\n")
+        logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /**
+     * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
+     * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda).
+     */
+    private fun log(level: LogLevel, s: String) {
+        if (s.isBlank()) return
+        val indent = " ".repeat(level.marker.length)
+        val lines = s.trimEnd().lines().map { it.trimEnd() }
+        val text = lines.mapIndexed { i, l -> (if (i == 0) level.marker else indent) + l }.joinToString("\n") + "\n"
+        val sp = SpannableString(text)
+        sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        if (level.bold) sp.setSpan(StyleSpan(Typeface.BOLD), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         txtLog.append(sp)
         logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
     }
 
-    private fun lineColor(s: String): Int {
-        val l = s.lowercase()
-        return when {
-            s.startsWith("===") ->
-                if (l.contains("berhasil")) Color.rgb(74, 222, 128) else Color.rgb(248, 113, 113)
-            s.startsWith("──") -> Color.WHITE
-            s.startsWith("> ") -> Color.rgb(56, 189, 248)
-            l.startsWith("ringkasan") -> Color.WHITE
-            l.startsWith("peringatan") -> Color.rgb(251, 191, 36)
-            l.contains("sudah ada") || l.contains("dilewati") -> Color.rgb(251, 191, 36)
-            l.contains("fail") || l.contains("gagal") || l.contains("error") || l.contains("cannot") ||
-                l.contains("tidak ditemukan") || l.contains("timeout") -> Color.rgb(248, 113, 113)
-            l.contains("success") || l.contains("berhasil") || l.startsWith("terhubung ke") ||
-                l.startsWith("koneksi diputus") -> Color.rgb(74, 222, 128)
-            s.startsWith("[") || s.startsWith("Isi ") || s.startsWith("Belum ada APK") -> Color.rgb(252, 211, 77)
-            else -> Color.rgb(203, 213, 225)
-        }
+    private fun levelColor(level: LogLevel): Int = when (level) {
+        LogLevel.HEAD, LogLevel.SUMMARY -> Color.WHITE
+        LogLevel.STEP -> Color.rgb(252, 211, 77)
+        LogLevel.CMD -> Color.rgb(56, 189, 248)
+        LogLevel.OK, LogLevel.END_OK -> Color.rgb(74, 222, 128)
+        LogLevel.WARN -> Color.rgb(251, 191, 36)
+        LogLevel.ERR, LogLevel.END_ERR -> Color.rgb(248, 113, 113)
+        LogLevel.DETAIL -> Color.rgb(148, 163, 184)
     }
 
     private fun clean(s: String) = s.trim().replace("\"", "").replace(" ", "")
@@ -668,7 +665,7 @@ class MainActivity : AppCompatActivity() {
             ApkItem(name, f)
         } catch (e: Exception) {
             f.delete() // jangan tinggalkan file setengah jadi
-            runOnUiThread { log("Gagal membaca $name: ${e.message}") }
+            runOnUiThread { log(LogLevel.ERR, "Gagal membaca $name: ${e.message ?: e.javaClass.simpleName}") }
             null
         }
     }
