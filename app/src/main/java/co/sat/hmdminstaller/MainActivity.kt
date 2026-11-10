@@ -16,6 +16,7 @@ import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import android.widget.CheckBox
 import android.widget.LinearLayout
@@ -72,6 +73,7 @@ class MainActivity : AppCompatActivity() {
     private val poller = Executors.newSingleThreadScheduledExecutor()
     private var pollTask: ScheduledFuture<*>? = null
     private var lastProbe = 0L
+    private var probeFails = 0
 
     // ---- Kunci PIN ----
     private lateinit var pinStore: PinStore
@@ -356,7 +358,11 @@ class MainActivity : AppCompatActivity() {
                 lastProbe = now
                 // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
                 synchronized(adb.probeLock) {
-                    if (!busy) alive = adb.probe()
+                    if (!busy) {
+                        alive = adb.probe()
+                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
+                        if (alive) probeFails = 0 else if (++probeFails < 3) alive = true
+                    }
                 }
             }
             runOnUiThread { applyLiveState(alive, wasBusy) }
@@ -446,25 +452,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
-
-    /** Jaga layar tetap menyala dan Wi-Fi tidak masuk mode hemat selama operasi, agar koneksi ADB tidak putus. */
-    private fun keepAwake(on: Boolean) {
-        try {
-            if (on) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            if (on) {
-                if (wifiLock == null) {
-                    val wm = applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
-                    wifiLock = wm.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "hmdm:adb")
-                }
-                if (wifiLock?.isHeld == false) wifiLock?.acquire()
-            } else if (wifiLock?.isHeld == true) wifiLock?.release()
-        } catch (e: Throwable) { }
-    }
-
     private fun setBusy(on: Boolean, status: String) {
-        keepAwake(on)
+        adb.holdLocks(on)
+        if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         buttons.forEach { it.isEnabled = !on }
         dropZone.isEnabled = !on
         dropZone.alpha = if (on) 0.5f else 1f

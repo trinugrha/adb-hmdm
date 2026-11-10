@@ -1,6 +1,9 @@
 package co.sat.hmdminstaller
 
 import android.content.Context
+import android.net.wifi.WifiManager
+import android.os.Build
+import android.os.PowerManager
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
@@ -56,8 +59,52 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     /** Dipakai agar probe dari thread pemantau tidak tumpang tindih dengan operasi di thread kerja. */
     val probeLock = Any()
 
+    // ---- Cegah Wi-Fi / CPU HP teknisi tidur saat operasi panjang (install APK besar) ----
+    private var wifiLock: WifiManager.WifiLock? = null
+    private var wakeLock: PowerManager.WakeLock? = null
+
+    /** Tahan Wi-Fi (performa tinggi) + CPU tetap aktif selama operasi berjalan. Panggil dengan false setelah selesai. */
+    @Synchronized
+    fun holdLocks(on: Boolean) {
+        try {
+            if (on) {
+                if (wifiLock == null) {
+                    val wm = appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+                    @Suppress("DEPRECATION")
+                    val mode = if (Build.VERSION.SDK_INT >= 29) WifiManager.WIFI_MODE_FULL_LOW_LATENCY
+                               else WifiManager.WIFI_MODE_FULL_HIGH_PERF
+                    wifiLock = wm.createWifiLock(mode, "hmdm:adb").apply { setReferenceCounted(false) }
+                }
+                if (wakeLock == null) {
+                    val pm = appContext.getSystemService(Context.POWER_SERVICE) as PowerManager
+                    wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "hmdm:adb").apply { setReferenceCounted(false) }
+                }
+                if (wifiLock?.isHeld == false) wifiLock?.acquire()
+                if (wakeLock?.isHeld == false) wakeLock?.acquire(30 * 60 * 1000L)
+            } else {
+                if (wifiLock?.isHeld == true) wifiLock?.release()
+                if (wakeLock?.isHeld == true) wakeLock?.release()
+            }
+        } catch (e: Throwable) { }
+    }
+
+    /** Alamat connect terakhir yang berhasil, dipakai untuk sambung ulang otomatis bila koneksi putus saat install. */
+    @Volatile private var lastAddr: String? = null
+
+    private fun tryReconnect(): Boolean {
+        val addr = lastAddr ?: return false
+        log("Koneksi terputus, mencoba menyambung ulang ke $addr ...")
+        repeat(3) { i ->
+            if (i > 0) Thread.sleep(2000)
+            if (connect(addr)) return true
+        }
+        log("Sambung ulang gagal. Pastikan Wireless debugging di HP target masih aktif & satu Wi-Fi.")
+        return false
+    }
+
     /** Tutup koneksi & lepas resource (dipanggil saat Activity dihancurkan). */
     fun close() {
+        holdLocks(false)
         val m = mgr ?: return
         try { m.disconnect() } catch (e: Throwable) { }
         try { m.close() } catch (e: Throwable) { }
@@ -68,13 +115,13 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     /**
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
-     * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 4 detik.
+     * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
      */
     fun probe(): Boolean {
         if (!isConnected) return false
         var stream: io.github.muntashirakon.adb.AdbStream? = null
         val watchdog = Thread {
-            try { Thread.sleep(4_000); stream?.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
+            try { Thread.sleep(8_000); stream?.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
         }.apply { isDaemon = true; start() }
         return try {
             val s = manager.openStream("shell:echo ok")
@@ -182,6 +229,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 } else if (probe()) {
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
+                    lastAddr = addr
                     log("connected to $addr")
                 } else {
                     log("Connect gagal: device tidak menjawab (belum di-pair / Wireless debugging mati / port salah)")
@@ -196,6 +244,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
 
     fun disconnect(): Boolean {
         log("> adb disconnect")
+        lastAddr = null
         return try {
             manager.disconnect()
             log("disconnected")
@@ -215,13 +264,6 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         }
         var ok = 0
         val failed = StringBuilder()
-        // Verifikasi Play Protect untuk install via ADB sering membuat install terasa sangat lama.
-        // Dimatikan sementara selama install, nilai asli dipulihkan di akhir.
-        val prevVerify = try { shell("settings get global verifier_verify_adb_installs", 4_000, quiet = true).trim() } catch (e: Throwable) { "" }
-        if (prevVerify.isNotEmpty()) {
-            try { shell("settings put global verifier_verify_adb_installs 0", 4_000, quiet = true) } catch (e: Throwable) { }
-        }
-        try {
         apks.forEachIndexed { i, apk ->
             log("")
             log("[${i + 1}/${apks.size}] ${apk.name}")
@@ -230,22 +272,24 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 failed.appendLine("  - ${apk.name} (file tidak ditemukan)")
                 return@forEachIndexed
             }
+            if (!isConnected && !tryReconnect()) {
+                failed.appendLine("  - ${apk.name} (koneksi terputus)")
+                return@forEachIndexed
+            }
             log("> adb install -r ${apk.name}")
             var out = installTry(apk.file)
-            if (!out.contains("Success", ignoreCase = true) && isTransient(out) && isConnected) {
-                log("Stream tertutup, mencoba lagi (1x)...")
-                Thread.sleep(1500)
-                out = installTry(apk.file)
+            if (!out.contains("Success", ignoreCase = true) && isTransient(out)) {
+                if (isConnected) {
+                    log("Stream tertutup, mencoba lagi (1x)...")
+                    Thread.sleep(1500)
+                } else {
+                    log("Koneksi putus di tengah install: ${out.trim().ifEmpty { "(tanpa pesan)" }}")
+                    tryReconnect()
+                }
+                if (isConnected) out = installTry(apk.file)
             }
             out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
             if (out.contains("Success", ignoreCase = true)) ok++ else failed.appendLine("  - ${apk.name}")
-        }
-        } finally {
-            if (prevVerify.isNotEmpty()) {
-                val restore = if (prevVerify == "null") "settings delete global verifier_verify_adb_installs"
-                              else "settings put global verifier_verify_adb_installs $prevVerify"
-                try { shell(restore, 4_000, quiet = true) } catch (e: Throwable) { }
-            }
         }
         log("")
         log("Ringkasan install: $ok berhasil, ${apks.size - ok} gagal dari ${apks.size} APK.")
@@ -401,10 +445,6 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
-            val total = file.length()
-            val t0 = System.currentTimeMillis()
-            var lastLog = t0
-            var sent = 0L
             try {
                 val os = stream.openOutputStream()
                 file.inputStream().use { input ->
@@ -413,14 +453,6 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                         val n = input.read(buf)
                         if (n < 0) break
                         os.write(buf, 0, n)
-                        sent += n
-                        val now = System.currentTimeMillis()
-                        if (now - lastLog >= 3_000) {
-                            lastLog = now
-                            val sec = maxOf(1L, now - t0) / 1000.0
-                            log("  terkirim %d%% (%.1f MB, %.2f MB/s)".format(
-                                if (total > 0) sent * 100 / total else 0, sent / 1048576.0, sent / 1048576.0 / sec))
-                        }
                     }
                 }
                 os.flush()
@@ -428,10 +460,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 // Device menutup stream lebih awal (mis. install ditolak). Tetap baca pesan aslinya.
                 writeError = e
             }
-            val tSent = System.currentTimeMillis()
-            log("  transfer ke device: %.1f dtk; menunggu device memproses (verifikasi + dexopt)...".format((tSent - t0) / 1000.0))
-            val out = readUntil(stream.openInputStream(), pmDone)
-            log("  proses di device: %.1f dtk".format((System.currentTimeMillis() - tSent) / 1000.0))
+            val out = readAll(stream.openInputStream())
             if (out.isBlank() && writeError != null) {
                 return "Error: ${writeError.message ?: "stream closed"}"
             }
@@ -440,25 +469,6 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             watchdog.interrupt()
             try { stream.close() } catch (e: Throwable) { }
         }
-    }
-
-    /**
-     * Baca output sambil memeriksa [done]; berhenti begitu hasil `pm` (Success/Failure/Error) lengkap,
-     * tanpa menunggu device menutup stream (yang sering tidak terjadi setelah install selesai).
-     */
-    private fun readUntil(input: InputStream, done: (String) -> Boolean): String {
-        val bos = ByteArrayOutputStream()
-        val buf = ByteArray(4096)
-        try {
-            while (true) {
-                val n = input.read(buf)
-                if (n < 0) break
-                bos.write(buf, 0, n)
-                if (done(bos.toString("UTF-8"))) break
-            }
-        } catch (e: java.io.IOException) {
-        }
-        return bos.toString("UTF-8")
     }
 
     /** Baca sampai EOF. Bila stream ditutup device (IOException), kembalikan yang sudah terbaca. */
