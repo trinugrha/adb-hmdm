@@ -215,6 +215,13 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         }
         var ok = 0
         val failed = StringBuilder()
+        // Verifikasi Play Protect untuk install via ADB sering membuat install terasa sangat lama.
+        // Dimatikan sementara selama install, nilai asli dipulihkan di akhir.
+        val prevVerify = try { shell("settings get global verifier_verify_adb_installs", 4_000, quiet = true).trim() } catch (e: Throwable) { "" }
+        if (prevVerify.isNotEmpty()) {
+            try { shell("settings put global verifier_verify_adb_installs 0", 4_000, quiet = true) } catch (e: Throwable) { }
+        }
+        try {
         apks.forEachIndexed { i, apk ->
             log("")
             log("[${i + 1}/${apks.size}] ${apk.name}")
@@ -232,6 +239,13 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             }
             out.lines().filter { it.isNotBlank() }.forEach { log(it.trim()) }
             if (out.contains("Success", ignoreCase = true)) ok++ else failed.appendLine("  - ${apk.name}")
+        }
+        } finally {
+            if (prevVerify.isNotEmpty()) {
+                val restore = if (prevVerify == "null") "settings delete global verifier_verify_adb_installs"
+                              else "settings put global verifier_verify_adb_installs $prevVerify"
+                try { shell(restore, 4_000, quiet = true) } catch (e: Throwable) { }
+            }
         }
         log("")
         log("Ringkasan install: $ok berhasil, ${apks.size - ok} gagal dari ${apks.size} APK.")
@@ -387,14 +401,26 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
+            val total = file.length()
+            val t0 = System.currentTimeMillis()
+            var lastLog = t0
+            var sent = 0L
             try {
                 val os = stream.openOutputStream()
                 file.inputStream().use { input ->
-                    val buf = ByteArray(32 * 1024)
+                    val buf = ByteArray(256 * 1024)
                     while (true) {
                         val n = input.read(buf)
                         if (n < 0) break
                         os.write(buf, 0, n)
+                        sent += n
+                        val now = System.currentTimeMillis()
+                        if (now - lastLog >= 3_000) {
+                            lastLog = now
+                            val sec = maxOf(1L, now - t0) / 1000.0
+                            log("  terkirim %d%% (%.1f MB, %.2f MB/s)".format(
+                                if (total > 0) sent * 100 / total else 0, sent / 1048576.0, sent / 1048576.0 / sec))
+                        }
                     }
                 }
                 os.flush()
@@ -402,7 +428,10 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 // Device menutup stream lebih awal (mis. install ditolak). Tetap baca pesan aslinya.
                 writeError = e
             }
+            val tSent = System.currentTimeMillis()
+            log("  transfer ke device: %.1f dtk; menunggu device memproses (verifikasi + dexopt)...".format((tSent - t0) / 1000.0))
             val out = readAll(stream.openInputStream())
+            log("  proses di device: %.1f dtk".format((System.currentTimeMillis() - tSent) / 1000.0))
             if (out.isBlank() && writeError != null) {
                 return "Error: ${writeError.message ?: "stream closed"}"
             }
