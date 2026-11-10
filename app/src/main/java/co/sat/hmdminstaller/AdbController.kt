@@ -408,7 +408,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             try {
                 val os = stream.openOutputStream()
                 file.inputStream().use { input ->
-                    val buf = ByteArray(256 * 1024)
+                    val buf = ByteArray(32 * 1024)
                     while (true) {
                         val n = input.read(buf)
                         if (n < 0) break
@@ -430,7 +430,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             }
             val tSent = System.currentTimeMillis()
             log("  transfer ke device: %.1f dtk; menunggu device memproses (verifikasi + dexopt)...".format((tSent - t0) / 1000.0))
-            val out = readAll(stream.openInputStream())
+            val out = readUntil(stream.openInputStream(), pmDone)
             log("  proses di device: %.1f dtk".format((System.currentTimeMillis() - tSent) / 1000.0))
             if (out.isBlank() && writeError != null) {
                 return "Error: ${writeError.message ?: "stream closed"}"
@@ -440,6 +440,25 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
             watchdog.interrupt()
             try { stream.close() } catch (e: Throwable) { }
         }
+    }
+
+    /**
+     * Baca output sambil memeriksa [done]; berhenti begitu hasil `pm` (Success/Failure/Error) lengkap,
+     * tanpa menunggu device menutup stream (yang sering tidak terjadi setelah install selesai).
+     */
+    private fun readUntil(input: InputStream, done: (String) -> Boolean): String {
+        val bos = ByteArrayOutputStream()
+        val buf = ByteArray(4096)
+        try {
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                bos.write(buf, 0, n)
+                if (done(bos.toString("UTF-8"))) break
+            }
+        } catch (e: java.io.IOException) {
+        }
+        return bos.toString("UTF-8")
     }
 
     /** Baca sampai EOF. Bila stream ditutup device (IOException), kembalikan yang sudah terbaca. */

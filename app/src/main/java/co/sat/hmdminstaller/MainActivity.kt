@@ -446,7 +446,25 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var wifiLock: android.net.wifi.WifiManager.WifiLock? = null
+
+    /** Jaga layar tetap menyala dan Wi-Fi tidak masuk mode hemat selama operasi, agar koneksi ADB tidak putus. */
+    private fun keepAwake(on: Boolean) {
+        try {
+            if (on) window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            else window.clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            if (on) {
+                if (wifiLock == null) {
+                    val wm = applicationContext.getSystemService(android.content.Context.WIFI_SERVICE) as android.net.wifi.WifiManager
+                    wifiLock = wm.createWifiLock(android.net.wifi.WifiManager.WIFI_MODE_FULL_HIGH_PERF, "hmdm:adb")
+                }
+                if (wifiLock?.isHeld == false) wifiLock?.acquire()
+            } else if (wifiLock?.isHeld == true) wifiLock?.release()
+        } catch (e: Throwable) { }
+    }
+
     private fun setBusy(on: Boolean, status: String) {
+        keepAwake(on)
         buttons.forEach { it.isEnabled = !on }
         dropZone.isEnabled = !on
         dropZone.alpha = if (on) 0.5f else 1f
