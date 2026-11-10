@@ -18,8 +18,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
-import android.widget.CheckBox
-import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
@@ -49,19 +47,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtApkEmpty: TextView
     private lateinit var txtDropSub: TextView
     private lateinit var dropZone: View
-    private lateinit var apkActions: View
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
     private lateinit var progress: ProgressBar
-    private lateinit var apkList: LinearLayout
     private lateinit var buttons: List<MaterialButton>
 
     private val worker = Executors.newSingleThreadExecutor()
     // Penyalinan APK ke cache dipisah dari worker ADB agar tidak antre di belakang install, dan tidak membebani UI thread.
     private val io = Executors.newSingleThreadExecutor()
     private val apks = mutableListOf<ApkItem>()
-    private val checked = mutableSetOf<ApkItem>()
     private lateinit var adb: AdbController
     @Volatile private var busy = false
     @Volatile private var connectedAddr: String? = null
@@ -139,18 +134,14 @@ class MainActivity : AppCompatActivity() {
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
         txtDropSub = findViewById(R.id.txtDropSub)
         dropZone = findViewById(R.id.dropZone)
-        apkActions = findViewById(R.id.apkActions)
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
         progress = findViewById(R.id.progress)
-        apkList = findViewById(R.id.apkList)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
         val btnConnect: MaterialButton = findViewById(R.id.btnConnect)
         val btnDisconnect: MaterialButton = findViewById(R.id.btnDisconnect)
-        val btnRemoveApk: MaterialButton = findViewById(R.id.btnRemoveApk)
-        val btnClearApk: MaterialButton = findViewById(R.id.btnClearApk)
         val btnInstallOnly: MaterialButton = findViewById(R.id.btnInstallOnly)
         val btnOwner: MaterialButton = findViewById(R.id.btnOwner)
         val btnAll: MaterialButton = findViewById(R.id.btnAll)
@@ -158,8 +149,8 @@ class MainActivity : AppCompatActivity() {
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
-        buttons = listOf(btnPair, btnConnect, btnDisconnect, btnRemoveApk,
-            btnClearApk, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+        buttons = listOf(btnPair, btnConnect, btnDisconnect,
+            btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         adb = AdbController(this) { line -> runOnUiThread { log(line) } }
@@ -190,21 +181,6 @@ class MainActivity : AppCompatActivity() {
         dropZone.setOnClickListener {
             if (busy) return@setOnClickListener
             pickApks.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*"))
-        }
-        btnRemoveApk.setOnClickListener {
-            val sel = apks.filter { it in checked }
-            if (sel.isEmpty()) { log("Tidak ada APK yang dipilih untuk dihapus."); return@setOnClickListener }
-            sel.forEach { log("Dihapus dari daftar: ${it.name}"); if (!it.builtIn) it.file.delete() }
-            apks.removeAll(sel.toSet()); checked.removeAll(sel.toSet())
-            log("Dihapus ${sel.size} APK. Sisa: ${apks.size}")
-            refreshApkList()
-        }
-        btnClearApk.setOnClickListener {
-            val n = apks.size
-            apks.filter { !it.builtIn }.forEach { it.file.delete() }
-            apks.clear(); checked.clear()
-            log("Daftar APK dikosongkan ($n APK dihapus dari daftar).")
-            refreshApkList()
         }
         btnInstallOnly.setOnClickListener {
             val list = apks.toList()
@@ -542,24 +518,13 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshApkList() {
-        apkList.removeAllViews()
-        apks.forEachIndexed { i, item ->
-            val cb = CheckBox(this)
-            cb.text = "%02d  %s  ·  %s".format(i + 1, item.name, item.sizeText)
-            cb.textSize = 14f
-            cb.setPadding(cb.paddingLeft, (8 * resources.displayMetrics.density).toInt(), cb.paddingRight, (8 * resources.displayMetrics.density).toInt())
-            cb.isChecked = item in checked
-            cb.setOnCheckedChangeListener { _, isChecked -> if (isChecked) checked.add(item) else checked.remove(item) }
-            apkList.addView(cb)
-        }
-        apkActions.visibility = if (apks.isEmpty()) View.GONE else View.VISIBLE
         if (apks.isEmpty()) {
             txtApkEmpty.text = "Pilih File APK Di Sini"
             txtDropSub.text = "Dapat memilih lebih dari satu file APK"
             txtApkTitle.text = "Unggah File APK (Bisa Banyak)"
         } else {
             txtApkEmpty.text = "${apks.size} APK dipilih"
-            txtDropSub.text = "Ketuk untuk menambah file APK lagi · centang lalu Hapus Terpilih untuk membuang"
+            txtDropSub.text = "Ketuk untuk menambah file APK lagi"
             txtApkTitle.text = "Unggah File APK (${apks.size})"
         }
         refreshHeader()

@@ -497,44 +497,6 @@
                             android:textSize="12sp" />
                     </LinearLayout>
 
-                    <!-- Daftar APK terpilih -->
-                    <LinearLayout
-                        android:id="@+id/apkList"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="vertical" />
-
-                    <LinearLayout
-                        android:id="@+id/apkActions"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:orientation="horizontal"
-                        android:visibility="gone">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRemoveApk"
-                            style="@style/Widget.Hmdm.Button.Danger"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:minHeight="0dp"
-                            android:text="Hapus Terpilih"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnClearApk"
-                            style="@style/Widget.Hmdm.Button.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_weight="1"
-                            android:minHeight="0dp"
-                            android:text="Kosongkan"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnInstallOnly"
                         android:layout_width="match_parent"
