@@ -714,7 +714,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Jalankan pemasangan semua APK dan pengaturan Device Owner sekaligus dalam satu klik." />
+                        android:text="Pasang semua APK lalu atur Device Owner sekaligus dalam satu klik. Pair &amp; Connect harus sudah dilakukan lebih dulu." />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAll"
