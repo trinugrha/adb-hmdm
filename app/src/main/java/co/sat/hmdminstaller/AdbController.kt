@@ -200,7 +200,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 log("Pairing gagal: ditolak oleh device (cek kode / port pairing).")
                 false
             } else {
-                log("Successfully paired to $addr")
+                log("Pairing berhasil ke $addr")
                 true
             }
         } catch (e: Throwable) {
@@ -236,7 +236,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
                     lastAddr = addr
-                    log("connected to $addr")
+                    log("Terhubung ke $addr")
                 } else {
                     log("Connect gagal: device tidak menjawab (belum di-pair / Wireless debugging mati / port salah)")
                     try { manager.disconnect() } catch (e: Throwable) { }
@@ -253,10 +253,10 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
         lastAddr = null
         return try {
             manager.disconnect()
-            log("disconnected")
+            log("Koneksi diputus.")
             true
         } catch (e: Throwable) {
-            log("Disconnect error: ${e.message ?: e.javaClass.simpleName}")
+            log("Disconnect gagal: ${e.message ?: e.javaClass.simpleName}")
             false
         }
     }
@@ -265,7 +265,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     fun install(apks: List<ApkItem>): Boolean {
         if (!ensureConnected()) return false
         if (apks.isEmpty()) {
-            log("Daftar APK kosong. Tambahkan APK terlebih dahulu.")
+            log("Belum ada APK. Pilih file APK terlebih dahulu.")
             return false
         }
         var ok = 0

@@ -82,7 +82,8 @@ class MainActivity : AppCompatActivity() {
     private val pickApks = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNullOrEmpty()) return@registerForActivityResult
         // Di UI thread: hanya baca nama (cepat) dan saring duplikat / non-APK.
-        val seen = apks.map { it.name.lowercase() }.toMutableSet()
+        // Setiap pemilihan baru mereset daftar sebelumnya (APK lama diganti).
+        val seen = mutableSetOf<String>()
         val todo = mutableListOf<Pair<Uri, String>>()
         var skipped = 0
         uris.forEach { uri ->
@@ -98,9 +99,12 @@ class MainActivity : AppCompatActivity() {
         }
         if (skipped > 0) log("$skipped file dilewati (bukan .apk / duplikat).")
         if (todo.isEmpty()) return@registerForActivityResult
-        log("Menyalin ${todo.size} APK...")
+        log("Daftar APK direset. Menyalin ${todo.size} APK baru...")
         // Penyalinan file (bisa puluhan-ratusan MB) di thread latar.
         io.execute {
+            // Hapus file APK lama dari cache dulu (sebelum menyalin, agar nama yang sama tidak ikut terhapus).
+            val old = apks.toList()
+            old.filter { !it.builtIn }.forEach { it.file.delete() }
             val items = mutableListOf<ApkItem>()
             var failed = 0
             todo.forEach { (uri, name) ->
@@ -108,8 +112,9 @@ class MainActivity : AppCompatActivity() {
                 if (item == null) failed++ else items.add(item)
             }
             runOnUiThread {
+                apks.clear()
                 apks.addAll(items)
-                if (items.isNotEmpty()) log("Ditambahkan ${items.size} APK. Total: ${apks.size}")
+                if (items.isNotEmpty()) log("Dipilih ${items.size} APK.")
                 if (failed > 0) log("Gagal menyalin $failed file.")
                 refreshApkList()
             }
@@ -411,6 +416,7 @@ class MainActivity : AppCompatActivity() {
         if (busy) return
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
+        log("[$title] dimulai...")
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
             synchronized(adb.probeLock) { }
@@ -524,7 +530,7 @@ class MainActivity : AppCompatActivity() {
             txtApkTitle.text = "Unggah File APK (Bisa Banyak)"
         } else {
             txtApkEmpty.text = "${apks.size} APK dipilih"
-            txtDropSub.text = "Ketuk untuk menambah file APK lagi"
+            txtDropSub.text = "Ketuk untuk memilih ulang (daftar sebelumnya diganti)"
             txtApkTitle.text = "Unggah File APK (${apks.size})"
         }
         refreshHeader()
@@ -548,9 +554,9 @@ class MainActivity : AppCompatActivity() {
             l.contains("sudah ada") || l.contains("dilewati") -> Color.rgb(251, 191, 36)
             l.contains("fail") || l.contains("gagal") || l.contains("error") || l.contains("cannot") ||
                 l.contains("tidak ditemukan") || l.contains("timeout") -> Color.rgb(248, 113, 113)
-            l.contains("success") || l.contains("berhasil") || l.contains("connected to") ||
-                l.contains("paired") -> Color.rgb(74, 222, 128)
-            s.startsWith("[") || s.startsWith("Isi ") || s.startsWith("Daftar APK kosong") -> Color.rgb(252, 211, 77)
+            l.contains("success") || l.contains("berhasil") || l.startsWith("terhubung ke") ||
+                l.startsWith("koneksi diputus") -> Color.rgb(74, 222, 128)
+            s.startsWith("[") || s.startsWith("Isi ") || s.startsWith("Belum ada APK") -> Color.rgb(252, 211, 77)
             else -> Color.rgb(203, 213, 225)
         }
     }
