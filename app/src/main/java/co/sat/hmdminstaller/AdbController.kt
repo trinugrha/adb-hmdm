@@ -439,9 +439,9 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     /** Setara `adb install -r`: stream APK ke `cmd package install -S <ukuran>` lewat service exec. */
     private fun installOne(file: File): String {
         val stream = manager.openStream("exec:cmd package install -r -S ${file.length()}")
-        // Pengaman: tutup stream bila tidak selesai dalam 5 menit.
+        // Pengaman: tutup stream bila tidak selesai dalam 3 menit.
         val watchdog = Thread {
-            try { Thread.sleep(300_000); stream.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
+            try { Thread.sleep(180_000); stream.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
@@ -460,7 +460,8 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 // Device menutup stream lebih awal (mis. install ditolak). Tetap baca pesan aslinya.
                 writeError = e
             }
-            val out = readAll(stream.openInputStream())
+            // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
+            val out = readAll(stream.openInputStream(), pmDone)
             if (out.isBlank() && writeError != null) {
                 return "Error: ${writeError.message ?: "stream closed"}"
             }
@@ -472,7 +473,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
     }
 
     /** Baca sampai EOF. Bila stream ditutup device (IOException), kembalikan yang sudah terbaca. */
-    private fun readAll(input: InputStream): String {
+    private fun readAll(input: InputStream, doneWhen: ((String) -> Boolean)? = null): String {
         val bos = ByteArrayOutputStream()
         val buf = ByteArray(4096)
         try {
@@ -480,6 +481,7 @@ class AdbController(context: Context, private val log: (String) -> Unit) {
                 val n = input.read(buf)
                 if (n < 0) break
                 bos.write(buf, 0, n)
+                if (doneWhen != null && doneWhen(bos.toString("UTF-8"))) break
             }
         } catch (e: java.io.IOException) {
             // "Stream closed" saat EOF itu normal: device menutup stream setelah perintah selesai.
