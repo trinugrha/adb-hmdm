@@ -464,6 +464,16 @@
                         android:layout_height="wrap_content"
                         android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel OTG, lalu ketuk Pilih Perangkat. Tidak perlu Pair." />
 
+                    <TextView
+                        android:id="@+id/txtUsbDevice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:fontFamily="monospace"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:visibility="gone" />
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnConnectUsb"
                         android:layout_width="match_parent"

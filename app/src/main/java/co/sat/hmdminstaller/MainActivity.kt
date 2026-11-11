@@ -204,7 +204,11 @@ class MainActivity : AppCompatActivity() {
             val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
             AlertDialog.Builder(this)
                 .setTitle("Pilih perangkat USB")
-                .setItems(names) { _, i -> val t = targets[i]; run("Connect USB") { doConnectUsb(t) } }
+                .setItems(names) { _, i ->
+                    val t = targets[i]
+                    showUsbDevice(t.label)
+                    run("Connect USB") { doConnectUsb(t) }
+                }
                 .setNegativeButton("Batal", null)
                 .show()
         }
@@ -401,6 +405,14 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
+    /** Tampilkan nama device yang dipilih di tab USB (null = sembunyikan). Aman dipanggil dari thread mana pun. */
+    private fun showUsbDevice(label: String?) = runOnUiThread {
+        findViewById<TextView>(R.id.txtUsbDevice).apply {
+            text = if (label == null) "" else "Perangkat: $label"
+            visibility = if (label == null) View.GONE else View.VISIBLE
+        }
+    }
+
     private fun doConnectUsb(t: UsbAdbBridge.Target): Boolean {
         val label = adb.connectUsb(t)
         if (label != null) {
@@ -413,6 +425,7 @@ class MainActivity : AppCompatActivity() {
             connectedAddr = null
             connectedSince = 0L
             ownerState = OwnerState.Unknown
+            showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
         return label != null
@@ -426,7 +439,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
