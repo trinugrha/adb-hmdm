@@ -62,6 +62,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var buttons: List<MaterialButton>
     // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
     private lateinit var needsConnection: Set<MaterialButton>
+    /** Tombol yang membuka sambungan baru: mati selama masih ada sambungan aktif (harus Disconnect dulu). */
+    private lateinit var blockedWhenConnected: Set<MaterialButton>
 
     private val worker = Executors.newSingleThreadExecutor()
     // Penyalinan APK ke cache dipisah dari worker ADB agar tidak antre di belakang install, dan tidak membebani UI thread.
@@ -165,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
         needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+        blockedWhenConnected = setOf(btnConnect, btnConnectUsb)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
@@ -428,6 +431,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = addr; adb.sessionSince = connectedSince
             lostAddr = null
             lastProbe = connectedSince
+            showUsbDevice(null)
             updateOwner()
         } else {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
@@ -588,7 +592,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyButtonState(isBusy: Boolean) {
         val connected = connectedAddr != null && adb.isConnected
         buttons.forEach { b ->
-            val enabled = !isBusy && (connected || b !in needsConnection)
+            val enabled = !isBusy && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
