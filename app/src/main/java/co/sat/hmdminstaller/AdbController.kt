@@ -550,26 +550,45 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
 
     /** Setara `adb install -r`: stream APK ke `cmd package install -S <ukuran>` lewat service exec. */
     private fun installOne(file: File): String {
-        val stream = manager.openStream("exec:cmd package install -r -S ${file.length()}")
-        // Pengaman: tutup stream bila tidak selesai dalam 3 menit.
+        val total = file.length()
+        // Lewat USB, adbd di HP lama (Android 7/8, mis. SUNMI) membatasi payload per paket (4 KB).
+        // Paket WRTE yang lebih besar membuat transfer macet di 0%. Lewat Wi-Fi 32 KB aman.
+        val chunk = if (viaUsb) 4 * 1024 else 32 * 1024
+        if (viaUsb) logDetail("Mode USB: data dikirim per ${chunk / 1024} KB")
+        val stream = manager.openStream("exec:cmd package install -r -S $total")
+        val lastActivity = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
+        val sendingDone = java.util.concurrent.atomic.AtomicBoolean(false)
+        val stalled = java.util.concurrent.atomic.AtomicBoolean(false)
+        // Pengaman: saat mengirim, tidak ada kemajuan 20 dtk = macet. Setelah terkirim, tunggu hasil pm maks. 3 menit.
         val watchdog = Thread {
-            try { Thread.sleep(180_000); stream.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
+            try {
+                while (true) {
+                    Thread.sleep(1000)
+                    val idle = System.currentTimeMillis() - lastActivity.get()
+                    val limit = if (sendingDone.get()) 180_000L else 20_000L
+                    if (idle > limit) {
+                        stalled.set(true)
+                        stream.close()
+                        break
+                    }
+                }
+            } catch (e: InterruptedException) { } catch (e: Throwable) { }
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
             try {
                 val os = stream.openOutputStream()
-                val total = file.length()
                 var sent = 0L
                 var lastReport = 0L
                 file.inputStream().use { input ->
-                    val buf = ByteArray(32 * 1024)
+                    val buf = ByteArray(chunk)
                     while (true) {
                         val n = input.read(buf)
                         if (n < 0) break
                         os.write(buf, 0, n)
                         sent += n
                         val now = System.currentTimeMillis()
+                        lastActivity.set(now)
                         if (now - lastReport >= 100 || sent >= total) {
                             lastReport = now
                             onProgress?.invoke(curIdx, curTotal, curName, sent, total)
@@ -577,9 +596,15 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
                     }
                 }
                 os.flush()
+                sendingDone.set(true)
+                lastActivity.set(System.currentTimeMillis())
             } catch (e: java.io.IOException) {
                 // Device menutup stream lebih awal (mis. install ditolak). Tetap baca pesan aslinya.
                 writeError = e
+            }
+            if (stalled.get()) {
+                logWarn("Pengiriman macet: tidak ada kemajuan 20 detik. Cabut-colok kabel USB lalu Connect USB ulang.")
+                return "Error: pengiriman macet (tidak ada kemajuan)"
             }
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
             val out = readAll(stream.openInputStream(), pmDone)
