@@ -347,6 +347,14 @@ class MainActivity : AppCompatActivity() {
         try {
             val wasBusy = busy
             var alive = adb.isConnected
+            var cableGone = false
+            // Kabel USB dicabut: terdeteksi seketika (tanpa menunggu probe 3x gagal).
+            if (!wasBusy && adb.usbCableGone) {
+                adb.dropUsb()
+                alive = false
+                cableGone = true
+                probeFails = 0
+            }
             val now = System.currentTimeMillis()
             // Probe sungguhan tiap ±8 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
             if (alive && !wasBusy && now - lastProbe >= 8_000) {
@@ -360,17 +368,18 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            runOnUiThread { applyLiveState(alive, wasBusy) }
+            runOnUiThread { applyLiveState(alive, wasBusy, cableGone) }
         } catch (e: Throwable) { }
     }
 
-    private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean) {
+    private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean, cableGone: Boolean = false) {
         if (isFinishing) return
         updateSessionTimer()
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log(LogLevel.ERR, "Koneksi ke $addr terputus.")
+            log(LogLevel.ERR, if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus." else "Koneksi ke $addr terputus.")
+            showUsbDevice(null)
             lostAddr = addr
             connectedAddr = null
             connectedSince = 0L

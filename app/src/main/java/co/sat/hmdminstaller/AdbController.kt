@@ -147,6 +147,18 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         return label
     }
 
+    /** True bila koneksi lewat USB tetapi kabel sudah dicabut / perangkat hilang dari port. */
+    val usbCableGone: Boolean
+        get() = viaUsb && !usbBridge.isRunning
+
+    /** Bersihkan sisa koneksi USB setelah kabel dicabut (tanpa menulis log). */
+    fun dropUsb() {
+        lastAddr = null
+        try { usbBridge.stop() } catch (e: Throwable) { }
+        viaUsb = false
+        try { mgr?.disconnect() } catch (e: Throwable) { }
+    }
+
     private fun tryReconnect(): Boolean {
         val addr = lastAddr ?: return false
         logWarn("Koneksi terputus, menyambung ulang ke $addr...")
