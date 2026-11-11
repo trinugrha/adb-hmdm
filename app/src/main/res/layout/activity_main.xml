@@ -311,6 +311,22 @@
                         android:layout_height="wrap_content"
                         android:text="Alternatif tanpa Wi-Fi: HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel OTG, lalu ketuk Connect USB. Tidak perlu Pair." />
 
+                    <TextView
+                        android:id="@+id/txtUsbEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textSize="13sp"
+                        android:text="Belum ada perangkat USB terdeteksi" />
+
+                    <RadioGroup
+                        android:id="@+id/usbList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:orientation="vertical"
+                        android:visibility="gone" />
+
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnConnectUsb"
                         android:layout_width="match_parent"

@@ -183,17 +183,14 @@ class MainActivity : AppCompatActivity() {
         btnConnectUsb.setOnClickListener {
             if (busy) return@setOnClickListener
             val targets = adb.listUsbTargets()
-            if (targets.isEmpty()) {
+            renderUsb(targets)
+            val t = targets.firstOrNull { it.device.deviceName == selectedUsb } ?: targets.firstOrNull()
+            if (t == null) {
                 log(LogLevel.HEAD, "Connect USB")
                 log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
-                return@setOnClickListener
+            } else {
+                run("Connect USB") { doConnectUsb(t) }
             }
-            val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
-            AlertDialog.Builder(this)
-                .setTitle("Pilih perangkat USB")
-                .setItems(names) { _, i -> val t = targets[i]; run("Connect USB") { doConnectUsb(t) } }
-                .setNegativeButton("Batal", null)
-                .show()
         }
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
@@ -343,7 +340,8 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            runOnUiThread { applyLiveState(alive, wasBusy) }
+            val usbTargets = adb.listUsbTargets()
+            runOnUiThread { renderUsb(usbTargets); applyLiveState(alive, wasBusy) }
         } catch (e: Throwable) { }
     }
 
@@ -386,6 +384,35 @@ class MainActivity : AppCompatActivity() {
         }
         runOnUiThread { refreshHeader() }
         return ok
+    }
+
+    // ---------- Pilih perangkat USB (daftar langsung di kartu, tanpa dialog) ----------
+
+    private var usbKey = ""
+    private var selectedUsb: String? = null
+
+    private fun renderUsb(targets: List<UsbAdbBridge.Target>) {
+        val key = targets.joinToString("|") { it.device.deviceName + it.label }
+        if (key == usbKey) return
+        usbKey = key
+        val group = findViewById<android.widget.RadioGroup>(R.id.usbList)
+        val empty = findViewById<TextView>(R.id.txtUsbEmpty)
+        group.setOnCheckedChangeListener(null)
+        group.removeAllViews()
+        if (targets.none { it.device.deviceName == selectedUsb }) selectedUsb = targets.firstOrNull()?.device?.deviceName
+        targets.forEach { t ->
+            val rb = android.widget.RadioButton(this).apply {
+                id = View.generateViewId()
+                text = t.label + "\n" + t.device.deviceName
+                textSize = 13f
+                tag = t.device.deviceName
+                isChecked = t.device.deviceName == selectedUsb
+            }
+            group.addView(rb)
+        }
+        group.setOnCheckedChangeListener { g, id -> selectedUsb = g.findViewById<View>(id)?.tag as? String }
+        group.visibility = if (targets.isEmpty()) View.GONE else View.VISIBLE
+        empty.visibility = if (targets.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun doConnectUsb(t: UsbAdbBridge.Target): Boolean {
