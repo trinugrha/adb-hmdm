@@ -108,16 +108,17 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
 
     private val usbBridge by lazy { UsbAdbBridge(appContext) }
 
-    /** Setara `adb devices` + `adb connect` lewat kabel USB (USB debugging). Panggil dari thread latar. Mengembalikan nama perangkat, atau null bila gagal. */
-    fun connectUsb(): String? {
-        logCmd("adb usb (USB debugging)")
-        val targets = try { usbBridge.findTargets() } catch (e: Throwable) { emptyList() }
-        if (targets.isEmpty()) {
-            logErr("Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
+    /** Daftar HP target di port USB (setara `adb devices`). Ringan, aman dipanggil dari UI thread. */
+    fun listUsbTargets(): List<UsbAdbBridge.Target> =
+        try { usbBridge.findTargets() } catch (e: Throwable) { emptyList() }
+
+    /** Setara `adb connect` lewat kabel USB ke perangkat yang dipilih. Panggil dari thread latar. Mengembalikan label, atau null bila gagal. */
+    fun connectUsb(t: UsbAdbBridge.Target): String? {
+        logCmd("adb -d usb (USB debugging)")
+        if (!listUsbTargets().any { it.device.deviceName == t.device.deviceName }) {
+            logErr("Perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi.")
             return null
         }
-        if (targets.size > 1) logWarn("Ada ${targets.size} perangkat USB ADB, memakai yang pertama: ${targets[0].label}")
-        val t = targets[0]
         logStep("Perangkat USB: ${t.label}")
         if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini.")
         if (!usbBridge.requestPermission(t.device)) {

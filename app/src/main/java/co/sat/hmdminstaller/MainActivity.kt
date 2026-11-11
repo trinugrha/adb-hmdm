@@ -181,7 +181,19 @@ class MainActivity : AppCompatActivity() {
             run("Connect") { doConnect(addr) }
         }
         btnConnectUsb.setOnClickListener {
-            run("Connect USB") { doConnectUsb() }
+            if (busy) return@setOnClickListener
+            val targets = adb.listUsbTargets()
+            if (targets.isEmpty()) {
+                log(LogLevel.HEAD, "Connect USB")
+                log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
+                return@setOnClickListener
+            }
+            val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("Pilih perangkat USB")
+                .setItems(names) { _, i -> val t = targets[i]; run("Connect USB") { doConnectUsb(t) } }
+                .setNegativeButton("Batal", null)
+                .show()
         }
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
@@ -376,8 +388,8 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
-    private fun doConnectUsb(): Boolean {
-        val label = adb.connectUsb()
+    private fun doConnectUsb(t: UsbAdbBridge.Target): Boolean {
+        val label = adb.connectUsb(t)
         if (label != null) {
             connectedAddr = label
             connectedSince = System.currentTimeMillis()
