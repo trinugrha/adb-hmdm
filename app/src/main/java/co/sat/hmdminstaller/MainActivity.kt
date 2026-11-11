@@ -549,7 +549,6 @@ class MainActivity : AppCompatActivity() {
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         applyButtonState(on)
         apkListBox.alpha = if (on) 0.5f else 1f
-        for (i in 0 until apkListBox.childCount) apkListBox.getChildAt(i).findViewById<View>(R.id.apkRemoveTag)?.isEnabled = !on
         progress.visibility = if (on) View.VISIBLE else View.GONE
         txtStatus.text = status
     }
@@ -600,12 +599,25 @@ class MainActivity : AppCompatActivity() {
             dropZone.isClickable = pickEnabled
             dropZone.alpha = if (pickEnabled) 1f else 0.4f
         }
+        // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
+        setApkRemoveButtonsEnabled(!isBusy && connected)
         // Kotak status Device Owner (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
         if (::ownerPill.isInitialized) {
             val checkEnabled = !isBusy && connected
             ownerPill.isEnabled = checkEnabled
             ownerPill.isClickable = checkEnabled
             ownerPill.alpha = if (checkEnabled) 1f else 0.5f
+        }
+    }
+
+    private fun setApkRemoveButtonsEnabled(enabled: Boolean) {
+        if (!::apkListBox.isInitialized) return
+        for (i in 0 until apkListBox.childCount) {
+            apkListBox.getChildAt(i).findViewById<View>(R.id.apkRemoveTag)?.let {
+                it.isEnabled = enabled
+                it.isClickable = enabled
+                it.alpha = if (enabled) 1f else 0.3f
+            }
         }
     }
 
@@ -694,10 +706,13 @@ class MainActivity : AppCompatActivity() {
                 setColorFilter(ContextCompat.getColor(this@MainActivity, R.color.danger))
                 background = null
                 contentDescription = "Hapus ${item.name} dari daftar"
-                isEnabled = !busy
+                val canRemove = !busy && connectedAddr != null && adb.isConnected
+                isEnabled = canRemove
+                isClickable = canRemove
+                alpha = if (canRemove) 1f else 0.3f
                 layoutParams = android.widget.LinearLayout.LayoutParams(dp(40), dp(40))
                 setOnClickListener {
-                    if (busy) return@setOnClickListener
+                    if (busy || !(connectedAddr != null && adb.isConnected)) return@setOnClickListener
                     apks.remove(item)
                     if (!item.builtIn) io.execute { item.file.delete() }
                     refreshApkList()
