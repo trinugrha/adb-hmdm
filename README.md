@@ -36,7 +36,7 @@ Cara kerja: paket ADB dikirim lewat soket loopback lalu diteruskan ke endpoint b
 - PIN 4 digit. PIN awal: **4321** (dibuat otomatis saat pertama kali dibuka). Untuk mengganti PIN, ubah `DEFAULT_PIN` di `PinStore.kt` lalu build ulang.
 - Setelah itu setiap buka aplikasi harus memasukkan PIN (otomatis diperiksa setelah digit ke-4; PIN benar langsung masuk).
 - Tombol **Logout** (header) langsung mengunci aplikasi; koneksi ADB / proses yang berjalan tidak terputus.
-- **Timer sesi** di status bar header menghitung mundur 30 menit tanpa aktivitas (diulang tiap layar disentuh, ditahan penuh
+- **Timer sesi** di status bar header menghitung mundur 30 menit sejak login (TIDAK direset oleh sentuhan layar; ditahan penuh
   saat operasi install/pair berjalan). Habis → terkunci otomatis. Batas waktu: `LOCK_TIMEOUT_MS` di `MainActivity.kt`.
 - Salah 5x berturut-turut → terkunci sementara (30 dtk, lalu 1, 2, 4 mnt ... maks 15 mnt).
 - PIN disimpan sebagai hash PBKDF2-SHA256 + salt (`PinStore.kt`), bukan teks asli.

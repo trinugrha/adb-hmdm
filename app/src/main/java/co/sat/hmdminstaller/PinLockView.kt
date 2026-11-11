@@ -152,7 +152,7 @@ class PinLockView(
                     paintBoxes()
                     if (message.tag == "err") hideMessage()
                     // Digit terakhir terisi → langsung diperiksa; jika benar langsung masuk.
-                    if ((s?.length ?: 0) == PinStore.PIN_LENGTH) handler.postDelayed({ submit() }, 100)
+                    if ((s?.length ?: 0) == PinStore.PIN_LENGTH) this@PinLockView.handler.postDelayed({ submit() }, 100)
                 }
             })
             setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_DONE) { submit(); true } else false }
