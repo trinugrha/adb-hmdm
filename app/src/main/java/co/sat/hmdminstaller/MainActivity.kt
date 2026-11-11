@@ -234,9 +234,16 @@ class MainActivity : AppCompatActivity() {
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
         }
+        // Memilih file APK TIDAK butuh koneksi ke device; hanya diblokir saat ada proses berjalan.
+        dropZone.isEnabled = true
+        dropZone.isClickable = true
         dropZone.setOnClickListener {
             if (busy) return@setOnClickListener
-            pickApks.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*"))
+            try {
+                pickApks.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*"))
+            } catch (e: Throwable) {
+                log(LogLevel.ERR, "Tidak bisa membuka pemilih file: ${e.message ?: e.javaClass.simpleName}")
+            }
         }
         btnInstallOnly.setOnClickListener {
             val list = apks.toList()
@@ -597,6 +604,10 @@ class MainActivity : AppCompatActivity() {
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
         }
+        // Area pilih APK tidak bergantung pada koneksi: aktif kapan pun tidak ada proses berjalan.
+        dropZone.isEnabled = !isBusy
+        dropZone.isClickable = !isBusy
+        dropZone.alpha = if (isBusy) 0.5f else 1f
     }
 
     private fun refreshOwner() {
