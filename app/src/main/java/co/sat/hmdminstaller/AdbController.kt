@@ -100,6 +100,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Alamat connect terakhir yang berhasil, dipakai untuk sambung ulang otomatis bila koneksi putus saat install. */
     @Volatile private var lastAddr: String? = null
     @Volatile private var viaUsb = false
+    /** true jika sesi aktif berjalan lewat kabel USB (false = ADB wireless atau tidak terhubung). */
+    val isViaUsb: Boolean get() = viaUsb
 
     /** Label & waktu sesi, disimpan di sini (bukan di Activity) agar tampilan bisa dipulihkan bila Activity dibuat ulang. */
     @Volatile var sessionLabel: String? = null

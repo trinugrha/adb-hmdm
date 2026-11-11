@@ -54,6 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var dropZone: View
     private lateinit var ownerPill: View
     private lateinit var apkListBox: android.widget.LinearLayout
+    private lateinit var tabMode: TabLayout
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
@@ -163,7 +164,7 @@ class MainActivity : AppCompatActivity() {
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
-        needsConnection = setOf(btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
@@ -197,7 +198,7 @@ class MainActivity : AppCompatActivity() {
                 st != OwnerState.Unknown
             }
         }
-        val tabMode: TabLayout = findViewById(R.id.tabMode)
+        tabMode = findViewById(R.id.tabMode)
         val tabWireless: View = findViewById(R.id.tabWireless)
         val tabUsb: View = findViewById(R.id.tabUsb)
         tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
@@ -599,6 +600,9 @@ class MainActivity : AppCompatActivity() {
             dropZone.isClickable = pickEnabled
             dropZone.alpha = if (pickEnabled) 1f else 0.4f
         }
+        // Tab metode koneksi: yang tidak sedang dipakai terkunci selama ada koneksi aktif
+        // (wireless terhubung -> tab USB mati; USB terhubung -> tab Wireless mati).
+        setModeTabsEnabled(wirelessEnabled = !(connected && adb.isViaUsb), usbEnabled = !(connected && !adb.isViaUsb))
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
         // Kotak status Device Owner (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
@@ -608,6 +612,20 @@ class MainActivity : AppCompatActivity() {
             ownerPill.isClickable = checkEnabled
             ownerPill.alpha = if (checkEnabled) 1f else 0.5f
         }
+    }
+
+    private fun setModeTabsEnabled(wirelessEnabled: Boolean, usbEnabled: Boolean) {
+        if (!::tabMode.isInitialized) return
+        listOf(0 to wirelessEnabled, 1 to usbEnabled).forEach { (pos, enabled) ->
+            val tab = tabMode.getTabAt(pos) ?: return@forEach
+            tab.view.isEnabled = enabled
+            tab.view.isClickable = enabled
+            tab.view.alpha = if (enabled) 1f else 0.4f
+        }
+        // Jaga-jaga: kalau tab yang terkunci sedang terbuka, pindah ke tab yang masih aktif.
+        val sel = tabMode.selectedTabPosition
+        if (sel == 1 && !usbEnabled) tabMode.getTabAt(0)?.select()
+        else if (sel == 0 && !wirelessEnabled) tabMode.getTabAt(1)?.select()
     }
 
     private fun setApkRemoveButtonsEnabled(enabled: Boolean) {
