@@ -58,9 +58,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
+    private lateinit var txtOwnerDetail: TextView
     private lateinit var homePill: View
     private lateinit var homeDot: View
     private lateinit var txtHome: TextView
+    private lateinit var txtHomeDetail: TextView
     private lateinit var progress: ProgressBar
     private lateinit var buttons: List<MaterialButton>
     // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
@@ -155,9 +157,11 @@ class MainActivity : AppCompatActivity() {
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
+        txtOwnerDetail = findViewById(R.id.txtOwnerDetail)
         homePill = findViewById(R.id.homePill)
         homeDot = findViewById(R.id.homeDot)
         txtHome = findViewById(R.id.txtHome)
+        txtHomeDetail = findViewById(R.id.txtHomeDetail)
         progress = findViewById(R.id.progress)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
@@ -675,14 +679,21 @@ class MainActivity : AppCompatActivity() {
         val connected = connectedAddr != null && adb.isConnected
         val st = if (connected) homeState else HomeState.Unknown
         val (text, color) = when (st) {
-            is HomeState.Hmdm -> "HMDM Launcher aktif ✓" to Color.rgb(74, 222, 128)
-            is HomeState.Other -> "Launcher lain (${st.component.substringBefore('/')})" to Color.rgb(248, 113, 113)
+            is HomeState.Hmdm -> "HMDM aktif ✓" to Color.rgb(74, 222, 128)
+            is HomeState.Other -> "Launcher lain" to Color.rgb(248, 113, 113)
             HomeState.None -> "Belum ada default" to Color.rgb(251, 191, 36)
             HomeState.Unknown ->
                 (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
         }
         txtHome.text = text
         homeDot.backgroundTintList = ColorStateList.valueOf(color)
+        val detail = when (st) {
+            is HomeState.Hmdm -> st.component
+            is HomeState.Other -> st.component
+            else -> null
+        }
+        txtHomeDetail.text = detail ?: ""
+        txtHomeDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
     }
 
     private fun refreshOwner() {
@@ -690,13 +701,20 @@ class MainActivity : AppCompatActivity() {
         val st = if (connected) ownerState else OwnerState.Unknown
         val (text, color) = when (st) {
             is OwnerState.Hmdm -> "HMDM aktif ✓" to Color.rgb(74, 222, 128)
-            is OwnerState.Other -> "Aplikasi lain (${st.pkg})" to Color.rgb(248, 113, 113)
+            is OwnerState.Other -> "Aplikasi lain" to Color.rgb(248, 113, 113)
             OwnerState.None -> "Belum diset" to Color.rgb(251, 191, 36)
             OwnerState.Unknown ->
                 (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
         }
         txtOwner.text = text
         ownerDot.backgroundTintList = ColorStateList.valueOf(color)
+        val detail = when (st) {
+            is OwnerState.Hmdm -> st.pkg
+            is OwnerState.Other -> st.pkg
+            else -> null
+        }
+        txtOwnerDetail.text = detail ?: ""
+        txtOwnerDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
     }
 
     private fun refreshApkList() {
