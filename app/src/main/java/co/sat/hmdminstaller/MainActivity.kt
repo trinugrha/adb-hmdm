@@ -52,6 +52,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtApkEmpty: TextView
     private lateinit var txtDropSub: TextView
     private lateinit var dropZone: View
+    private lateinit var ownerPill: View
     private lateinit var apkListBox: android.widget.LinearLayout
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
@@ -142,6 +143,7 @@ class MainActivity : AppCompatActivity() {
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
         txtDropSub = findViewById(R.id.txtDropSub)
         dropZone = findViewById(R.id.dropZone)
+        ownerPill = findViewById(R.id.ownerPill)
         apkListBox = findViewById(R.id.apkListBox)
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
@@ -186,7 +188,7 @@ class MainActivity : AppCompatActivity() {
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
         logScroll.setOnTouchListener { v, _ -> v.parent.requestDisallowInterceptTouchEvent(true); false }
 
-        findViewById<View>(R.id.ownerPill).setOnClickListener {
+        ownerPill.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, "Belum terhubung ke device. Connect dulu untuk cek status Device Owner."); return@setOnClickListener }
             run("Cek Device Owner") { true }
@@ -601,6 +603,13 @@ class MainActivity : AppCompatActivity() {
             dropZone.isEnabled = pickEnabled
             dropZone.isClickable = pickEnabled
             dropZone.alpha = if (pickEnabled) 1f else 0.4f
+        }
+        // Kotak status Device Owner (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
+        if (::ownerPill.isInitialized) {
+            val checkEnabled = !isBusy && connected
+            ownerPill.isEnabled = checkEnabled
+            ownerPill.isClickable = checkEnabled
+            ownerPill.alpha = if (checkEnabled) 1f else 0.5f
         }
     }
 
