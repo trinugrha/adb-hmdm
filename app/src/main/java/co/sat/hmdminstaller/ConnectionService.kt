@@ -48,8 +48,15 @@ class ConnectionService : Service() {
         return START_NOT_STICKY
     }
 
-    // Aplikasi digeser dari recent apps: jangan putuskan koneksi, service tetap jalan.
-    override fun onTaskRemoved(rootIntent: Intent?) { }
+    // Aplikasi digeser dari recent apps: putuskan koneksi ADB, lepas semua resource, lalu matikan service.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        val adb = (application as App).adb
+        Thread {
+            try { adb.close() } catch (e: Throwable) { }
+            handler.post { stopSelf() }
+        }.start()
+        super.onTaskRemoved(rootIntent)
+    }
 
     override fun onDestroy() {
         handler.removeCallbacks(check)
