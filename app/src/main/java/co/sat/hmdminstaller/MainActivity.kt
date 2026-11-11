@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.provider.OpenableColumns
 import android.text.SpannableString
@@ -159,7 +160,19 @@ class MainActivity : AppCompatActivity() {
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
-        adb = AdbController(this) { level, line -> runOnUiThread { log(level, line) } }
+        val app = application as App
+        adb = app.adb
+        app.logListener = { level, line -> runOnUiThread { log(level, line) } }
+        // Koneksi bisa masih hidup dari Activity sebelumnya: pulihkan tampilan, jangan sambung ulang.
+        if (adb.isConnected && adb.sessionLabel != null) {
+            connectedAddr = adb.sessionLabel
+            connectedSince = adb.sessionSince
+            lastProbe = System.currentTimeMillis()
+        }
+        // Izin notifikasi (Android 13+) agar notifikasi "koneksi aktif" terlihat.
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
         adb.onProgress = { idx, total, name, sent, size -> runOnUiThread { showInstallProgress(idx, total, name, sent, size) } }
 
         // Siapkan kunci ADB di thread latar (bukan UI thread).
@@ -301,9 +314,10 @@ class MainActivity : AppCompatActivity() {
         worker.shutdown()
         io.shutdown()
         poller.shutdownNow()
-        val a = adb
-        // Tutup koneksi di thread terpisah agar tidak memblokir UI thread.
-        Thread { a.close() }.apply { isDaemon = true; start() }
+        // Koneksi ADB sengaja TIDAK ditutup di sini: ia hidup di App + ConnectionService.
+        // Hanya lepas pendengar log milik Activity ini.
+        (application as App).logListener = null
+        adb.onProgress = null
     }
 
     // ---------- Kunci PIN ----------
@@ -381,6 +395,7 @@ class MainActivity : AppCompatActivity() {
             log(LogLevel.ERR, if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus." else "Koneksi ke $addr terputus.")
             showUsbDevice(null)
             lostAddr = addr
+            adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
             ownerState = OwnerState.Unknown
@@ -401,6 +416,7 @@ class MainActivity : AppCompatActivity() {
         if (ok) {
             connectedAddr = addr
             connectedSince = System.currentTimeMillis()
+            adb.sessionLabel = addr; adb.sessionSince = connectedSince
             lostAddr = null
             lastProbe = connectedSince
             updateOwner()
@@ -427,6 +443,7 @@ class MainActivity : AppCompatActivity() {
         if (label != null) {
             connectedAddr = label
             connectedSince = System.currentTimeMillis()
+            adb.sessionLabel = label; adb.sessionSince = connectedSince
             lostAddr = null
             lastProbe = connectedSince
             updateOwner()

@@ -37,7 +37,7 @@ sealed class OwnerState {
  * Padanan fungsi ADB di versi Windows: pair, connect, disconnect,
  * install -r, dan dpm set-device-owner. Dipanggil dari thread latar.
  */
-class AdbController(context: Context, private val sink: (LogLevel, String) -> Unit) {
+class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> Unit) {
 
     private fun logStep(s: String) = sink(LogLevel.STEP, s)
     private fun logCmd(s: String) = sink(LogLevel.CMD, s)
@@ -106,6 +106,15 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
     @Volatile private var lastAddr: String? = null
     @Volatile private var viaUsb = false
 
+    /** Label & waktu sesi, disimpan di sini (bukan di Activity) agar tampilan bisa dipulihkan bila Activity dibuat ulang. */
+    @Volatile var sessionLabel: String? = null
+    @Volatile var sessionSince: Long = 0L
+
+    /** Jaga proses tetap hidup selama koneksi aktif (tanpa ini Android mematikan proses saat aplikasi ditutup/di background). */
+    private fun keepAlive(on: Boolean) {
+        try { if (on) ConnectionService.start(appContext) else ConnectionService.stop(appContext) } catch (e: Throwable) { }
+    }
+
     private val usbBridge by lazy { UsbAdbBridge(appContext) }
 
     /** Daftar HP target di port USB (setara `adb devices`). Ringan, aman dipanggil dari UI thread. */
@@ -144,6 +153,7 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
             return null
         }
         viaUsb = true
+        keepAlive(true)
         return label
     }
 
@@ -157,6 +167,8 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         try { usbBridge.stop() } catch (e: Throwable) { }
         viaUsb = false
         try { mgr?.disconnect() } catch (e: Throwable) { }
+        sessionLabel = null
+        keepAlive(false)
     }
 
     private fun tryReconnect(): Boolean {
@@ -173,6 +185,7 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
 
     /** Tutup koneksi & lepas resource (dipanggil saat Activity dihancurkan). */
     fun close() {
+        keepAlive(false)
         holdLocks(false)
         try { usbBridge.stop() } catch (e: Throwable) { }
         val m = mgr ?: return
@@ -305,6 +318,7 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
                     lastAddr = addr
+                    keepAlive(true)
                     break
                 } else {
                     reason = "device tidak menjawab; belum di-pair, Wireless debugging mati, atau port salah"
@@ -322,6 +336,8 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
     fun disconnect(): Boolean {
         logCmd("adb disconnect")
         lastAddr = null
+        sessionLabel = null
+        keepAlive(false)
         return try {
             manager.disconnect()
             if (viaUsb) { usbBridge.stop(); viaUsb = false }
