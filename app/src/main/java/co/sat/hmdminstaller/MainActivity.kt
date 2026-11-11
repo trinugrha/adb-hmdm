@@ -234,16 +234,9 @@ class MainActivity : AppCompatActivity() {
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
         }
-        // Memilih file APK TIDAK butuh koneksi ke device; hanya diblokir saat ada proses berjalan.
-        dropZone.isEnabled = true
-        dropZone.isClickable = true
         dropZone.setOnClickListener {
-            if (busy) return@setOnClickListener
-            try {
-                pickApks.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*"))
-            } catch (e: Throwable) {
-                log(LogLevel.ERR, "Tidak bisa membuka pemilih file: ${e.message ?: e.javaClass.simpleName}")
-            }
+            if (busy || !(connectedAddr != null && adb.isConnected)) return@setOnClickListener
+            pickApks.launch(arrayOf("application/vnd.android.package-archive", "application/octet-stream", "*/*"))
         }
         btnInstallOnly.setOnClickListener {
             val list = apks.toList()
@@ -557,8 +550,6 @@ class MainActivity : AppCompatActivity() {
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         applyButtonState(on)
-        dropZone.isEnabled = !on
-        dropZone.alpha = if (on) 0.5f else 1f
         apkListBox.alpha = if (on) 0.5f else 1f
         for (i in 0 until apkListBox.childCount) apkListBox.getChildAt(i).findViewById<View>(R.id.apkRemoveTag)?.isEnabled = !on
         progress.visibility = if (on) View.VISIBLE else View.GONE
@@ -604,10 +595,13 @@ class MainActivity : AppCompatActivity() {
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
         }
-        // Area pilih APK tidak bergantung pada koneksi: aktif kapan pun tidak ada proses berjalan.
-        dropZone.isEnabled = !isBusy
-        dropZone.isClickable = !isBusy
-        dropZone.alpha = if (isBusy) 0.5f else 1f
+        // Area pilih file APK: hanya bisa ditekan saat sudah terhubung dan tidak sedang ada proses.
+        if (::dropZone.isInitialized) {
+            val pickEnabled = !isBusy && connected
+            dropZone.isEnabled = pickEnabled
+            dropZone.isClickable = pickEnabled
+            dropZone.alpha = if (pickEnabled) 1f else 0.4f
+        }
     }
 
     private fun refreshOwner() {
