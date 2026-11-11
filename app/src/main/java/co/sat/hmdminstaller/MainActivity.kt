@@ -28,6 +28,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
 import java.io.File
 import java.util.concurrent.Executors
@@ -171,6 +172,18 @@ class MainActivity : AppCompatActivity() {
             if (!adb.isConnected) { log(LogLevel.WARN, "Belum terhubung ke device. Connect dulu untuk cek status Device Owner."); return@setOnClickListener }
             run("Cek Device Owner") { true }
         }
+        val tabMode: TabLayout = findViewById(R.id.tabMode)
+        val tabWireless: View = findViewById(R.id.tabWireless)
+        val tabUsb: View = findViewById(R.id.tabUsb)
+        tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                val usb = tab.position == 1
+                tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
+                tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
+            }
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
         btnPair.setOnClickListener {
             val addr = addr(edtPairIp.text.toString(), edtPairPort.text.toString())
             val code = clean(edtPairCode.text.toString())
@@ -183,14 +196,17 @@ class MainActivity : AppCompatActivity() {
         btnConnectUsb.setOnClickListener {
             if (busy) return@setOnClickListener
             val targets = adb.listUsbTargets()
-            renderUsb(targets)
-            val t = targets.firstOrNull { it.device.deviceName == selectedUsb } ?: targets.firstOrNull()
-            if (t == null) {
+            if (targets.isEmpty()) {
                 log(LogLevel.HEAD, "Connect USB")
                 log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
-            } else {
-                run("Connect USB") { doConnectUsb(t) }
+                return@setOnClickListener
             }
+            val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
+            AlertDialog.Builder(this)
+                .setTitle("Pilih perangkat USB")
+                .setItems(names) { _, i -> val t = targets[i]; run("Connect USB") { doConnectUsb(t) } }
+                .setNegativeButton("Batal", null)
+                .show()
         }
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
@@ -340,8 +356,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-            val usbTargets = adb.listUsbTargets()
-            runOnUiThread { renderUsb(usbTargets); applyLiveState(alive, wasBusy) }
+            runOnUiThread { applyLiveState(alive, wasBusy) }
         } catch (e: Throwable) { }
     }
 
@@ -384,35 +399,6 @@ class MainActivity : AppCompatActivity() {
         }
         runOnUiThread { refreshHeader() }
         return ok
-    }
-
-    // ---------- Pilih perangkat USB (daftar langsung di kartu, tanpa dialog) ----------
-
-    private var usbKey = ""
-    private var selectedUsb: String? = null
-
-    private fun renderUsb(targets: List<UsbAdbBridge.Target>) {
-        val key = targets.joinToString("|") { it.device.deviceName + it.label }
-        if (key == usbKey) return
-        usbKey = key
-        val group = findViewById<android.widget.RadioGroup>(R.id.usbList)
-        val empty = findViewById<TextView>(R.id.txtUsbEmpty)
-        group.setOnCheckedChangeListener(null)
-        group.removeAllViews()
-        if (targets.none { it.device.deviceName == selectedUsb }) selectedUsb = targets.firstOrNull()?.device?.deviceName
-        targets.forEach { t ->
-            val rb = android.widget.RadioButton(this).apply {
-                id = View.generateViewId()
-                text = t.label + "\n" + t.device.deviceName
-                textSize = 13f
-                tag = t.device.deviceName
-                isChecked = t.device.deviceName == selectedUsb
-            }
-            group.addView(rb)
-        }
-        group.setOnCheckedChangeListener { g, id -> selectedUsb = g.findViewById<View>(id)?.tag as? String }
-        group.visibility = if (targets.isEmpty()) View.GONE else View.VISIBLE
-        empty.visibility = if (targets.isEmpty()) View.VISIBLE else View.GONE
     }
 
     private fun doConnectUsb(t: UsbAdbBridge.Target): Boolean {

@@ -158,6 +158,32 @@
                 android:layout_marginBottom="8dp"
                 android:text="KONEKSI ADB" />
 
+            <!-- Tab metode koneksi -->
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/tabMode"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:tabMode="fixed"
+                app:tabGravity="fill">
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Wireless debugging" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="USB debugging" />
+            </com.google.android.material.tabs.TabLayout>
+
+            <LinearLayout
+                android:id="@+id/tabWireless"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
             <!-- Pair -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.Hmdm.Card"
@@ -286,58 +312,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- USB debugging -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="14dp">
-
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="USB Debugging (Kabel)" />
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Alternatif tanpa Wi-Fi: HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel OTG, lalu ketuk Connect USB. Tidak perlu Pair." />
-
-                    <TextView
-                        android:id="@+id/txtUsbEmpty"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textSize="13sp"
-                        android:text="Belum ada perangkat USB terdeteksi" />
-
-                    <RadioGroup
-                        android:id="@+id/usbList"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:orientation="vertical"
-                        android:visibility="gone" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnConnectUsb"
-                        android:layout_width="match_parent"
-                        android:layout_height="36dp"
-                        android:layout_marginTop="8dp"
-                        android:minHeight="0dp"
-                        android:textSize="13sp"
-                        android:text="Connect USB" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <!-- Connect -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.Hmdm.Card"
@@ -455,6 +429,53 @@
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/tabUsb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+            <!-- USB debugging -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Widget.Hmdm.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="14dp">
+
+                    <TextView
+                        style="@style/Hmdm.CardTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="USB Debugging (Kabel)" />
+
+                    <TextView
+                        style="@style/Hmdm.CardHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel OTG, lalu ketuk Pilih Perangkat. Tidak perlu Pair." />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnConnectUsb"
+                        android:layout_width="match_parent"
+                        android:layout_height="36dp"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="0dp"
+                        android:textSize="13sp"
+                        android:text="Pilih Perangkat" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
             <!-- 1. Instalasi aplikasi -->
             <com.google.android.material.card.MaterialCardView
