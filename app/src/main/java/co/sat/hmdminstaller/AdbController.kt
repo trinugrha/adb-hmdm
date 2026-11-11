@@ -638,7 +638,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 writeError = e
             }
             if (stalled.get()) {
-                logWarn("Pengiriman macet: tidak ada kemajuan 20 detik. Cabut-colok kabel USB lalu Connect USB ulang.")
+                val waitSec = if (sendingDone.get()) 180 else 20
+                val fase = if (sendingDone.get()) "menunggu hasil instalasi dari HP target" else "mengirim APK"
+                val saran = if (viaUsb) "Cabut-colok kabel USB, lalu Connect USB ulang."
+                            else "Pastikan HP target tetap menyala dan satu jaringan Wi-Fi, lalu Connect ulang."
+                logWarn("Proses macet saat $fase: tidak ada kemajuan selama $waitSec detik. $saran")
                 return "Error: pengiriman macet (tidak ada kemajuan)"
             }
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
