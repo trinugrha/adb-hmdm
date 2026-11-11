@@ -476,8 +476,8 @@ class MainActivity : AppCompatActivity() {
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st } } catch (e: Throwable) { }
             runOnUiThread {
                 val took = (System.currentTimeMillis() - startedAt).let { if (it < 1000) "$it ms" else "%.1f dtk".format(java.util.Locale.US, it / 1000.0) }
-                if (ok) log(LogLevel.END_OK, "Selesai: $title · $took")
-                else log(LogLevel.END_ERR, "Gagal / berhenti: $title · $took")
+                if (ok) log(LogLevel.END_OK, "Selesai · $took")
+                else log(LogLevel.END_ERR, "Gagal / berhenti · $took")
                 logBlank()
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal / berhenti: $title (lihat log)")
@@ -678,7 +678,16 @@ class MainActivity : AppCompatActivity() {
         sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         if (level.bold) sp.setSpan(StyleSpan(Typeface.BOLD), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         txtLog.append(sp)
+        trimLog()
         logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /** Batasi panjang log agar tidak membengkak: buang baris paling lama (dipotong di batas baris). */
+    private fun trimLog() {
+        val ed = txtLog.text as? android.text.Editable ?: return
+        if (ed.length <= LOG_MAX_CHARS) return
+        val cut = ed.indexOf("\n", ed.length - LOG_KEEP_CHARS)
+        ed.delete(0, if (cut < 0) ed.length - LOG_KEEP_CHARS else cut + 1)
     }
 
     private fun levelColor(level: LogLevel): Int = when (level) {
@@ -741,5 +750,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Aplikasi dikunci lagi bila ditinggalkan lebih dari ini (ms). */
         private const val LOCK_TIMEOUT_MS = 30 * 60_000L
+        private const val LOG_MAX_CHARS = 60_000
+        private const val LOG_KEEP_CHARS = 40_000
     }
 }

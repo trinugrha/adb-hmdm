@@ -134,8 +134,8 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..3) {
-            if (attempt > 1) logWarn("Mencoba lagi ($attempt/3)... setujui dialog di HP target bila belum.")
-            if (connect("127.0.0.1:$port")) { ok = true; break }
+            if (connect("127.0.0.1:$port", verbose = false)) { ok = true; break }
+            if (attempt < 3) logWarn("Percobaan $attempt/3 belum berhasil ($lastConnectReason). Setujui dialog di HP target, lalu mencoba lagi...")
         }
         if (!ok) {
             usbBridge.stop()
@@ -273,7 +273,10 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         }
     }
 
-    fun connect(addr: String): Boolean {
+    @Volatile private var lastConnectReason = ""
+
+    /** [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB). */
+    fun connect(addr: String, verbose: Boolean = true): Boolean {
         if (addr.isEmpty()) {
             logWarn("Isi IP:Port connect terlebih dahulu.")
             return false
@@ -288,10 +291,10 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         val maxAttempts = 2
         var ok = false
         var reason = ""
-        logCmd("adb connect $addr")
+        if (verbose) logCmd("adb connect $addr")
         for (attempt in 1..maxAttempts) {
             if (attempt > 1) {
-                logWarn("Percobaan ${attempt - 1}/$maxAttempts gagal ($reason), mencoba lagi...")
+                if (verbose) logWarn("Percobaan ${attempt - 1}/$maxAttempts gagal ($reason), mencoba lagi...")
                 Thread.sleep(1500)
             }
             try {
@@ -311,7 +314,8 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
                 reason = e.message ?: e.javaClass.simpleName
             }
         }
-        if (ok) logOk("Terhubung: $addr") else logErr("Connect gagal: $reason")
+        lastConnectReason = reason
+        if (ok) logOk("Terhubung: $addr") else if (verbose) logErr("Connect gagal: $reason")
         return ok
     }
 
@@ -369,8 +373,11 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
                 logRaw(out)
             }
         }
-        logSummary("Ringkasan: $ok berhasil, ${failed.size} gagal dari ${apks.size} APK")
-        failed.forEach { (name, reason) -> logErr("$name: $reason") }
+        // Satu APK: hasilnya sudah jelas dari baris di atas dan baris penutup, tak perlu ringkasan.
+        if (apks.size > 1) {
+            logSummary("Ringkasan: $ok berhasil, ${failed.size} gagal dari ${apks.size} APK")
+            failed.forEach { (name, reason) -> logErr("$name: $reason") }
+        }
         return failed.isEmpty()
     }
 
