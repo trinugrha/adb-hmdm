@@ -43,6 +43,23 @@ Cara kerja: paket ADB dikirim lewat soket loopback lalu diteruskan ke endpoint b
 - Salah 5x berturut-turut → terkunci sementara (30 dtk, lalu 1, 2, 4 mnt ... maks 15 mnt).
 - PIN disimpan sebagai hash PBKDF2-SHA256 + salt (`PinStore.kt`), bukan teks asli.
 
+## Format log
+Setiap proses tampil sebagai satu blok berwarna: judul + jam, isi, lalu penutup berisi nama proses dan lama waktunya.
+```
+── Install APK · 14:02:11
+[1/2] hmdm-launcher.apk (12.3 MB)
+> adb install -r hmdm-launcher.apk
+✓ Terpasang · 4.2 dtk
+[2/2] agent.apk (3.1 MB)
+> adb install -r agent.apk
+✗ Gagal: versi lebih rendah dari yang terpasang (INSTALL_FAILED_VERSION_DOWNGRADE)
+    Failure [INSTALL_FAILED_VERSION_DOWNGRADE]
+Ringkasan: 1 berhasil, 1 gagal dari 2 APK
+✗ agent.apk: versi lebih rendah dari yang terpasang
+✗ Gagal: Install APK · 6.0 dtk
+```
+Warna ditentukan oleh `LogLevel`, format angka oleh `Fmt`. Aturan penulisan pesan ada di KDoc `LogLevel.kt`.
+
 ## Catatan teknis
 - ADB memakai library [libadb-android](https://github.com/MuntashirAkon/libadb-android) (JitPack) + Conscrypt (TLS 1.3).
 - Kunci/sertifikat ADB dibuat sekali (`AdbManager.kt`) dan disimpan; pairing terikat pada kunci ini.

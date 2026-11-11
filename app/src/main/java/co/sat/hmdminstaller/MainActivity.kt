@@ -190,8 +190,12 @@ class MainActivity : AppCompatActivity() {
 
         ownerPill.setOnClickListener {
             if (busy) return@setOnClickListener
-            if (!adb.isConnected) { log(LogLevel.WARN, "Belum terhubung ke device. Connect dulu untuk cek status Device Owner."); return@setOnClickListener }
-            run("Cek Device Owner") { true }
+            if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
+            run("Cek Device Owner") {
+                val st = adb.checkDeviceOwner()
+                if (st != OwnerState.Unknown) ownerState = st
+                st != OwnerState.Unknown
+            }
         }
         val tabMode: TabLayout = findViewById(R.id.tabMode)
         val tabWireless: View = findViewById(R.id.tabWireless)
@@ -218,8 +222,10 @@ class MainActivity : AppCompatActivity() {
             if (busy) return@setOnClickListener
             val targets = adb.listUsbTargets()
             if (targets.isEmpty()) {
-                log(LogLevel.HEAD, "Connect USB")
+                val t0 = System.currentTimeMillis()
+                logHead("Connect USB", t0)
                 log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
+                logEnd("Connect USB", false, t0)
                 return@setOnClickListener
             }
             val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
@@ -250,7 +256,7 @@ class MainActivity : AppCompatActivity() {
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Hapus data Kaspersky?")
-                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di device akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
+                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ ->
                     run("Hapus Data Kaspersky") { adb.clearKasperskyData() }
@@ -270,13 +276,7 @@ class MainActivity : AppCompatActivity() {
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
             val list = apks.toList()
-            run("Install APK + Set Owner") {
-                if (!adb.isConnected) {
-                    runOnUiThread { log(LogLevel.WARN, "Belum terhubung ke device. Lakukan Pair dan Connect dulu, lalu jalankan lagi.") }
-                    return@run false
-                }
-                adb.installAndOwner(list)
-            }
+            run("Install APK + Set Owner") { adb.installAndOwner(list) }
         }
         btnCopyLog.setOnClickListener {
             if (txtLog.length() > 0) {
@@ -489,7 +489,7 @@ class MainActivity : AppCompatActivity() {
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
-        log(LogLevel.HEAD, "$title · ${java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US).format(java.util.Date(startedAt))}")
+        logHead(title, startedAt)
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
             synchronized(adb.probeLock) { }
@@ -500,12 +500,9 @@ class MainActivity : AppCompatActivity() {
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st } } catch (e: Throwable) { }
             runOnUiThread {
-                val took = (System.currentTimeMillis() - startedAt).let { if (it < 1000) "$it ms" else "%.1f dtk".format(java.util.Locale.US, it / 1000.0) }
-                if (ok) log(LogLevel.END_OK, "Selesai · $took")
-                else log(LogLevel.END_ERR, "Gagal / berhenti · $took")
-                logBlank()
+                logEnd(title, ok, startedAt)
                 busy = false
-                setBusy(false, if (ok) "Selesai: $title" else "Gagal / berhenti: $title (lihat log)")
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
             }
         }
@@ -528,15 +525,14 @@ class MainActivity : AppCompatActivity() {
             box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
         }
         n.text = "Memasang APK $idx dari $total: $name"
-        val mb = 1048576.0
         if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
-            info.text = "Terkirim %.1f MB. Menunggu HP target memasang...".format(size / mb)
+            info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
         } else {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "%d%%  (%.1f / %.1f MB)".format(pct, sent / mb, size / mb)
+            info.text = "$pct%  (${Fmt.mb(sent)} / ${Fmt.mb(size)})"
         }
     }
 
@@ -711,6 +707,18 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Pembuka satu proses: "── Judul · 14:02:11". */
+    private fun logHead(title: String, at: Long = System.currentTimeMillis()) =
+        log(LogLevel.HEAD, "$title · ${Fmt.clock(at)}")
+
+    /** Penutup satu proses: "✓ Selesai: Judul · 4.2 dtk" atau "✗ Gagal: Judul · 4.2 dtk", lalu baris kosong pemisah. */
+    private fun logEnd(title: String, ok: Boolean, startedAt: Long) {
+        val took = Fmt.duration(System.currentTimeMillis() - startedAt)
+        if (ok) log(LogLevel.END_OK, "Selesai: $title · $took")
+        else log(LogLevel.END_ERR, "Gagal: $title · $took")
+        logBlank()
+    }
+
     /** Satu baris kosong sebagai pemisah antar proses. */
     private fun logBlank() {
         txtLog.append("\n")
@@ -719,12 +727,17 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
-     * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda).
+     * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda), dan titik di
+     * akhir pesan dibuang supaya semua baris seragam (elipsis "..." dibiarkan).
      */
     private fun log(level: LogLevel, s: String) {
         if (s.isBlank()) return
         val indent = " ".repeat(level.marker.length)
-        val lines = s.trimEnd().lines().map { it.trimEnd() }
+        val body = s.trimEnd().let {
+            // Output mentah device (DETAIL) tidak diubah sama sekali.
+            if (level != LogLevel.DETAIL && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
+        }
+        val lines = body.lines().map { it.trimEnd() }
         val text = lines.mapIndexed { i, l -> (if (i == 0) level.marker else indent) + l }.joinToString("\n") + "\n"
         val sp = SpannableString(text)
         sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)

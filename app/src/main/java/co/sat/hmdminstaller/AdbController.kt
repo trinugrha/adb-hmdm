@@ -11,14 +11,7 @@ import java.io.InputStream
 /** Satu APK di daftar: file hasil pilihan user (disalin ke cache). */
 data class ApkItem(val name: String, val file: File, val builtIn: Boolean = false) {
     val sizeText: String
-        get() {
-            val n = file.length()
-            return when {
-                n >= 1048576 -> "%.1f MB".format(n / 1048576.0)
-                n >= 1024 -> "${n / 1024} KB"
-                else -> "$n B"
-            }
-        }
+        get() = Fmt.size(file.length())
 }
 
 /** Status device owner di HP target. */
@@ -50,6 +43,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
+        /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
+        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) dulu"
     }
 
     private val appContext = context.applicationContext
@@ -263,6 +258,20 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return if (pkg == hmdmPkg) OwnerState.Hmdm(pkg) else OwnerState.Other(pkg)
     }
 
+    /** Cek manual (tombol status Device Owner): hasilnya ditulis ke log. Unknown bila tidak terbaca. */
+    fun checkDeviceOwner(): OwnerState {
+        if (!ensureConnected()) return OwnerState.Unknown
+        logCmd("adb shell dpm list-owners")
+        val st = queryDeviceOwner()
+        when (st) {
+            is OwnerState.Hmdm -> logOk("Device owner: HMDM (${st.pkg})")
+            is OwnerState.Other -> logWarn("Device owner: aplikasi lain (${st.pkg})")
+            is OwnerState.None -> logOk("Belum ada device owner di HP target")
+            is OwnerState.Unknown -> logErr("Status device owner tidak terbaca: HP target tidak menjawab")
+        }
+        return st
+    }
+
     fun pair(addr: String, code: String): Boolean {
         if (addr.isEmpty() || code.isEmpty()) {
             logWarn("Isi IP:Port pairing dan kode pairing terlebih dahulu.")
@@ -274,7 +283,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             // Ditampung sebagai Any? agar aman baik pair() mengembalikan Boolean maupun void.
             val result: Any? = manager.pair(host, port, code)
             if (result == false) {
-                logErr("Pairing gagal: ditolak device (cek kode dan port pairing).")
+                logErr("Pairing gagal: ditolak HP target (cek kode dan port pairing)")
                 false
             } else {
                 logOk("Pairing berhasil: $addr")
@@ -321,7 +330,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     keepAlive(true)
                     break
                 } else {
-                    reason = "device tidak menjawab; belum di-pair, Wireless debugging mati, atau port salah"
+                    reason = "HP target tidak menjawab; belum di-pair, Wireless debugging mati, atau port salah"
                     try { manager.disconnect() } catch (e: Throwable) { }
                 }
             } catch (e: Throwable) {
@@ -381,7 +390,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             }
             if (isSuccess(out)) {
                 ok++
-                logOk("Terpasang · ${formatDuration(System.currentTimeMillis() - t0)}")
+                logOk("Terpasang · ${Fmt.duration(System.currentTimeMillis() - t0)}")
             } else {
                 val reason = installFailureReason(out)
                 failed += apk.name to reason
@@ -420,7 +429,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
         if (!isSuccess(out)) {
-            logErr("Hapus data Kaspersky gagal: pastikan $KASPERSKY_PACKAGE terpasang di device.")
+            logErr("Hapus data Kaspersky gagal: pastikan $KASPERSKY_PACKAGE terpasang di HP target")
             logRaw(out)
             return false
         }
@@ -438,12 +447,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!isSuccess(out)) {
             val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    "Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)."
+                    "Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
-                    "diblokir kebijakan Device Owner atau Profile Owner."
+                    "diblokir kebijakan Device Owner atau Profile Owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
-                    "Kaspersky sudah tidak terpasang."
-                else -> "pastikan $KASPERSKY_PACKAGE terpasang di device."
+                    "Kaspersky sudah tidak terpasang"
+                else -> "pastikan $KASPERSKY_PACKAGE terpasang di HP target"
             }
             logErr("Uninstall Kaspersky gagal: $reason")
             logRaw(out)
@@ -454,6 +463,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     fun installAndOwner(apks: List<ApkItem>): Boolean {
+        if (!ensureConnected()) return false
         // Walau sebagian APK gagal, tetap coba set device owner (HMDM mungkin sudah terpasang).
         val installOk = install(apks)
         val ownerOk = setDeviceOwner()
@@ -464,14 +474,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     private fun ensureConnected(): Boolean {
         if (isConnected) return true
-        logWarn("Belum terhubung ke device. Klik Connect terlebih dahulu.")
+        logWarn(MSG_NOT_CONNECTED)
         return false
     }
 
     private fun isSuccess(out: String) = out.contains("Success", ignoreCase = true)
-
-    private fun formatDuration(ms: Long): String =
-        if (ms < 1000) "$ms ms" else "%.1f dtk".format(java.util.Locale.US, ms / 1000.0)
 
     /** Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis. */
     private fun logRaw(out: String, max: Int = 6) {
@@ -488,7 +495,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         "INSTALL_FAILED_INVALID_APK" to "file APK rusak atau tidak valid",
         "INSTALL_FAILED_NO_MATCHING_ABIS" to "arsitektur CPU tidak cocok",
         "INSTALL_FAILED_OLDER_SDK" to "versi Android HP target terlalu lama",
-        "INSTALL_FAILED_USER_RESTRICTED" to "install dibatasi kebijakan device",
+        "INSTALL_FAILED_USER_RESTRICTED" to "install dibatasi kebijakan HP target",
         "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
     )
 
@@ -499,7 +506,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return when {
             friendly != null -> "$friendly ($code)"
             code != null -> code
-            out.isBlank() -> "tidak ada balasan dari device"
+            out.isBlank() -> "tidak ada balasan dari HP target"
             else -> out.lines().firstOrNull { it.isNotBlank() }?.trim()?.removePrefix("Error:")?.trim()?.take(120)
                 ?: "tidak diketahui"
         }
@@ -509,11 +516,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun ownerFailureReason(out: String): String {
         val l = out.lowercase()
         return when {
-            "already has a device owner" in l || "device owner is already set" in l -> "device sudah memiliki device owner."
-            "accounts" in l -> "masih ada akun (Google/lainnya) di device. Hapus akun atau reset device."
-            "provisioned" in l || "setup" in l -> "device sudah melewati setup awal. Reset ke pengaturan pabrik."
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di device."
-            else -> "pastikan device baru di-reset dan belum ada akun (Google/lainnya)."
+            "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner"
+            "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
+            "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target"
+            else -> "pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
         }
     }
 

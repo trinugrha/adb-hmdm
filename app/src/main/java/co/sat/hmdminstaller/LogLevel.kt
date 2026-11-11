@@ -18,6 +18,12 @@ package co.sat.hmdminstaller
  * ✗ agent.apk: versi lebih rendah dari yang terpasang
  * ✗ Gagal: Install APK · 6.0 dtk
  * ```
+ *
+ * Aturan penulisan pesan:
+ * - Tanpa titik di akhir (dibuang otomatis oleh `MainActivity.log`, kecuali baris DETAIL).
+ * - HP yang sedang dipasang disebut "HP target"; "device owner" hanya untuk istilah Android.
+ * - Ukuran dan durasi lewat [Fmt] (titik desimal tetap, mis. 12.3 MB, 4.2 dtk).
+ * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {
     /** Pembuka satu proses. */
