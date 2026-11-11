@@ -104,6 +104,47 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
 
     /** Alamat connect terakhir yang berhasil, dipakai untuk sambung ulang otomatis bila koneksi putus saat install. */
     @Volatile private var lastAddr: String? = null
+    @Volatile private var viaUsb = false
+
+    private val usbBridge by lazy { UsbAdbBridge(appContext) }
+
+    /** Setara `adb devices` + `adb connect` lewat kabel USB (USB debugging). Panggil dari thread latar. Mengembalikan nama perangkat, atau null bila gagal. */
+    fun connectUsb(): String? {
+        logCmd("adb usb (USB debugging)")
+        val targets = try { usbBridge.findTargets() } catch (e: Throwable) { emptyList() }
+        if (targets.isEmpty()) {
+            logErr("Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
+            return null
+        }
+        if (targets.size > 1) logWarn("Ada ${targets.size} perangkat USB ADB, memakai yang pertama: ${targets[0].label}")
+        val t = targets[0]
+        logStep("Perangkat USB: ${t.label}")
+        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini.")
+        if (!usbBridge.requestPermission(t.device)) {
+            logErr("Izin akses USB ditolak atau tidak dijawab.")
+            return null
+        }
+        val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
+            logErr("Gagal membuka USB: ${e.message ?: e.javaClass.simpleName}")
+            return null
+        }
+        logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK.")
+        val label = "USB · ${t.label}"
+        // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
+        var ok = false
+        for (attempt in 1..3) {
+            if (attempt > 1) logWarn("Mencoba lagi ($attempt/3)... setujui dialog di HP target bila belum.")
+            if (connect("127.0.0.1:$port")) { ok = true; break }
+        }
+        if (!ok) {
+            usbBridge.stop()
+            viaUsb = false
+            logErr("Connect USB gagal: pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui.")
+            return null
+        }
+        viaUsb = true
+        return label
+    }
 
     private fun tryReconnect(): Boolean {
         val addr = lastAddr ?: return false
@@ -112,13 +153,15 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
             if (i > 0) Thread.sleep(2000)
             if (connect(addr)) return true
         }
-        logErr("Sambung ulang gagal: pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi.")
+        if (viaUsb) logErr("Sambung ulang gagal: pastikan kabel USB masih terpasang dan USB debugging di HP target aktif.")
+        else logErr("Sambung ulang gagal: pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi.")
         return false
     }
 
     /** Tutup koneksi & lepas resource (dipanggil saat Activity dihancurkan). */
     fun close() {
         holdLocks(false)
+        try { usbBridge.stop() } catch (e: Throwable) { }
         val m = mgr ?: return
         try { m.disconnect() } catch (e: Throwable) { }
         try { m.close() } catch (e: Throwable) { }
@@ -228,6 +271,7 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         if (isConnected) {
             try { manager.disconnect() } catch (e: Throwable) { }
         }
+        if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
         val maxAttempts = 2
         var ok = false
         var reason = ""
@@ -263,6 +307,7 @@ class AdbController(context: Context, private val sink: (LogLevel, String) -> Un
         lastAddr = null
         return try {
             manager.disconnect()
+            if (viaUsb) { usbBridge.stop(); viaUsb = false }
             logOk("Koneksi diputus.")
             true
         } catch (e: Throwable) {

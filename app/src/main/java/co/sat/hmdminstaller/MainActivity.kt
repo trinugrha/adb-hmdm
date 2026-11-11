@@ -145,6 +145,7 @@ class MainActivity : AppCompatActivity() {
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
         val btnConnect: MaterialButton = findViewById(R.id.btnConnect)
+        val btnConnectUsb: MaterialButton = findViewById(R.id.btnConnectUsb)
         val btnDisconnect: MaterialButton = findViewById(R.id.btnDisconnect)
         val btnInstallOnly: MaterialButton = findViewById(R.id.btnInstallOnly)
         val btnOwner: MaterialButton = findViewById(R.id.btnOwner)
@@ -153,7 +154,7 @@ class MainActivity : AppCompatActivity() {
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
-        buttons = listOf(btnPair, btnConnect, btnDisconnect,
+        buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
@@ -178,6 +179,9 @@ class MainActivity : AppCompatActivity() {
         btnConnect.setOnClickListener {
             val addr = addr(edtConnIp.text.toString(), edtConnPort.text.toString())
             run("Connect") { doConnect(addr) }
+        }
+        btnConnectUsb.setOnClickListener {
+            run("Connect USB") { doConnectUsb() }
         }
         btnDisconnect.setOnClickListener {
             run("Disconnect") { doDisconnect() }
@@ -372,6 +376,23 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
+    private fun doConnectUsb(): Boolean {
+        val label = adb.connectUsb()
+        if (label != null) {
+            connectedAddr = label
+            connectedSince = System.currentTimeMillis()
+            lostAddr = null
+            lastProbe = connectedSince
+            updateOwner()
+        } else {
+            connectedAddr = null
+            connectedSince = 0L
+            ownerState = OwnerState.Unknown
+        }
+        runOnUiThread { refreshHeader() }
+        return label != null
+    }
+
     /** Cek ulang device owner di HP target (panggil dari thread kerja). */
     private fun updateOwner() {
         ownerState = adb.queryDeviceOwner()
@@ -486,7 +507,7 @@ class MainActivity : AppCompatActivity() {
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(248, 113, 113))
             }
             else -> {
-                txtConn.text = "Belum terhubung · Pair lalu Connect untuk mulai"
+                txtConn.text = "Belum terhubung · Pair lalu Connect, atau Connect USB"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(148, 163, 184))
             }
         }

@@ -23,6 +23,15 @@ Syarat device owner: HP target baru / habis factory reset dan belum ada akun (Go
 Satu HP tidak bisa memasang dirinya sendiri sebagai device owner dengan cara ini kecuali IP diisi 127.0.0.1 dan
 syarat di atas terpenuhi.
 
+## Opsi USB debugging (kabel)
+Alternatif tanpa Wi-Fi / Pair:
+1. HP target: Opsi Developer › aktifkan **USB debugging** (mode USB: Transfer file).
+2. Colok HP target ke HP teknisi memakai kabel OTG (HP teknisi = USB host).
+3. Di kartu **USB Debugging (Kabel)** ketuk **Connect USB**; izinkan akses USB di HP teknisi, lalu di HP target
+   setujui dialog "Izinkan USB debugging?" (centang "Selalu izinkan").
+4. Lanjut seperti biasa: Pasang APK, set-device-owner, atau Proses Otomatis.
+Cara kerja: paket ADB dikirim lewat soket loopback lalu diteruskan ke endpoint bulk USB (`UsbAdbBridge.kt`).
+
 ## Login PIN
 - PIN 4 digit. PIN awal: **4321** (dibuat otomatis saat pertama kali dibuka). Untuk mengganti PIN, ubah `DEFAULT_PIN` di `PinStore.kt` lalu build ulang.
 - Setelah itu setiap buka aplikasi harus memasukkan PIN (otomatis diperiksa setelah digit ke-4; PIN benar langsung masuk).
