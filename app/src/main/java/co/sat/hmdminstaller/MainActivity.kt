@@ -58,6 +58,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtOwner: TextView
     private lateinit var progress: ProgressBar
     private lateinit var buttons: List<MaterialButton>
+    // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
+    private lateinit var needsConnection: Set<MaterialButton>
 
     private val worker = Executors.newSingleThreadExecutor()
     // Penyalinan APK ke cache dipisah dari worker ADB agar tidak antre di belakang install, dan tidak membebani UI thread.
@@ -159,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+        needsConnection = setOf(btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
@@ -546,7 +549,7 @@ class MainActivity : AppCompatActivity() {
         adb.holdLocks(on)
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        buttons.forEach { it.isEnabled = !on }
+        applyButtonState(on)
         dropZone.isEnabled = !on
         dropZone.alpha = if (on) 0.5f else 1f
         apkListBox.alpha = if (on) 0.5f else 1f
@@ -579,6 +582,21 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshOwner()
+        applyButtonState(busy)
+    }
+
+    /**
+     * Atur status tombol: semua tombol mati saat ada proses berjalan; tombol yang butuh device
+     * (Pasang APK, set-device-owner, Otomatis, Hapus data & Uninstall Kaspersky) juga mati selama belum terhubung.
+     */
+    private fun applyButtonState(isBusy: Boolean) {
+        val connected = connectedAddr != null && adb.isConnected
+        buttons.forEach { b ->
+            val enabled = !isBusy && (connected || b !in needsConnection)
+            b.isEnabled = enabled
+            // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
+            b.alpha = if (enabled) 1f else 0.4f
+        }
     }
 
     private fun refreshOwner() {

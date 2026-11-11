@@ -19,6 +19,8 @@ buka tab Actions › "Build APK" › Run workflow, lalu unduh artifact `HMDM-Ins
 5. **2 · Atur Hak Akses**: pastikan semua akun Google/pengguna di HP target sudah dihapus, cek status Device Owner, lalu **Jalankan set-device-owner**.
 6. Atau pakai **Proses Otomatis** (hanya Install APK + Set Owner; Pair & Connect harus sudah dilakukan lebih dulu). Kartu **Uninstall Kaspersky** berisi 3 langkah: hapus data, matikan Aplikasi Admin Kaspersky di HP (manual), lalu uninstall.
 
+Selama belum terhubung (Pair+Connect / USB), tombol **Pasang Semua APK**, **Jalankan set-device-owner**, **Otomatis**, **Hapus Data Kaspersky** dan **Uninstall Kaspersky** nonaktif (redup, tidak bisa ditekan); otomatis aktif setelah terhubung dan nonaktif lagi bila koneksi terputus.
+
 Syarat device owner: HP target baru / habis factory reset dan belum ada akun (Google dll).
 Satu HP tidak bisa memasang dirinya sendiri sebagai device owner dengan cara ini kecuali IP diisi 127.0.0.1 dan
 syarat di atas terpenuhi.
