@@ -31,6 +31,7 @@
             </intent-filter>
         </activity>
 
+        <service android:name=".CleanupService" android:exported="false" />
         <service
             android:name=".ConnectionService"
             android:exported="false"

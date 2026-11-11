@@ -53,6 +53,8 @@ class ConnectionService : Service() {
         val adb = (application as App).adb
         Thread {
             try { adb.close() } catch (e: Throwable) { }
+            // Daftar APK dipulihkan dari cache/picked saat aplikasi dibuka; hapus agar daftar kosong lagi.
+            try { java.io.File(cacheDir, "picked").deleteRecursively() } catch (e: Throwable) { }
             handler.post { stopSelf() }
         }.start()
         super.onTaskRemoved(rootIntent)

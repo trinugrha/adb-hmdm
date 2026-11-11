@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.net.Uri
@@ -161,6 +162,8 @@ class MainActivity : AppCompatActivity() {
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
+        // Pantau penggeseran dari recent apps (putus koneksi + kosongkan daftar APK).
+        try { startService(Intent(this, CleanupService::class.java)) } catch (e: Throwable) { }
         adb = app.adb
         app.logListener = { level, line -> runOnUiThread { log(level, line) } }
         // Koneksi bisa masih hidup dari Activity sebelumnya: pulihkan tampilan, jangan sambung ulang.
