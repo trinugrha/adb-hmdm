@@ -58,6 +58,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
+    private lateinit var homePill: View
+    private lateinit var homeDot: View
+    private lateinit var txtHome: TextView
     private lateinit var progress: ProgressBar
     private lateinit var buttons: List<MaterialButton>
     // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
@@ -75,6 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var connectedSince = 0L
     private var lostAddr: String? = null
     @Volatile private var ownerState: OwnerState = OwnerState.Unknown
+    @Volatile private var homeState: HomeState = HomeState.Unknown
 
     // Pemantau status koneksi (live): jalan hanya saat layar terlihat.
     private val poller = Executors.newSingleThreadScheduledExecutor()
@@ -151,6 +155,9 @@ class MainActivity : AppCompatActivity() {
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
+        homePill = findViewById(R.id.homePill)
+        homeDot = findViewById(R.id.homeDot)
+        txtHome = findViewById(R.id.txtHome)
         progress = findViewById(R.id.progress)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
@@ -159,14 +166,15 @@ class MainActivity : AppCompatActivity() {
         val btnDisconnect: MaterialButton = findViewById(R.id.btnDisconnect)
         val btnInstallOnly: MaterialButton = findViewById(R.id.btnInstallOnly)
         val btnOwner: MaterialButton = findViewById(R.id.btnOwner)
+        val btnHome: MaterialButton = findViewById(R.id.btnSetHome)
         val btnAll: MaterialButton = findViewById(R.id.btnAll)
         val btnClearKaspersky: MaterialButton = findViewById(R.id.btnClearKaspersky)
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
-            btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
-        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+            btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
         blockedWhenConnected = setOf(btnConnect, btnConnectUsb)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
@@ -199,6 +207,15 @@ class MainActivity : AppCompatActivity() {
                 val st = adb.checkDeviceOwner()
                 if (st != OwnerState.Unknown) ownerState = st
                 st != OwnerState.Unknown
+            }
+        }
+        homePill.setOnClickListener {
+            if (busy) return@setOnClickListener
+            if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
+            run("Cek Launcher Default") {
+                val st = adb.checkDefaultLauncher()
+                if (st != HomeState.Unknown) homeState = st
+                st != HomeState.Unknown
             }
         }
         tabMode = findViewById(R.id.tabMode)
@@ -256,6 +273,9 @@ class MainActivity : AppCompatActivity() {
         }
         btnOwner.setOnClickListener {
             run("Set Device Owner") { doSetOwner() }
+        }
+        btnHome.setOnClickListener {
+            run("Set Launcher Default") { adb.setDefaultLauncher() }
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
@@ -410,7 +430,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
         }
         refreshHeader()
     }
@@ -437,7 +457,7 @@ class MainActivity : AppCompatActivity() {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
         }
         runOnUiThread { refreshHeader() }
         return ok
@@ -463,7 +483,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
             showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
@@ -473,12 +493,13 @@ class MainActivity : AppCompatActivity() {
     /** Cek ulang device owner di HP target (panggil dari thread kerja). */
     private fun updateOwner() {
         ownerState = adb.queryDeviceOwner()
+        homeState = adb.queryDefaultLauncher()
         runOnUiThread { refreshHeader() }
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -503,7 +524,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.message ?: e.javaClass.simpleName}") }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st } } catch (e: Throwable) { }
+            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs } } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -582,6 +603,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshOwner()
+        refreshHome()
         applyButtonState(busy)
     }
 
@@ -610,6 +632,12 @@ class MainActivity : AppCompatActivity() {
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
         // Kotak status Device Owner (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
+        if (::homePill.isInitialized) {
+            val checkEnabled = !isBusy && connected
+            homePill.isEnabled = checkEnabled
+            homePill.isClickable = checkEnabled
+            homePill.alpha = if (checkEnabled) 1f else 0.5f
+        }
         if (::ownerPill.isInitialized) {
             val checkEnabled = !isBusy && connected
             ownerPill.isEnabled = checkEnabled
@@ -641,6 +669,20 @@ class MainActivity : AppCompatActivity() {
                 it.alpha = if (enabled) 1f else 0.3f
             }
         }
+    }
+
+    private fun refreshHome() {
+        val connected = connectedAddr != null && adb.isConnected
+        val st = if (connected) homeState else HomeState.Unknown
+        val (text, color) = when (st) {
+            is HomeState.Hmdm -> "HMDM Launcher aktif ✓" to Color.rgb(74, 222, 128)
+            is HomeState.Other -> "Launcher lain (${st.component.substringBefore('/')})" to Color.rgb(248, 113, 113)
+            HomeState.None -> "Belum ada default" to Color.rgb(251, 191, 36)
+            HomeState.Unknown ->
+                (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
+        }
+        txtHome.text = text
+        homeDot.backgroundTintList = ColorStateList.valueOf(color)
     }
 
     private fun refreshOwner() {

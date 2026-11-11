@@ -26,6 +26,18 @@ sealed class OwnerState {
     data class Other(val pkg: String) : OwnerState()
 }
 
+/** Status launcher (home) default di HP target. */
+sealed class HomeState {
+    /** Belum terhubung / belum dicek / gagal dicek. */
+    object Unknown : HomeState()
+    /** Belum ada launcher default (Android akan menampilkan pilihan launcher). */
+    object None : HomeState()
+    /** HMDM launcher adalah default. */
+    data class Hmdm(val component: String) : HomeState()
+    /** Launcher lain yang menjadi default. */
+    data class Other(val component: String) : HomeState()
+}
+
 /**
  * Padanan fungsi ADB di versi Windows: pair, connect, disconnect,
  * install -r, dan dpm set-device-owner. Dipanggil dari thread latar.
@@ -43,6 +55,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
+        /** Activity launcher HMDM yang dijadikan home default. */
+        const val HOME_COMPONENT = "com.hmdm.launcher/.Launcher"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
         const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) dulu"
     }
@@ -260,6 +274,43 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return if (pkg == hmdmPkg) OwnerState.Hmdm(pkg) else OwnerState.Other(pkg)
     }
 
+    /**
+     * Cek launcher default aktif (tanpa menulis log) lewat
+     * `cmd package resolve-activity --brief -a MAIN -c HOME`. Baris terakhir berisi pkg/.Kelas.
+     */
+    fun queryDefaultLauncher(): HomeState {
+        if (!isConnected) return HomeState.Unknown
+        return try {
+            val out = shell(
+                "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME",
+                5_000, quiet = true
+            )
+            val comp = out.lineSequence().map { it.trim() }.lastOrNull { it.isNotEmpty() && it.contains('/') && !it.contains(' ') }
+                ?: return if (out.isBlank()) HomeState.Unknown else HomeState.None
+            when {
+                comp.startsWith("android/") && comp.contains("ResolverActivity") -> HomeState.None
+                comp.substringBefore('/') == HOME_COMPONENT.substringBefore('/') -> HomeState.Hmdm(comp)
+                else -> HomeState.Other(comp)
+            }
+        } catch (e: Throwable) {
+            HomeState.Unknown
+        }
+    }
+
+    /** Cek manual (tombol status launcher): hasilnya ditulis ke log. */
+    fun checkDefaultLauncher(): HomeState {
+        if (!ensureConnected()) return HomeState.Unknown
+        logCmd("adb shell cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME")
+        val st = queryDefaultLauncher()
+        when (st) {
+            is HomeState.Hmdm -> logOk("Launcher default: HMDM (${st.component})")
+            is HomeState.Other -> logWarn("Launcher default: aplikasi lain (${st.component})")
+            is HomeState.None -> logWarn("Belum ada launcher default di HP target")
+            is HomeState.Unknown -> logErr("Launcher default tidak terbaca: HP target tidak menjawab")
+        }
+        return st
+    }
+
     /** Cek manual (tombol status Device Owner): hasilnya ditulis ke log. Unknown bila tidak terbaca. */
     fun checkDeviceOwner(): OwnerState {
         if (!ensureConnected()) return OwnerState.Unknown
@@ -421,6 +472,30 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logErr("Set device owner gagal: ${ownerFailureReason(out)}")
         logRaw(out)
         return false
+    }
+
+    /** Setara `adb shell cmd package set-home-activity "com.hmdm.launcher/.Launcher"`: jadikan HMDM launcher default. */
+    fun setDefaultLauncher(): Boolean {
+        if (!ensureConnected()) return false
+        logCmd("adb shell cmd package set-home-activity \"$HOME_COMPONENT\"")
+        val out = try { shell("cmd package set-home-activity \"$HOME_COMPONENT\"", doneWhen = pmDone) } catch (e: Throwable) {
+            "Error: ${e.message ?: e.javaClass.simpleName}"
+        }
+        if (!isSuccess(out)) {
+            val reason = when {
+                out.contains("Unknown", ignoreCase = true) || out.contains("not found", ignoreCase = true) ||
+                    out.contains("does not exist", ignoreCase = true) ->
+                    "komponen $HOME_COMPONENT tidak ditemukan, pastikan HMDM sudah terpasang"
+                out.contains("Permission", ignoreCase = true) || out.contains("SecurityException") ->
+                    "ditolak sistem (izin shell tidak cukup)"
+                else -> "pastikan HMDM sudah terpasang di HP target"
+            }
+            logErr("Set launcher default gagal: $reason")
+            logRaw(out)
+            return false
+        }
+        logOk("Launcher default: $HOME_COMPONENT")
+        return true
     }
 
     /** Setara `adb shell pm clear com.kaspersky.kes`: hapus semua data aplikasi Kaspersky di device. */
