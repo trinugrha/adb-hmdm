@@ -70,7 +70,7 @@ class PinStore(context: Context) {
 
     companion object {
         const val PIN_LENGTH = 4
-        /** PIN awal saat aplikasi pertama kali dibuka (bisa diganti lewat menu Ubah PIN). */
+        /** PIN awal, hanya dipakai saat PIN belum pernah dibuat. Mengubah nilai ini tidak berpengaruh di HP yang sudah pernah membuka aplikasi (uninstall dulu). */
         const val DEFAULT_PIN = "4321"
         private const val MAX_TRIES = 5
         private const val BASE_LOCK_MS = 30_000L

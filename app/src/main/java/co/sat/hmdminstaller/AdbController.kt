@@ -56,7 +56,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
         /** Activity launcher HMDM yang dijadikan home default. */
-        const val HOME_COMPONENT = "com.hmdm.launcher/.Launcher"
+        const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
         const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) dulu"
     }
@@ -474,7 +474,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return false
     }
 
-    /** Setara `adb shell cmd package set-home-activity "com.hmdm.launcher/.Launcher"`: jadikan HMDM launcher default. */
+    /** Setara `adb shell cmd package set-home-activity "com.hmdm.launcher/.ui.MainActivity"`: jadikan HMDM launcher default. */
     fun setDefaultLauncher(): Boolean {
         if (!ensureConnected()) return false
         logCmd("adb shell cmd package set-home-activity \"$HOME_COMPONENT\"")
