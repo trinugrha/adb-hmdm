@@ -910,10 +910,12 @@ class MainActivity : AppCompatActivity() {
 
     /** Batasi panjang log agar tidak membengkak: buang baris paling lama (dipotong di batas baris). */
     private fun trimLog() {
-        val ed = txtLog.text as? android.text.Editable ?: return
-        if (ed.length <= LOG_MAX_CHARS) return
-        val cut = ed.indexOf("\n", ed.length - LOG_KEEP_CHARS)
-        ed.delete(0, if (cut < 0) ed.length - LOG_KEEP_CHARS else cut + 1)
+        val cur = txtLog.text
+        if (cur.length <= LOG_MAX_CHARS) return
+        val sb = android.text.SpannableStringBuilder(cur)
+        val cut = sb.indexOf("\n", sb.length - LOG_KEEP_CHARS)
+        sb.delete(0, if (cut < 0) sb.length - LOG_KEEP_CHARS else cut + 1)
+        txtLog.text = sb
     }
 
     private fun levelColor(level: LogLevel): Int = when (level) {
