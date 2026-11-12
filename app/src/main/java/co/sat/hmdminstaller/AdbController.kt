@@ -579,7 +579,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /**
      * Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis.
      * Dibuang: baris "Performing ...", stack trace Java ("at ...", "... N more"), dan baris yang
-     * hanya mengulang alasan yang sudah tampil di baris [shown] (mis. "Failure [INSTALL_FAILED_...]").
+     * hanya mengulang alasan yang sudah tampil di baris [shown] (mis. "Failure: INSTALL_FAILED_...").
      */
     private fun logRaw(out: String, shown: String = "", max: Int = 6) {
         val lines = out.lines().map { it.trim() }
