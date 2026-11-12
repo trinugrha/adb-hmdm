@@ -304,9 +304,9 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnPair"
                             android:layout_width="0dp"
-                            android:layout_height="38dp"
+                            android:layout_height="44dp"
                             android:minHeight="0dp"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:layout_weight="1"
                             android:text="Pair" />
                     </LinearLayout>
@@ -315,10 +315,10 @@
                         android:id="@+id/btnPairQr"
                         style="@style/Widget.Hmdm.Button.Outlined"
                         android:layout_width="match_parent"
-                        android:layout_height="38dp"
+                        android:layout_height="44dp"
                         android:layout_marginTop="10dp"
                         android:minHeight="0dp"
-                        android:textSize="13sp"
+                        android:textSize="14sp"
                         android:text="Pair dengan QR code (scan)" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -422,9 +422,9 @@
                             android:id="@+id/btnDisconnect"
                             style="@style/Widget.Hmdm.Button.Outlined"
                             android:layout_width="0dp"
-                            android:layout_height="36dp"
+                            android:layout_height="44dp"
                             android:minHeight="0dp"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:layout_marginEnd="8dp"
                             android:layout_weight="1"
                             android:text="Disconnect" />
@@ -432,9 +432,9 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnConnect"
                             android:layout_width="0dp"
-                            android:layout_height="36dp"
+                            android:layout_height="44dp"
                             android:minHeight="0dp"
-                            android:textSize="13sp"
+                            android:textSize="14sp"
                             android:layout_weight="1"
                             android:text="Connect" />
                     </LinearLayout>
