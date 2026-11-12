@@ -126,7 +126,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         try { if (on) ConnectionService.start(appContext) else ConnectionService.stop(appContext) } catch (e: Throwable) { }
     }
 
-    private val usbBridge by lazy { UsbAdbBridge(appContext) }
+    private val usbBridge by lazy { UsbAdbBridge(appContext).also { b -> b.trace = { m -> logDetail(m) } } }
+
+    /**
+     * Cara kirim APK lewat USB, dicoba berurutan bila macet: (kirim ZLP, KB per paket).
+     * Yang pertama = perilaku lama (aman untuk HP lama seperti SUNMI). Yang berhasil diingat selama sesi.
+     */
+    private val usbStrategies = listOf(false to 4, true to 4, true to 16)
+    @Volatile private var usbStrategy = 0
 
     /** Daftar HP target di port USB (setara `adb devices`). Ringan, aman dipanggil dari UI thread. */
     fun listUsbTargets(): List<UsbAdbBridge.Target> =
@@ -435,12 +442,21 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             curIdx = i + 1; curTotal = apks.size; curName = apk.name
             onProgress?.invoke(curIdx, curTotal, curName, 0L, apk.file.length())
             val t0 = System.currentTimeMillis()
-            var out = installTry(apk.file)
-            if (!isSuccess(out) && isTransient(out)) {
-                logWarn("Pengiriman terputus, mencoba sekali lagi...")
+            // Lewat USB: bila macet, ganti cara kirim (lihat usbStrategies). Lewat Wi-Fi: satu kali ulang.
+            val maxTries = if (viaUsb) usbStrategies.size else 2
+            var strategy = if (viaUsb) usbStrategy else 0
+            var tries = 0
+            var out = ""
+            while (true) {
+                out = installTry(apk.file, strategy)
+                tries++
+                if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
+                logWarn("Pengiriman terputus, mencoba lagi dengan cara lain (${tries + 1}/$maxTries)...")
                 if (isConnected) Thread.sleep(1500) else tryReconnect()
-                if (isConnected) out = installTry(apk.file)
+                if (!isConnected) break
+                if (viaUsb) strategy = (strategy + 1) % usbStrategies.size
             }
+            if (viaUsb && isSuccess(out)) usbStrategy = strategy
             if (isSuccess(out)) {
                 ok++
                 logOk("Terpasang · ${Fmt.duration(System.currentTimeMillis() - t0)}")
@@ -660,20 +676,26 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return bos.toString("UTF-8")
     }
 
-    private fun installTry(file: File): String =
-        try { installOne(file) } catch (e: Throwable) { "Error: ${e.message ?: e.javaClass.simpleName}" }
+    private fun installTry(file: File, strategy: Int = 0): String =
+        try { installOne(file, strategy) } catch (e: Throwable) { "Error: ${e.message ?: e.javaClass.simpleName}" }
 
     /** Kegagalan tanpa pesan dari pm (stream putus), bukan penolakan install seperti INSTALL_FAILED_*. */
     private fun isTransient(out: String): Boolean =
         out.isBlank() || (out.startsWith("Error:") && !out.contains("INSTALL_", ignoreCase = true))
 
     /** Setara `adb install -r`: stream APK ke `cmd package install -S <ukuran>` lewat service exec. */
-    private fun installOne(file: File): String {
+    private fun installOne(file: File, strategy: Int = 0): String {
         val total = file.length()
         // Lewat USB, adbd di HP lama (Android 7/8, mis. SUNMI) membatasi payload per paket (4 KB).
         // Paket WRTE yang lebih besar membuat transfer macet di 0%. Lewat Wi-Fi 32 KB aman.
-        val chunk = if (viaUsb) 4 * 1024 else 32 * 1024
-        if (viaUsb) logDetail("Mode USB: data dikirim per ${chunk / 1024} KB")
+        // Sebagian HP lain (mis. terminal POS) macet di 0% tanpa ZLP; strategi USB bergantian mencoba keduanya.
+        val (zlp, kb) = usbStrategies[strategy.coerceIn(0, usbStrategies.lastIndex)]
+        val chunk = if (viaUsb) kb * 1024 else 32 * 1024
+        if (viaUsb) {
+            usbBridge.sendZlp = zlp
+            usbBridge.resetStats()
+            logDetail("Mode USB: data dikirim per $kb KB, ZLP ${if (zlp) "aktif" else "mati"} (cara ${strategy + 1}/${usbStrategies.size})")
+        }
         val stream = manager.openStream("exec:cmd package install -r -S $total")
         val lastActivity = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
         val sendingDone = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -695,9 +717,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
+            var sent = 0L
             try {
                 val os = stream.openOutputStream()
-                var sent = 0L
                 var lastReport = 0L
                 file.inputStream().use { input ->
                     val buf = ByteArray(chunk)
@@ -727,6 +749,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 val saran = if (viaUsb) "Cabut-colok kabel USB, lalu Connect USB ulang."
                             else "Pastikan HP target tetap menyala dan satu jaringan Wi-Fi, lalu Connect ulang."
                 logWarn("Proses macet saat $fase: tidak ada kemajuan selama $waitSec detik. $saran")
+                logDetail("Terkirim $sent dari $total byte." + if (viaUsb) " Lalu lintas USB: ${usbBridge.stats()}" else "")
                 return "Error: pengiriman macet (tidak ada kemajuan)"
             }
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).

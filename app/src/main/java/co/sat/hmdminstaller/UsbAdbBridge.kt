@@ -46,6 +46,30 @@ class UsbAdbBridge(context: Context) {
     @Volatile private var running = false
     @Volatile private var active: Socket? = null
 
+    /**
+     * Kirim paket nol-panjang (ZLP) setelah payload yang panjangnya kelipatan ukuran paket endpoint,
+     * seperti yang dilakukan adb di PC. Sebagian adbd menunggu paket pendek untuk menandai akhir payload;
+     * tanpa ZLP transfer macet di 0%.
+     */
+    @Volatile var sendZlp = false
+
+    /** Penerima log rinci (paket ADB yang lewat jembatan). Dipanggil dari thread jembatan. */
+    @Volatile var trace: ((String) -> Unit)? = null
+
+    private val upCount = java.util.concurrent.atomic.AtomicInteger()
+    private val downCount = java.util.concurrent.atomic.AtomicInteger()
+    @Volatile private var lastUp = "-"
+    @Volatile private var lastDown = "-"
+
+    /** Nol-kan penghitung paket (dipanggil sebelum tiap install). */
+    fun resetStats() { upCount.set(0); downCount.set(0); lastUp = "-"; lastDown = "-" }
+
+    /** Ringkasan lalu lintas jembatan sejak resetStats(), untuk diagnosis saat macet. */
+    fun stats(): String =
+        "ke target ${upCount.get()} paket (terakhir $lastUp), dari target ${downCount.get()} paket (terakhir $lastDown), ZLP ${if (sendZlp) "aktif" else "mati"}"
+
+    private fun cmdName(h: ByteArray): String = String(h, 0, 4, Charsets.US_ASCII)
+
     companion object {
         private const val ACTION_PERMISSION = "co.sat.hmdminstaller.USB_PERMISSION"
         private const val HEADER = 24
@@ -186,6 +210,17 @@ class UsbAdbBridge(context: Context) {
         }
     }
 
+    /** Kirim paket nol-panjang bila `len` kelipatan ukuran paket endpoint OUT (hanya jika sendZlp aktif). */
+    private fun usbZlpIfNeeded(len: Int) {
+        if (!sendZlp || len <= 0) return
+        val c = conn ?: return
+        val ep = epOut ?: return
+        val mps = ep.maxPacketSize
+        if (mps > 0 && len % mps == 0) {
+            c.bulkTransfer(ep, ByteArray(1), 0, 5000)
+        }
+    }
+
     /** Baca tepat `len` byte; timeout dianggap "belum ada data" selama `idleOk` dan perangkat masih terpasang. */
     private fun usbRead(buf: ByteArray, len: Int, idleOk: Boolean, mine: () -> Boolean) {
         val c = conn ?: throw java.io.IOException("USB tertutup")
@@ -220,8 +255,15 @@ class UsbAdbBridge(context: Context) {
                 val len = le32(header, 12)
                 if (len < 0 || len > MAX_PAYLOAD) throw java.io.IOException("Ukuran paket ADB tidak valid: $len")
                 if (len > 0) readFully(input, payload, len)
+                val name = cmdName(header)
+                val n = upCount.incrementAndGet()
+                lastUp = "$name($len)"
+                if (n <= 12) trace?.invoke("USB ke target #$n: $name len=$len")
                 usbWrite(header, HEADER)
-                if (len > 0) usbWrite(payload, len)
+                if (len > 0) {
+                    usbWrite(payload, len)
+                    usbZlpIfNeeded(len)
+                }
             }
         } catch (e: Throwable) {
         } finally {
@@ -239,6 +281,10 @@ class UsbAdbBridge(context: Context) {
                 val len = le32(header, 12)
                 if (len < 0 || len > MAX_PAYLOAD) throw java.io.IOException("Ukuran paket ADB tidak valid: $len")
                 if (len > 0) usbRead(payload, len, idleOk = false) { active === s }
+                val name = cmdName(header)
+                val n = downCount.incrementAndGet()
+                lastDown = "$name($len)"
+                if (n <= 12) trace?.invoke("USB dari target #$n: $name len=$len")
                 out.write(header, 0, HEADER)
                 if (len > 0) out.write(payload, 0, len)
                 out.flush()
