@@ -130,10 +130,21 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /**
      * Cara kirim APK lewat USB, dicoba berurutan bila macet: (kirim ZLP, KB per paket).
-     * Yang pertama = perilaku lama (aman untuk HP lama seperti SUNMI). Yang berhasil diingat selama sesi.
+     * Yang pertama = perilaku lama (aman untuk HP lama seperti SUNMI). Yang berhasil diingat permanen
+     * per jenis HP target (vendor:product ID USB), jadi pemasangan berikutnya tidak perlu menunggu macet dulu.
      */
     private val usbStrategies = listOf(false to 4, true to 4, true to 16)
-    @Volatile private var usbStrategy = 0
+    private val usbPrefs by lazy { appContext.getSharedPreferences("usb_strategy", Context.MODE_PRIVATE) }
+
+    private fun savedUsbStrategy(): Int {
+        val key = usbBridge.deviceKey() ?: return 0
+        return try { usbPrefs.getInt(key, 0).coerceIn(0, usbStrategies.lastIndex) } catch (e: Throwable) { 0 }
+    }
+
+    private fun saveUsbStrategy(strategy: Int) {
+        val key = usbBridge.deviceKey() ?: return
+        try { usbPrefs.edit().putInt(key, strategy).apply() } catch (e: Throwable) { }
+    }
 
     /** Daftar HP target di port USB (setara `adb devices`). Ringan, aman dipanggil dari UI thread. */
     fun listUsbTargets(): List<UsbAdbBridge.Target> =
@@ -444,7 +455,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             val t0 = System.currentTimeMillis()
             // Lewat USB: bila macet, ganti cara kirim (lihat usbStrategies). Lewat Wi-Fi: satu kali ulang.
             val maxTries = if (viaUsb) usbStrategies.size else 2
-            var strategy = if (viaUsb) usbStrategy else 0
+            var strategy = if (viaUsb) savedUsbStrategy() else 0
             var tries = 0
             var out = ""
             while (true) {
@@ -456,7 +467,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (!isConnected) break
                 if (viaUsb) strategy = (strategy + 1) % usbStrategies.size
             }
-            if (viaUsb && isSuccess(out)) usbStrategy = strategy
+            if (viaUsb && isSuccess(out)) saveUsbStrategy(strategy)
             if (isSuccess(out)) {
                 ok++
                 logOk("Terpasang · ${Fmt.duration(System.currentTimeMillis() - t0)}")
