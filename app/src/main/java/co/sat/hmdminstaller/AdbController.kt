@@ -374,6 +374,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
     }
 
+    /** Cari port connect HP target (layanan mDNS `_adb-tls-connect`) pada [host] yang sama. Null bila tidak ketemu. */
+    fun findConnectAddr(host: String, timeoutMs: Long = 15_000): String? {
+        logStep("Mencari port connect $host lewat mDNS...")
+        return AdbDiscovery.find(appContext, AdbDiscovery.TYPE_CONNECT, timeoutMs, java.util.concurrent.atomic.AtomicBoolean(false)) { _, h -> h == host }?.addr
+    }
+
     @Volatile private var lastConnectReason = ""
 
     /** [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB). */

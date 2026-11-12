@@ -220,7 +220,7 @@
                                 style="@style/Hmdm.CardHint"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="HP target: Opsi Developer › Wireless debugging › Pair device with pairing code" />
+                                android:text="HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -310,6 +310,16 @@
                             android:layout_weight="1"
                             android:text="Pair" />
                     </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnPairQr"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="38dp"
+                        android:layout_marginTop="10dp"
+                        android:minHeight="0dp"
+                        android:textSize="13sp"
+                        android:text="Pair dengan QR code (scan)" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

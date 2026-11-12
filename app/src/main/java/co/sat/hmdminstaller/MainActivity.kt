@@ -165,6 +165,7 @@ class MainActivity : AppCompatActivity() {
         progress = findViewById(R.id.progress)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
+        val btnPairQr: MaterialButton = findViewById(R.id.btnPairQr)
         val btnConnect: MaterialButton = findViewById(R.id.btnConnect)
         val btnConnectUsb: MaterialButton = findViewById(R.id.btnConnectUsb)
         val btnDisconnect: MaterialButton = findViewById(R.id.btnDisconnect)
@@ -176,7 +177,7 @@ class MainActivity : AppCompatActivity() {
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
-        buttons = listOf(btnPair, btnConnect, btnConnectUsb, btnDisconnect,
+        buttons = listOf(btnPair, btnPairQr, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
         needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
         blockedWhenConnected = setOf(btnConnect, btnConnectUsb)
@@ -239,6 +240,7 @@ class MainActivity : AppCompatActivity() {
             val code = clean(edtPairCode.text.toString())
             run("Pairing") { doPair(addr, code) }
         }
+        btnPairQr.setOnClickListener { showQrPairing() }
         btnConnect.setOnClickListener {
             val addr = addr(edtConnIp.text.toString(), edtConnPort.text.toString())
             run("Connect") { doConnect(addr) }
@@ -437,6 +439,68 @@ class MainActivity : AppCompatActivity() {
             ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
         }
         refreshHeader()
+    }
+
+    // ---------- Pair dengan QR ----------
+
+    /** Tampilkan QR; HP target memindainya, lalu aplikasi menemukan layanan pairing via mDNS dan pair + connect otomatis. */
+    private fun showQrPairing() {
+        if (busy) return
+        val session = AdbDiscovery.newQrSession()
+        val cancel = java.util.concurrent.atomic.AtomicBoolean(false)
+        val size = dp(260)
+        val img = android.widget.ImageView(this).apply {
+            setImageBitmap(AdbDiscovery.qrBitmap(session.payload, size))
+            layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL }
+        }
+        val hint = TextView(this).apply {
+            text = "HP target: Opsi Developer › Wireless debugging › Pair device with QR code, lalu arahkan kamera ke QR ini.\n\nHP teknisi dan HP target harus di Wi-Fi yang sama."
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text))
+            setPadding(0, dp(12), 0, 0)
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(16), dp(20), 0)
+            addView(img); addView(hint)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Scan QR untuk Pair")
+            .setView(box)
+            .setNegativeButton("Batal", null)
+            .setOnDismissListener { cancel.set(true) }
+            .create()
+        dialog.show()
+        io.execute {
+            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _ -> name == session.serviceName }
+            if (found == null) {
+                if (!cancel.get()) runOnUiThread {
+                    dialog.dismiss()
+                    log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi.")
+                }
+                return@execute
+            }
+            runOnUiThread {
+                dialog.dismiss()
+                if (busy) return@runOnUiThread
+                edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString())
+                run("Pairing QR") { doPairQr(found, session.password) }
+            }
+        }
+    }
+
+    private fun doPairQr(f: AdbDiscovery.Found, password: String): Boolean {
+        if (!doPair(f.addr, password)) return false
+        // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
+        val ca = adb.findConnectAddr(f.host)
+        if (ca == null) {
+            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect.")
+            return true
+        }
+        val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
+        runOnUiThread { edtConnIp.setText(ip); edtConnPort.setText(port) }
+        doConnect(ca)
+        return true
     }
 
     // ---------- Langkah (jalan di thread kerja) ----------
