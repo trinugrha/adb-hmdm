@@ -53,9 +53,6 @@ class UsbAdbBridge(context: Context) {
      */
     @Volatile var sendZlp = false
 
-    /** Penerima log rinci (paket ADB yang lewat jembatan). Dipanggil dari thread jembatan. */
-    @Volatile var trace: ((String) -> Unit)? = null
-
     private val upCount = java.util.concurrent.atomic.AtomicInteger()
     private val downCount = java.util.concurrent.atomic.AtomicInteger()
     @Volatile private var lastUp = "-"
@@ -66,7 +63,7 @@ class UsbAdbBridge(context: Context) {
 
     /** Ringkasan lalu lintas jembatan sejak resetStats(), untuk diagnosis saat macet. */
     fun stats(): String =
-        "ke target ${upCount.get()} paket (terakhir $lastUp), dari target ${downCount.get()} paket (terakhir $lastDown), ZLP ${if (sendZlp) "aktif" else "mati"}"
+        "ke target ${upCount.get()} paket (terakhir $lastUp), dari target ${downCount.get()} paket (terakhir $lastDown)"
 
     private fun cmdName(h: ByteArray): String = String(h, 0, 4, Charsets.US_ASCII)
 
@@ -259,9 +256,8 @@ class UsbAdbBridge(context: Context) {
                 if (len < 0 || len > MAX_PAYLOAD) throw java.io.IOException("Ukuran paket ADB tidak valid: $len")
                 if (len > 0) readFully(input, payload, len)
                 val name = cmdName(header)
-                val n = upCount.incrementAndGet()
+                upCount.incrementAndGet()
                 lastUp = "$name($len)"
-                if (n <= 12) trace?.invoke("USB ke target #$n: $name len=$len")
                 usbWrite(header, HEADER)
                 if (len > 0) {
                     usbWrite(payload, len)
@@ -285,9 +281,8 @@ class UsbAdbBridge(context: Context) {
                 if (len < 0 || len > MAX_PAYLOAD) throw java.io.IOException("Ukuran paket ADB tidak valid: $len")
                 if (len > 0) usbRead(payload, len, idleOk = false) { active === s }
                 val name = cmdName(header)
-                val n = downCount.incrementAndGet()
+                downCount.incrementAndGet()
                 lastDown = "$name($len)"
-                if (n <= 12) trace?.invoke("USB dari target #$n: $name len=$len")
                 out.write(header, 0, HEADER)
                 if (len > 0) out.write(payload, 0, len)
                 out.flush()

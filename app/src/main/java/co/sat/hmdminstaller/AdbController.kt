@@ -126,7 +126,15 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         try { if (on) ConnectionService.start(appContext) else ConnectionService.stop(appContext) } catch (e: Throwable) { }
     }
 
-    private val usbBridge by lazy { UsbAdbBridge(appContext).also { b -> b.trace = { m -> logDetail(m) } } }
+    private val usbBridge by lazy { UsbAdbBridge(appContext) }
+
+    private fun strategyText(s: Int): String {
+        val (zlp, kb) = usbStrategies[s.coerceIn(0, usbStrategies.lastIndex)]
+        return "$kb KB per paket, ${if (zlp) "dengan" else "tanpa"} ZLP"
+    }
+
+    /** Hasil installOne bila pengiriman macet; dipakai untuk mengenali kasus ini tanpa mencocokkan teks lagi. */
+    private val stallError = "Error: pengiriman macet (tidak ada kemajuan)"
 
     /**
      * Cara kirim APK lewat USB, dicoba berurutan bila macet: (kirim ZLP, KB per paket).
@@ -462,10 +470,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 out = installTry(apk.file, strategy)
                 tries++
                 if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
-                logWarn("Pengiriman terputus, mencoba lagi dengan cara lain (${tries + 1}/$maxTries)...")
+                if (viaUsb) strategy = (strategy + 1) % usbStrategies.size
+                logWarn("Mencoba lagi (${tries + 1}/$maxTries)" + if (viaUsb) ": ${strategyText(strategy)}" else "")
                 if (isConnected) Thread.sleep(1500) else tryReconnect()
                 if (!isConnected) break
-                if (viaUsb) strategy = (strategy + 1) % usbStrategies.size
             }
             if (viaUsb && isSuccess(out)) saveUsbStrategy(strategy)
             if (isSuccess(out)) {
@@ -475,7 +483,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 val reason = installFailureReason(out)
                 failed += apk.name to reason
                 logErr("Gagal: $reason")
-                logRaw(out)
+                if (out != stallError) logRaw(out)
             }
         }
         // Satu APK: hasilnya sudah jelas dari baris di atas dan baris penutup, tak perlu ringkasan.
@@ -608,6 +616,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val code = Regex("INSTALL_[A-Z_]+").find(out)?.value
         val friendly = code?.let { installReasons[it] }
         return when {
+            out == stallError ->
+                if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Connect USB ulang"
+                else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
             friendly != null -> "$friendly ($code)"
             code != null -> code
             out.isBlank() -> "tidak ada balasan dari HP target"
@@ -705,7 +716,6 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (viaUsb) {
             usbBridge.sendZlp = zlp
             usbBridge.resetStats()
-            logDetail("Mode USB: data dikirim per $kb KB, ZLP ${if (zlp) "aktif" else "mati"} (cara ${strategy + 1}/${usbStrategies.size})")
         }
         val stream = manager.openStream("exec:cmd package install -r -S $total")
         val lastActivity = java.util.concurrent.atomic.AtomicLong(System.currentTimeMillis())
@@ -755,13 +765,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 writeError = e
             }
             if (stalled.get()) {
-                val waitSec = if (sendingDone.get()) 180 else 20
-                val fase = if (sendingDone.get()) "menunggu hasil instalasi dari HP target" else "mengirim APK"
-                val saran = if (viaUsb) "Cabut-colok kabel USB, lalu Connect USB ulang."
-                            else "Pastikan HP target tetap menyala dan satu jaringan Wi-Fi, lalu Connect ulang."
-                logWarn("Proses macet saat $fase: tidak ada kemajuan selama $waitSec detik. $saran")
-                logDetail("Terkirim $sent dari $total byte." + if (viaUsb) " Lalu lintas USB: ${usbBridge.stats()}" else "")
-                return "Error: pengiriman macet (tidak ada kemajuan)"
+                val fase = if (sendingDone.get()) "menunggu hasil dari HP target (180 dtk)" else "mengirim APK (20 dtk tanpa kemajuan)"
+                logWarn("Macet saat $fase, terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)}")
+                if (viaUsb) logDetail("USB: ${usbBridge.stats()}")
+                return stallError
             }
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
             val out = readAll(stream.openInputStream(), pmDone)
