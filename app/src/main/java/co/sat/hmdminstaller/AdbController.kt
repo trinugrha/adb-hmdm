@@ -130,11 +130,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /**
      * Cara kirim APK lewat USB, dicoba berurutan bila macet: (kirim ZLP, KB per paket).
-     * Yang pertama = perilaku lama (aman untuk HP lama seperti SUNMI). Yang berhasil diingat permanen
+     * Yang pertama = 4 KB dengan ZLP (seperti adb di PC); cara kedua = perilaku lama tanpa ZLP (untuk HP lama seperti SUNMI). Yang berhasil diingat permanen
      * per jenis HP target (vendor:product ID USB), jadi pemasangan berikutnya tidak perlu menunggu macet dulu.
      */
-    private val usbStrategies = listOf(false to 4, true to 4, true to 16)
-    private val usbPrefs by lazy { appContext.getSharedPreferences("usb_strategy", Context.MODE_PRIVATE) }
+    private val usbStrategies = listOf(true to 4, false to 4, true to 16)
+    private val usbPrefs by lazy { appContext.getSharedPreferences("usb_strategy_v2", Context.MODE_PRIVATE) }
 
     private fun savedUsbStrategy(): Int {
         val key = usbBridge.deviceKey() ?: return 0
