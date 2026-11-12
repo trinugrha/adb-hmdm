@@ -54,11 +54,12 @@ Setiap proses tampil sebagai satu blok berwarna: judul + jam, isi, lalu penutup 
 [2/2] agent.apk (3.1 MB)
 > adb install -r agent.apk
 ✗ Gagal: versi lebih rendah dari yang terpasang (INSTALL_FAILED_VERSION_DOWNGRADE)
-    Failure [INSTALL_FAILED_VERSION_DOWNGRADE]
 Ringkasan: 1 berhasil, 1 gagal dari 2 APK
 ✗ agent.apk: versi lebih rendah dari yang terpasang
 ✗ Gagal: Install APK · 6.0 dtk
 ```
+Output mentah HP target (baris rincian) hanya ditampilkan bila menambah informasi: stack trace, baris "Performing ...", dan baris yang mengulang alasan di atasnya dibuang. Proses baru selalu didahului satu baris kosong. Baris yang terlipat sejajar dengan isi pesan.
+
 Warna ditentukan oleh `LogLevel`, format angka oleh `Fmt`. Aturan penulisan pesan ada di KDoc `LogLevel.kt`.
 
 ## Catatan teknis

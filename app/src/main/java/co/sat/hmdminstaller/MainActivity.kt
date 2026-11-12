@@ -14,6 +14,7 @@ import android.provider.OpenableColumns
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+import android.text.style.LeadingMarginSpan
 import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.os.SystemClock
@@ -894,8 +895,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Pembuka satu proses: "── Judul · 14:02:11". */
-    private fun logHead(title: String, at: Long = System.currentTimeMillis()) =
+    private fun logHead(title: String, at: Long = System.currentTimeMillis()) {
+        // Pesan lepas (mis. APK dilewati, koneksi terputus) tidak diakhiri baris kosong; pisahkan di sini.
+        val cur = txtLog.text
+        if (cur.isNotEmpty() && !cur.endsWith("\n\n")) logBlank()
         log(LogLevel.HEAD, "$title · ${Fmt.clock(at)}")
+    }
 
     /** Penutup satu proses: "✓ Selesai: Judul · 4.2 dtk" atau "✗ Gagal: Judul · 4.2 dtk", lalu baris kosong pemisah. */
     private fun logEnd(title: String, ok: Boolean, startedAt: Long) {
@@ -928,6 +933,9 @@ class MainActivity : AppCompatActivity() {
         val sp = SpannableString(text)
         sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         if (level.bold) sp.setSpan(StyleSpan(Typeface.BOLD), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        // Hanging indent: baris lanjutan akibat teks panjang sejajar dengan isi pesan, bukan dengan penanda.
+        val hang = (txtLog.paint.measureText("M") * level.marker.length).toInt()
+        if (hang > 0) sp.setSpan(LeadingMarginSpan.Standard(0, hang), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         txtLog.append(sp)
         trimLog()
         logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }

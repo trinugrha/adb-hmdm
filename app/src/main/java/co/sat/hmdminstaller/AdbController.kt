@@ -161,7 +161,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         var ok = false
         for (attempt in 1..3) {
             if (connect("127.0.0.1:$port", verbose = false)) { ok = true; break }
-            if (attempt < 3) logWarn("Percobaan $attempt/3 belum berhasil ($lastConnectReason). Setujui dialog di HP target, lalu mencoba lagi...")
+            if (attempt < 3) logWarn("Percobaan $attempt/3 gagal ($lastConnectReason), mencoba lagi. Setujui dialog di HP target bila muncul")
         }
         if (!ok) {
             usbBridge.stop()
@@ -455,7 +455,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 out = installTry(apk.file)
                 tries++
                 if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
-                logWarn("Mencoba lagi (${tries + 1}/$maxTries)")
+                logWarn("Percobaan $tries/$maxTries gagal (${installFailureReason(out)}), mencoba lagi...")
                 if (isConnected) Thread.sleep(1500) else tryReconnect()
                 if (!isConnected) break
             }
@@ -466,7 +466,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 val reason = installFailureReason(out)
                 failed += apk.name to reason
                 logErr("Gagal: $reason")
-                if (out != stallError) logRaw(out)
+                if (out != stallError) logRaw(out, reason)
             }
         }
         // Satu APK: hasilnya sudah jelas dari baris di atas dan baris penutup, tak perlu ringkasan.
@@ -487,8 +487,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logOk("Device owner aktif: ${OWNER_COMPONENT.substringBefore('/')}")
             return true
         }
-        logErr("Set device owner gagal: ${ownerFailureReason(out)}")
-        logRaw(out)
+        val reason = ownerFailureReason(out)
+        logErr("Set device owner gagal: $reason")
+        logRaw(out, reason)
         return false
     }
 
@@ -509,7 +510,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 else -> "pastikan HMDM sudah terpasang di HP target"
             }
             logErr("Set launcher default gagal: $reason")
-            logRaw(out)
+            logRaw(out, reason)
             return false
         }
         logOk("Launcher default: $HOME_COMPONENT")
@@ -550,7 +551,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 else -> "pastikan $KASPERSKY_PACKAGE terpasang di HP target"
             }
             logErr("Uninstall Kaspersky gagal: $reason")
-            logRaw(out)
+            logRaw(out, reason)
             return false
         }
         logOk("Kaspersky di-uninstall.")
@@ -575,11 +576,31 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     private fun isSuccess(out: String) = out.contains("Success", ignoreCase = true)
 
-    /** Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis. */
-    private fun logRaw(out: String, max: Int = 6) {
-        val lines = out.lines().map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith("Performing ") }
+    /**
+     * Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis.
+     * Dibuang: baris "Performing ...", stack trace Java ("at ...", "... N more"), dan baris yang
+     * hanya mengulang alasan yang sudah tampil di baris [shown] (mis. "Failure [INSTALL_FAILED_...]").
+     */
+    private fun logRaw(out: String, shown: String = "", max: Int = 6) {
+        val lines = out.lines().map { it.trim() }
+            .filter { it.isNotEmpty() && !isRawNoise(it) && !restates(it, shown) }
+            .distinct()
         lines.take(max).forEach { logDetail(it.take(240)) }
         if (lines.size > max) logDetail("... ${lines.size - max} baris lain tidak ditampilkan")
+    }
+
+    private val stackFrameRe = Regex("^at [\\w.$<>/]+\\(.*\\)$")
+    private val moreRe = Regex("^\\.\\.\\. \\d+ more$")
+
+    private fun isRawNoise(l: String) =
+        l.startsWith("Performing ") || stackFrameRe.matches(l) || moreRe.matches(l)
+
+    private fun restates(line: String, shown: String): Boolean {
+        if (shown.isEmpty()) return false
+        val body = line.removePrefix("Error:").trim()
+        if (body.isNotEmpty() && shown.contains(body, ignoreCase = true)) return true
+        val code = Regex("^Failure \\[([A-Z_]+)").find(line)?.groupValues?.get(1)
+        return code != null && shown.contains(code)
     }
 
     private val installReasons = mapOf(
@@ -674,7 +695,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
-                logWarn("Perintah '$cmd' tidak selesai dalam ${timeoutMs / 1000} detik, dilanjutkan.")
+                logWarn("Perintah '$cmd' tidak selesai dalam ${timeoutMs / 1000} dtk, dilanjutkan")
             }
         }
         error?.let { throw it }

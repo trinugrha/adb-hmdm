@@ -13,7 +13,6 @@ package co.sat.hmdminstaller
  * [2/2] agent.apk (3.1 MB)
  * > adb install -r agent.apk
  * ✗ Gagal: versi lebih rendah dari yang terpasang (INSTALL_FAILED_VERSION_DOWNGRADE)
- *     Failure [INSTALL_FAILED_VERSION_DOWNGRADE]
  * Ringkasan: 1 berhasil, 1 gagal dari 2 APK
  * ✗ agent.apk: versi lebih rendah dari yang terpasang
  * ✗ Gagal: Install APK · 6.0 dtk
@@ -23,6 +22,8 @@ package co.sat.hmdminstaller
  * - Tanpa titik di akhir (dibuang otomatis oleh `MainActivity.log`, kecuali baris DETAIL).
  * - HP yang sedang dipasang disebut "HP target"; "device owner" hanya untuk istilah Android.
  * - Ukuran dan durasi lewat [Fmt] (titik desimal tetap, mis. 12.3 MB, 4.2 dtk).
+ * - Percobaan ulang: "Percobaan 1/2 gagal (alasan), mencoba lagi..."; satuan waktu selalu "dtk".
+ * - DETAIL hanya untuk output mentah yang menambah informasi (bukan pengulangan alasan di baris ✗).
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {
