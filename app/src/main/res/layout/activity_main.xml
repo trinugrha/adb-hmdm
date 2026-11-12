@@ -488,10 +488,10 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnConnectUsb"
                         android:layout_width="match_parent"
-                        android:layout_height="36dp"
+                        android:layout_height="44dp"
                         android:layout_marginTop="8dp"
                         android:minHeight="0dp"
-                        android:textSize="13sp"
+                        android:textSize="14sp"
                         android:text="Pilih Perangkat" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -606,7 +606,7 @@
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
                         android:minHeight="0dp"
-                        android:text="Pasang Semua APK"
+                        android:text="Pasang Aplikasi"
                         android:textSize="14sp"
                         app:icon="@drawable/ic_download"
                         app:iconGravity="textStart"
@@ -776,7 +776,7 @@
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
                         android:minHeight="0dp"
-                        android:text="Jalankan set-device-owner"
+                        android:text="Jadikan HMDM Owner"
                         android:textSize="14sp"
                         app:icon="@drawable/ic_person"
                         app:iconGravity="textStart"
@@ -871,7 +871,7 @@
                         android:layout_height="44dp"
                         android:layout_marginTop="8dp"
                         android:minHeight="0dp"
-                        android:text="Set HMDM sebagai launcher default"
+                        android:text="Jadikan HMDM Default Launcher"
                         android:textSize="14sp"
                         app:icon="@drawable/ic_shield"
                         app:iconGravity="textStart"
@@ -926,7 +926,7 @@
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
                         android:minHeight="0dp"
-                        android:text="Otomatis: Install APK + Set Owner"
+                        android:text="Otomatis : Pasang Aplikasi + Jadikan Owner"
                         android:textSize="14sp"
                         app:icon="@drawable/ic_bolt"
                         app:iconGravity="textStart"
