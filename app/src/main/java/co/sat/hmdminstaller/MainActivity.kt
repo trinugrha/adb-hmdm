@@ -18,6 +18,8 @@ import android.text.style.StyleSpan
 import android.graphics.Typeface
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
@@ -38,6 +40,29 @@ import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
+
+    /** Swipe horizontal di mana saja pindah ke tab sebelah (Wireless <-> USB), selama tab tujuan tidak terkunci. */
+    private val swipeDetector by lazy {
+        GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
+                if (e1 == null || !::tabMode.isInitialized) return false
+                val dx = e2.x - e1.x
+                val dy = e2.y - e1.y
+                val d = resources.displayMetrics.density
+                if (Math.abs(dx) < 80 * d || Math.abs(dx) < 2 * Math.abs(dy) || Math.abs(vx) < 400 * d) return false
+                val target = tabMode.selectedTabPosition + if (dx < 0) 1 else -1
+                val tab = tabMode.getTabAt(target) ?: return false
+                if (!tab.view.isEnabled) return false
+                tab.select()
+                return true
+            }
+        })
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        swipeDetector.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
+    }
 
     private lateinit var edtPairIp: TextInputEditText
     private lateinit var edtPairPort: TextInputEditText
