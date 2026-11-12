@@ -128,31 +128,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     private val usbBridge by lazy { UsbAdbBridge(appContext) }
 
-    private fun strategyText(s: Int): String {
-        val (zlp, kb) = usbStrategies[s.coerceIn(0, usbStrategies.lastIndex)]
-        return "$kb KB per paket, ${if (zlp) "dengan" else "tanpa"} ZLP"
-    }
-
     /** Hasil installOne bila pengiriman macet; dipakai untuk mengenali kasus ini tanpa mencocokkan teks lagi. */
     private val stallError = "Error: pengiriman macet (tidak ada kemajuan)"
 
-    /**
-     * Cara kirim APK lewat USB, dicoba berurutan bila macet: (kirim ZLP, KB per paket).
-     * Yang pertama = 4 KB dengan ZLP (seperti adb di PC); cara kedua = perilaku lama tanpa ZLP (untuk HP lama seperti SUNMI). Yang berhasil diingat permanen
-     * per jenis HP target (vendor:product ID USB), jadi pemasangan berikutnya tidak perlu menunggu macet dulu.
-     */
-    private val usbStrategies = listOf(true to 4, false to 4, true to 16)
-    private val usbPrefs by lazy { appContext.getSharedPreferences("usb_strategy_v2", Context.MODE_PRIVATE) }
-
-    private fun savedUsbStrategy(): Int {
-        val key = usbBridge.deviceKey() ?: return 0
-        return try { usbPrefs.getInt(key, 0).coerceIn(0, usbStrategies.lastIndex) } catch (e: Throwable) { 0 }
-    }
-
-    private fun saveUsbStrategy(strategy: Int) {
-        val key = usbBridge.deviceKey() ?: return
-        try { usbPrefs.edit().putInt(key, strategy).apply() } catch (e: Throwable) { }
-    }
+    /** Cara kirim APK lewat USB: paket 4 KB dengan ZLP (seperti adb di PC). */
+    private val usbChunkKb = 4
 
     /** Daftar HP target di port USB (setara `adb devices`). Ringan, aman dipanggil dari UI thread. */
     fun listUsbTargets(): List<UsbAdbBridge.Target> =
@@ -467,21 +447,18 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             curIdx = i + 1; curTotal = apks.size; curName = apk.name
             onProgress?.invoke(curIdx, curTotal, curName, 0L, apk.file.length())
             val t0 = System.currentTimeMillis()
-            // Lewat USB: bila macet, ganti cara kirim (lihat usbStrategies). Lewat Wi-Fi: satu kali ulang.
-            val maxTries = if (viaUsb) usbStrategies.size else 2
-            var strategy = if (viaUsb) savedUsbStrategy() else 0
+            // Bila macet / gagal sementara: satu kali ulang.
+            val maxTries = 2
             var tries = 0
             var out = ""
             while (true) {
-                out = installTry(apk.file, strategy)
+                out = installTry(apk.file)
                 tries++
                 if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
-                if (viaUsb) strategy = (strategy + 1) % usbStrategies.size
-                logWarn("Mencoba lagi (${tries + 1}/$maxTries)" + if (viaUsb) ": ${strategyText(strategy)}" else "")
+                logWarn("Mencoba lagi (${tries + 1}/$maxTries)")
                 if (isConnected) Thread.sleep(1500) else tryReconnect()
                 if (!isConnected) break
             }
-            if (viaUsb && isSuccess(out)) saveUsbStrategy(strategy)
             if (isSuccess(out)) {
                 ok++
                 logOk("Terpasang · ${Fmt.duration(System.currentTimeMillis() - t0)}")
@@ -704,23 +681,22 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return bos.toString("UTF-8")
     }
 
-    private fun installTry(file: File, strategy: Int = 0): String =
-        try { installOne(file, strategy) } catch (e: Throwable) { "Error: ${e.message ?: e.javaClass.simpleName}" }
+    private fun installTry(file: File): String =
+        try { installOne(file) } catch (e: Throwable) { "Error: ${e.message ?: e.javaClass.simpleName}" }
 
     /** Kegagalan tanpa pesan dari pm (stream putus), bukan penolakan install seperti INSTALL_FAILED_*. */
     private fun isTransient(out: String): Boolean =
         out.isBlank() || (out.startsWith("Error:") && !out.contains("INSTALL_", ignoreCase = true))
 
     /** Setara `adb install -r`: stream APK ke `cmd package install -S <ukuran>` lewat service exec. */
-    private fun installOne(file: File, strategy: Int = 0): String {
+    private fun installOne(file: File): String {
         val total = file.length()
         // Lewat USB, adbd di HP lama (Android 7/8, mis. SUNMI) membatasi payload per paket (4 KB).
         // Paket WRTE yang lebih besar membuat transfer macet di 0%. Lewat Wi-Fi 32 KB aman.
-        // Sebagian HP lain (mis. terminal POS) macet di 0% tanpa ZLP; strategi USB bergantian mencoba keduanya.
-        val (zlp, kb) = usbStrategies[strategy.coerceIn(0, usbStrategies.lastIndex)]
-        val chunk = if (viaUsb) kb * 1024 else 32 * 1024
+        // Tanpa ZLP sebagian HP macet di 0%, jadi lewat USB ZLP selalu dikirim.
+        val chunk = if (viaUsb) usbChunkKb * 1024 else 32 * 1024
         if (viaUsb) {
-            usbBridge.sendZlp = zlp
+            usbBridge.sendZlp = true
             usbBridge.resetStats()
         }
         val stream = manager.openStream("exec:cmd package install -r -S $total")
