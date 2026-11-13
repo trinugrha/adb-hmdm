@@ -179,8 +179,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Dilewati untuk sesi USB dan loopback (127.0.0.1). Pemantau di Activity lalu menandai koneksi terputus.
      */
     fun onWifiLost() {
-        if (viaUsb || !isConnected) return
+        if (viaUsb || !connCache) return
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
+        connCache = false
         logWarn("Wi-Fi terputus, koneksi ADB ditutup.")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
@@ -192,6 +193,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Bersihkan sisa koneksi USB setelah kabel dicabut (tanpa menulis log). */
     fun dropUsb() {
         lastAddr = null
+        connCache = false
         try { usbBridge.stop() } catch (e: Throwable) { }
         viaUsb = false
         try { mgr?.disconnect() } catch (e: Throwable) { }
@@ -213,6 +215,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Tutup koneksi & lepas resource (dipanggil saat Activity dihancurkan). */
     fun close() {
+        connCache = false
         keepAlive(false)
         holdLocks(false)
         try { usbBridge.stop() } catch (e: Throwable) { }
@@ -221,15 +224,27 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         try { m.close() } catch (e: Throwable) { }
     }
 
-    val isConnected: Boolean
+    /** Menanyakan library langsung. Bisa tertahan lock library saat soket mati: JANGAN dipanggil dari main thread. */
+    private val libConnected: Boolean
         get() = try { mgr?.isConnected ?: false } catch (e: Throwable) { false }
+
+    @Volatile private var connCache = false
+
+    /**
+     * Status koneksi untuk UI / main thread: hanya membaca cache, tidak menyentuh library (tidak bisa hang).
+     * Cache diperbarui oleh [syncConnected] (thread pemantau) dan tiap connect/disconnect.
+     */
+    val isConnected: Boolean get() = connCache
+
+    /** Cek library lalu perbarui cache. Panggil dari thread latar saja. */
+    fun syncConnected(): Boolean { val c = libConnected; connCache = c; return c }
 
     /**
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
      * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
      */
     fun probe(): Boolean {
-        if (!isConnected) return false
+        if (!libConnected) return false
         var stream: io.github.muntashirakon.adb.AdbStream? = null
         val watchdog = Thread {
             try { Thread.sleep(8_000); stream?.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
@@ -251,7 +266,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Memakai `dpm list-owners`; bila tidak didukung, fallback ke `dumpsys device_policy`.
      */
     fun queryDeviceOwner(): OwnerState {
-        if (!isConnected) return OwnerState.Unknown
+        if (!libConnected) return OwnerState.Unknown
         return try {
             // Quiet: ini cek latar belakang, jangan memenuhi log dengan peringatan timeout.
             val a = shell("dpm list-owners", 5_000, quiet = true)
@@ -296,7 +311,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * `cmd package resolve-activity --brief -a MAIN -c HOME`. Baris terakhir berisi pkg/.Kelas.
      */
     fun queryDefaultLauncher(): HomeState {
-        if (!isConnected) return HomeState.Unknown
+        if (!libConnected) return HomeState.Unknown
         return try {
             val out = shell(
                 "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME",
@@ -382,7 +397,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val (host, port) = split(addr) ?: run { logErr("Alamat connect tidak valid: $addr"); return false }
         // connect() di library langsung "sukses" bila masih ada koneksi lama (mis. ke IP/port lain),
         // jadi putuskan dulu agar benar-benar menyambung ke alamat yang diminta.
-        if (isConnected) {
+        if (libConnected) {
             try { manager.disconnect() } catch (e: Throwable) { }
         }
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
@@ -414,6 +429,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             }
         }
         lastConnectReason = reason
+        syncConnected()
         if (ok) logOk("Terhubung: $addr") else if (verbose) logErr("Connect gagal: $reason")
         return ok
     }
@@ -425,6 +441,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         keepAlive(false)
         return try {
             manager.disconnect()
+            connCache = false
             if (viaUsb) { usbBridge.stop(); viaUsb = false }
             logOk("Koneksi diputus.")
             true
@@ -450,7 +467,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
-            if (!isConnected && !tryReconnect()) {
+            if (!libConnected && !tryReconnect()) {
                 failed += apk.name to "koneksi terputus"
                 return@forEachIndexed
             }
@@ -467,8 +484,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 tries++
                 if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
                 logWarn("Percobaan $tries/$maxTries gagal (${installFailureReason(out)}), mencoba lagi...")
-                if (isConnected) Thread.sleep(1500) else tryReconnect()
-                if (!isConnected) break
+                if (libConnected) Thread.sleep(1500) else tryReconnect()
+                if (!libConnected) break
             }
             if (isSuccess(out)) {
                 ok++
@@ -580,7 +597,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     // ---------- internal ----------
 
     private fun ensureConnected(): Boolean {
-        if (isConnected) return true
+        if (libConnected) return true
         logWarn(MSG_NOT_CONNECTED)
         return false
     }

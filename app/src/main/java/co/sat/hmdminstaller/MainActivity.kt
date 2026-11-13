@@ -433,7 +433,7 @@ class MainActivity : AppCompatActivity() {
     private fun pollConnection() {
         try {
             val wasBusy = busy
-            var alive = adb.isConnected
+            var alive = adb.syncConnected()
             var cableGone = false
             // Kabel USB dicabut: terdeteksi seketika (tanpa menunggu probe 3x gagal).
             if (!wasBusy && adb.usbCableGone) {
