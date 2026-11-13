@@ -187,6 +187,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
         forcedDown = true
         connCache = false
+        lastDropReason = "Wi-Fi HP teknisi hilang"
         logWarn("Wi-Fi terputus, koneksi ADB ditutup")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
@@ -248,17 +249,26 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     val isConnected: Boolean get() = connCache
 
     /** Cek library lalu perbarui cache. Panggil dari thread latar saja. */
-    fun syncConnected(): Boolean { val c = libConnected; connCache = c; return c }
+    fun syncConnected(): Boolean {
+        val c = libConnected
+        if (!c && connCache && !forcedDown) lastDropReason = "library melaporkan soket tertutup (HP target atau jaringan menutup koneksi)"
+        connCache = c
+        return c
+    }
 
     /**
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
      * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
      */
+    /** Alasan probe/sesi terakhir gagal, untuk diagnosis. Ditampilkan di log saat koneksi dinyatakan putus. */
+    @Volatile var lastDropReason: String = ""
+
     fun probe(addr: String? = lastAddr): Boolean {
-        if (!libConnected) return false
+        if (!libConnected) { lastDropReason = "library melaporkan soket sudah tertutup (HP target atau jaringan menutup koneksi)"; return false }
         val ok = java.util.concurrent.atomic.AtomicBoolean(false)
         val done = java.util.concurrent.CountDownLatch(1)
         val holder = java.util.concurrent.atomic.AtomicReference<io.github.muntashirakon.adb.AdbStream?>(null)
+        val why = java.util.concurrent.atomic.AtomicReference("")
         // openStream() sendiri bisa menggantung di soket yang mati, jadi seluruhnya dijalankan di thread terpisah
         // dan pemanggil (thread pemantau) menunggu paling lama 6 detik.
         Thread {
@@ -267,14 +277,20 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (reachable(addr)) {
                     val s = manager.openStream("shell:echo ok")
                     holder.set(s)
-                    ok.set(readAll(s.openInputStream()).contains("ok"))
-                }
+                    val out = readAll(s.openInputStream())
+                    ok.set(out.contains("ok"))
+                    if (!ok.get()) why.set("jawaban shell tidak sesuai: '${out.take(40)}'")
+                } else why.set("TCP ke $addr tidak terjangkau")
             } catch (e: Throwable) {
+                why.set("${e.javaClass.simpleName}: ${e.message ?: "-"}")
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
         val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
-        return finished && ok.get()
+        if (!finished) why.set("tidak ada jawaban dari HP target dalam 6 detik")
+        val result = finished && ok.get()
+        if (!result) lastDropReason = why.get().ifEmpty { "probe gagal" }
+        return result
     }
 
     private fun reachable(addr: String?): Boolean {
@@ -287,6 +303,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Sesi dinyatakan mati (probe gagal berulang): tandai putus dan tutup soket di thread latar. */
     fun markDead() {
+        logWarn("Probe gagal berulang: ${lastDropReason.ifEmpty { "alasan tidak diketahui" }}")
         forcedDown = true
         connCache = false
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }

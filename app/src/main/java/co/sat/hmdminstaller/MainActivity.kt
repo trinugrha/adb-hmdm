@@ -448,17 +448,17 @@ class MainActivity : AppCompatActivity() {
                 probeFails = 0
             }
             val now = System.currentTimeMillis()
-            // Probe sungguhan tiap ±8 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
-            if (alive && !wasBusy && now - lastProbe >= 3_000) {
+            // Probe sungguhan tiap ±10 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
+            if (alive && !wasBusy && now - lastProbe >= 10_000) {
                 lastProbe = now
                 // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
                 synchronized(adb.probeLock) {
                     if (!busy) {
                         alive = adb.probe()
-                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 2x gagal beruntun.
+                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
                         if (alive) probeFails = 0 else {
                             val n = ++probeFails
-                            if (n < 2) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
+                            if (n < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
                         }
                     }
                 }
@@ -473,7 +473,7 @@ class MainActivity : AppCompatActivity() {
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}")
+            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}" + adb.lastDropReason.let { if (it.isEmpty()) "" else "\nPenyebab: $it" })
             showUsbDevice(null)
             lostAddr = addr
             adb.sessionLabel = null
