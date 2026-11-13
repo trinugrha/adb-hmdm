@@ -463,7 +463,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 advice = "Pastikan satu jaringan Wi-Fi dan Wireless debugging aktif. Port connect berubah setiap Wireless debugging dinyalakan ulang, jadi cek port terbaru"
                 detail = generateSequence(e) { it.cause }.take(4)
                     .joinToString(" <- ") { "${it.javaClass.simpleName}: ${it.message ?: "-"}" }
-                try { manager.disconnect() } catch (_: Throwable) { }
+                try { manager.disconnect() } catch (e: Throwable) { }
             }
         }
         lastConnectReason = reason
