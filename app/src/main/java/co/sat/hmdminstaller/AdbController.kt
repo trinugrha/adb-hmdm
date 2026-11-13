@@ -181,6 +181,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun onWifiLost() {
         if (viaUsb || !connCache) return
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
+        forcedDown = true
         connCache = false
         logWarn("Wi-Fi terputus, koneksi ADB ditutup.")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
@@ -226,7 +227,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Menanyakan library langsung. Bisa tertahan lock library saat soket mati: JANGAN dipanggil dari main thread. */
     private val libConnected: Boolean
-        get() = try { mgr?.isConnected ?: false } catch (e: Throwable) { false }
+        get() = !forcedDown && try { mgr?.isConnected ?: false } catch (e: Throwable) { false }
+
+    /** true setelah Wi-Fi hilang: sesi dianggap putus walau library belum sadar (soket mati diam-diam). Dihapus saat connect baru. */
+    @Volatile private var forcedDown = false
 
     @Volatile private var connCache = false
 
@@ -397,13 +401,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val (host, port) = split(addr) ?: run { logErr("Alamat connect tidak valid: $addr"); return false }
         // connect() di library langsung "sukses" bila masih ada koneksi lama (mis. ke IP/port lain),
         // jadi putuskan dulu agar benar-benar menyambung ke alamat yang diminta.
-        if (libConnected) {
+        if (forcedDown || libConnected) {
             try { manager.disconnect() } catch (e: Throwable) { }
         }
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
         val maxAttempts = 2
         var ok = false
         var reason = ""
+        forcedDown = false
         if (verbose) logCmd("adb connect $addr")
         for (attempt in 1..maxAttempts) {
             if (attempt > 1) {
