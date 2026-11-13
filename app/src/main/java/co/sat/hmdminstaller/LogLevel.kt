@@ -24,8 +24,11 @@ package co.sat.hmdminstaller
  * - Ukuran dan durasi lewat [Fmt] (titik desimal tetap, mis. 12.3 MB, 4.2 dtk).
  * - Percobaan ulang: "Percobaan 1/2 gagal (alasan), mencoba lagi..."; satuan waktu selalu "dtk".
  *   Alasan di sini singkat (tanpa saran perbaikan); saran lengkap hanya di baris ✗ akhir.
+ * - Baris ✗ akhir berbentuk "<Aksi> gagal: <alasan singkat>. <Saran diawali huruf besar>" (satu bentuk untuk connect, sambung ulang, install).
+ * - Status "belum ada / belum diset" memakai WARN (sama dengan warna kotak status di layar), bukan OK.
  * - Sambung ulang otomatis (saat install) tidak mencetak "> adb connect" per percobaan, cukup hasil akhirnya.
  * - Istilah Android ditulis huruf kecil di tengah kalimat: "device owner", "profile owner".
+ * - Rantai exception teknis (mis. "IOException: ... <- ...") hanya di baris DETAIL; baris ✗ memuat alasan singkat + saran.
  * - DETAIL hanya untuk output mentah yang menambah informasi (bukan pengulangan alasan di baris ✗).
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */

@@ -508,13 +508,16 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton("Batal", null)
             .setOnDismissListener { cancel.set(true) }
             .create()
+        val shownAt = System.currentTimeMillis()
         dialog.show()
         io.execute {
             val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _, _ -> name == session.serviceName }
             if (found == null) {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
-                    log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    logHead("Pairing QR", shownAt)
+                    log(LogLevel.ERR, "HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    logEnd("Pairing QR", false, shownAt)
                 }
                 return@execute
             }

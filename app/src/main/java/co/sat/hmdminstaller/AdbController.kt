@@ -146,7 +146,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return null
         }
         logStep("Perangkat USB: ${t.label}")
-        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini")
+        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
         if (!usbBridge.requestPermission(t.device)) {
             logErr("Izin akses USB ditolak atau tidak dijawab")
             return null
@@ -210,9 +210,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             if (i > 0) Thread.sleep(2000)
             if (connect(addr, verbose = false)) return true
         }
-        val hint = if (viaUsb) "pastikan kabel USB masih terpasang dan USB debugging di HP target aktif"
-                   else "pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi"
-        logErr("Sambung ulang gagal ($lastConnectReason): $hint")
+        val hint = if (viaUsb) "Pastikan kabel USB masih terpasang dan USB debugging di HP target aktif"
+                   else "Pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi"
+        // Bentuk sama dengan "Connect gagal: alasan. saran".
+        logErr("Sambung ulang gagal: $lastConnectReason. $hint")
         return false
     }
 
@@ -377,7 +378,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         when (st) {
             is OwnerState.Hmdm -> logOk("Device owner: HMDM (${st.pkg})")
             is OwnerState.Other -> logWarn("Device owner: aplikasi lain (${st.pkg})")
-            is OwnerState.None -> logOk("Belum ada device owner di HP target")
+            is OwnerState.None -> logWarn("Belum ada device owner di HP target")
             is OwnerState.Unknown -> logErr("Status device owner tidak terbaca: HP target tidak menjawab")
         }
         return st
@@ -429,7 +430,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
         val maxAttempts = 2
         var ok = false
-        var reason = ""
+        var reason = ""   // singkat, tampil di baris percobaan ulang
+        var advice = ""   // saran perbaikan, hanya di baris ✗ akhir
+        var detail = ""   // rantai exception teknis, hanya sebagai baris rincian
         forcedDown = false
         if (verbose) logCmd("adb connect $addr")
         for (attempt in 1..maxAttempts) {
@@ -437,10 +440,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (verbose) logWarn("Percobaan ${attempt - 1}/$maxAttempts gagal ($reason), mencoba lagi...")
                 Thread.sleep(1500)
             }
+            detail = ""
             try {
                 val result: Any? = manager.connect(host, port)
                 if (result == false || !manager.isConnected) {
                     reason = "tidak terhubung"
+                    advice = "Pastikan Wireless debugging aktif di HP target dan port connect benar"
                 } else if (probe(addr)) {
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
@@ -448,20 +453,41 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     keepAlive(true)
                     break
                 } else {
-                    reason = "HP target tidak menjawab; belum di-pair, Wireless debugging mati, atau port salah"
+                    reason = "HP target tidak menjawab"
+                    advice = "Pastikan sudah di-pair, Wireless debugging aktif, dan port connect benar"
                     try { manager.disconnect() } catch (e: Throwable) { }
                 }
             } catch (e: Throwable) {
                 android.util.Log.e("AdbConnect", "connect $addr", e)
-                reason = generateSequence(e) { it.cause }.take(4)
+                reason = connectErrorReason(e)
+                advice = "Pastikan satu jaringan Wi-Fi dan Wireless debugging aktif. Port connect berubah setiap Wireless debugging dinyalakan ulang, jadi cek port terbaru"
+                detail = generateSequence(e) { it.cause }.take(4)
                     .joinToString(" <- ") { "${it.javaClass.simpleName}: ${it.message ?: "-"}" }
                 try { manager.disconnect() } catch (_: Throwable) { }
             }
         }
         lastConnectReason = reason
         syncConnected()
-        if (ok) logOk("Terhubung: $addr") else if (verbose) logErr("Connect gagal: $reason")
+        if (ok) {
+            logOk("Terhubung: $addr")
+        } else if (verbose) {
+            logErr("Connect gagal: $reason. $advice")
+            if (detail.isNotEmpty()) logDetail(detail.take(240))
+        }
         return ok
+    }
+
+    /** Alasan singkat (tanpa saran) dari exception saat connect. Rantai teknis lengkap dicetak terpisah sebagai DETAIL. */
+    private fun connectErrorReason(e: Throwable): String {
+        val chain = generateSequence(e) { it.cause }.take(4).toList()
+        val text = chain.joinToString(" ") { it.message.orEmpty() }.lowercase()
+        return when {
+            chain.any { it is java.net.SocketTimeoutException } || "timed out" in text -> "waktu habis, HP target tidak menjawab"
+            chain.any { it is java.net.ConnectException } || "refused" in text -> "koneksi ditolak oleh HP target"
+            chain.any { it is java.net.UnknownHostException || it is java.net.NoRouteToHostException } || "unreachable" in text -> "HP target tidak terjangkau"
+            chain.any { it is javax.net.ssl.SSLException } || "handshake" in text || "certificate" in text -> "jabat tangan TLS gagal"
+            else -> "koneksi gagal (${e.javaClass.simpleName})"
+        }
     }
 
     fun disconnect(): Boolean {
