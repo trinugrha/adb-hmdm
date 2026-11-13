@@ -409,7 +409,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Cari port connect HP target (layanan mDNS `_adb-tls-connect`) pada [host] yang sama. Null bila tidak ketemu. */
     fun findConnectAddr(host: String, timeoutMs: Long = 15_000): String? {
         logStep("Mencari port connect $host lewat mDNS...")
-        return AdbDiscovery.find(appContext, AdbDiscovery.TYPE_CONNECT, timeoutMs, java.util.concurrent.atomic.AtomicBoolean(false)) { _, h -> h == host }?.addr
+        return AdbDiscovery.find(appContext, AdbDiscovery.TYPE_CONNECT, timeoutMs, java.util.concurrent.atomic.AtomicBoolean(false)) { _, h, p -> h == host && reachable("$h:$p") }?.addr
     }
 
     @Volatile private var lastConnectReason = ""
@@ -427,7 +427,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             try { manager.disconnect() } catch (e: Throwable) { }
         }
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
-        val maxAttempts = 2
+        val maxAttempts = 4
         var ok = false
         var reason = ""
         forcedDown = false
@@ -452,7 +452,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     try { manager.disconnect() } catch (e: Throwable) { }
                 }
             } catch (e: Throwable) {
-                reason = e.message ?: e.javaClass.simpleName
+                android.util.Log.e("AdbConnect", "connect $addr", e)
+                reason = generateSequence(e) { it.cause }.take(4)
+                    .joinToString(" <- ") { "${it.javaClass.simpleName}: ${it.message ?: "-"}" }
+                try { manager.disconnect() } catch (_: Throwable) { }
             }
         }
         lastConnectReason = reason

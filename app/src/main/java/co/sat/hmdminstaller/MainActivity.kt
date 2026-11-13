@@ -510,7 +510,7 @@ class MainActivity : AppCompatActivity() {
             .create()
         dialog.show()
         io.execute {
-            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _ -> name == session.serviceName }
+            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _, _ -> name == session.serviceName }
             if (found == null) {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
@@ -530,6 +530,8 @@ class MainActivity : AppCompatActivity() {
     private fun doPairQr(f: AdbDiscovery.Found, password: String): Boolean {
         if (!doPair(f.addr, password)) return false
         // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
+        // Beri waktu adbd di HP target siap menerima koneksi TLS setelah pairing.
+        try { Thread.sleep(2_500) } catch (e: InterruptedException) { }
         val ca = adb.findConnectAddr(f.host)
         if (ca == null) {
             log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect")

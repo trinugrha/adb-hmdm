@@ -54,13 +54,13 @@ object AdbDiscovery {
     }
 
     /**
-     * Cari satu layanan [type] yang lolos [accept] (nama layanan, host). Memblokir sampai ketemu,
+     * Cari satu layanan [type] yang lolos [accept] (nama layanan, host, port). Memblokir sampai ketemu,
      * [timeoutMs] habis, atau [cancel] bernilai true. Panggil dari thread latar. null bila tidak ketemu.
      */
     @Suppress("DEPRECATION")
     fun find(
         context: Context, type: String, timeoutMs: Long, cancel: AtomicBoolean,
-        accept: (name: String, host: String) -> Boolean
+        accept: (name: String, host: String, port: Int) -> Boolean
     ): Found? {
         val nsd = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
         val latch = CountDownLatch(1)
@@ -79,7 +79,7 @@ object AdbDiscovery {
                     }
                     override fun onServiceResolved(s: NsdServiceInfo) {
                         val host = s.host?.hostAddress?.substringBefore('%')
-                        if (host != null && s.port > 0 && accept(s.serviceName, host)) {
+                        if (host != null && s.port > 0 && accept(s.serviceName, host, s.port)) {
                             result.set(Found(s.serviceName, host, s.port))
                             latch.countDown()
                         }
