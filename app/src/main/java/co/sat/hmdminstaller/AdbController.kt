@@ -49,10 +49,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun logOk(s: String) = sink(LogLevel.OK, s)
     private fun logWarn(s: String) = sink(LogLevel.WARN, s)
     private fun logErr(s: String) = sink(LogLevel.ERR, s)
-    private fun logDetail(s: String) = sink(LogLevel.DETAIL, s)
+    private fun logDetail(s: String) =
+        sink(LogLevel.DETAIL, if (s.length > DETAIL_MAX) s.take(DETAIL_MAX).trimEnd() + "…" else s)
     private fun logSummary(s: String) = sink(LogLevel.SUMMARY, s)
 
     companion object {
+        /** Panjang maksimum satu baris DETAIL; selebihnya dipotong dan diakhiri "…". */
+        private const val DETAIL_MAX = 240
+
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
         /** Activity launcher HMDM yang dijadikan home default. */
@@ -152,7 +156,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
-            logErr("Gagal membuka USB: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Buka USB gagal: ${e.message ?: e.javaClass.simpleName}")
             return null
         }
         logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
@@ -166,7 +170,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ok) {
             usbBridge.stop()
             viaUsb = false
-            logErr("Connect USB gagal: pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui")
+            logErr("Connect USB gagal: ${lastConnectReason.ifBlank { "tidak terhubung" }}. Pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui")
             return null
         }
         viaUsb = true
@@ -395,7 +399,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             // Ditampung sebagai Any? agar aman baik pair() mengembalikan Boolean maupun void.
             val result: Any? = manager.pair(host, port, code)
             if (result == false) {
-                logErr("Pairing gagal: ditolak HP target (cek kode dan port pairing)")
+                logErr("Pairing gagal: ditolak HP target. Cek kode dan port pairing")
                 false
             } else {
                 logOk("Pairing berhasil: $addr")
@@ -472,7 +476,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logOk("Terhubung: $addr")
         } else if (verbose) {
             logErr("Connect gagal: $reason. $advice")
-            if (detail.isNotEmpty()) logDetail(detail.take(240))
+            if (detail.isNotEmpty()) logDetail(detail)
         }
         return ok
     }
@@ -519,7 +523,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         apks.forEachIndexed { i, apk ->
             logStep("[${i + 1}/${apks.size}] ${apk.name} (${apk.sizeText})")
             if (!apk.file.exists()) {
-                logErr("File tidak ditemukan di penyimpanan sementara")
+                logErr("Gagal: file tidak ditemukan di penyimpanan sementara")
                 failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
@@ -611,7 +615,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
         if (!isSuccess(out)) {
-            logErr("Hapus data Kaspersky gagal: pastikan $KASPERSKY_PACKAGE terpasang di HP target")
+            logErr("Hapus data Kaspersky gagal: perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target")
             logRaw(out)
             return false
         }
@@ -634,7 +638,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     "diblokir kebijakan device owner atau profile owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
                     "Kaspersky sudah tidak terpasang"
-                else -> "pastikan $KASPERSKY_PACKAGE terpasang di HP target"
+                else -> "perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target"
             }
             logErr("Uninstall Kaspersky gagal: $reason")
             logRaw(out, reason)
@@ -672,7 +676,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val lines = out.lines().map { it.trim() }
             .filter { it.isNotEmpty() && !isRawNoise(it) && !restates(it, shown) }
             .distinct()
-        lines.take(max).forEach { logDetail(it.take(240)) }
+        lines.take(max).forEach { logDetail(it) }
         if (lines.size > max) logDetail("... ${lines.size - max} baris lain tidak ditampilkan")
     }
 
@@ -783,7 +787,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
-                logWarn("Perintah '$cmd' tidak selesai dalam ${timeoutMs / 1000} dtk, dilanjutkan")
+                logWarn("Perintah '$cmd' tidak selesai dalam ${Fmt.duration(timeoutMs)}, dilanjutkan")
             }
         }
         error?.let { throw it }

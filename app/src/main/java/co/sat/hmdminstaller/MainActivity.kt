@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 apks.clear()
                 apks.addAll(items)
-                if (failed > 0) log(LogLevel.ERR, "Gagal menyalin $failed file APK")
+                if (failed > 0) log(LogLevel.ERR, "Salin APK gagal: $failed file")
                 refreshApkList()
             }
         }
@@ -637,7 +637,7 @@ class MainActivity : AppCompatActivity() {
             synchronized(adb.probeLock) { }
             var ok = false
             try { ok = work() } catch (e: Throwable) {
-                runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.message ?: e.javaClass.simpleName}") }
+                runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.javaClass.simpleName}${e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}") }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs } } catch (e: Throwable) { }
@@ -1025,7 +1025,7 @@ class MainActivity : AppCompatActivity() {
             ApkItem(name, f)
         } catch (e: Exception) {
             f.delete() // jangan tinggalkan file setengah jadi
-            runOnUiThread { log(LogLevel.ERR, "Gagal membaca $name: ${e.message ?: e.javaClass.simpleName}") }
+            runOnUiThread { log(LogLevel.ERR, "Salin $name gagal: ${e.message ?: e.javaClass.simpleName}") }
             null
         }
     }
