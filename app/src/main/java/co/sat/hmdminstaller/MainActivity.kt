@@ -206,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         buttons = listOf(btnPair, btnPairQr, btnConnect, btnConnectUsb, btnDisconnect,
             btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
         needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
-        blockedWhenConnected = setOf(btnConnect, btnConnectUsb)
+        blockedWhenConnected = setOf(btnPair, btnPairQr, btnConnect, btnConnectUsb)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
@@ -271,17 +271,22 @@ class MainActivity : AppCompatActivity() {
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
         btnPair.setOnClickListener {
+            if (connectedAddr != null && adb.isConnected) return@setOnClickListener
             val addr = addr(edtPairIp.text.toString(), edtPairPort.text.toString())
             val code = clean(edtPairCode.text.toString())
             run("Pairing") { doPair(addr, code) }
         }
-        btnPairQr.setOnClickListener { showQrPairing() }
+        btnPairQr.setOnClickListener {
+            if (connectedAddr != null && adb.isConnected) return@setOnClickListener
+            showQrPairing()
+        }
         btnConnect.setOnClickListener {
+            if (connectedAddr != null && adb.isConnected) return@setOnClickListener
             val addr = addr(edtConnIp.text.toString(), edtConnPort.text.toString())
             run("Connect") { doConnect(addr) }
         }
         btnConnectUsb.setOnClickListener {
-            if (busy) return@setOnClickListener
+            if (busy || (connectedAddr != null && adb.isConnected)) return@setOnClickListener
             val targets = adb.listUsbTargets()
             if (targets.isEmpty()) {
                 val t0 = System.currentTimeMillis()
