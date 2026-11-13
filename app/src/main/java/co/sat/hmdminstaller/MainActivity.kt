@@ -460,6 +460,7 @@ class MainActivity : AppCompatActivity() {
             showUsbDevice(null)
             lostAddr = addr
             adb.sessionLabel = null
+            adb.dropWireless()
             connectedAddr = null
             connectedSince = 0L
             ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
@@ -494,19 +495,46 @@ class MainActivity : AppCompatActivity() {
             .setTitle("Scan QR untuk Pair")
             .setView(box)
             .setNegativeButton("Batal", null)
-            .setOnDismissListener { cancel.set(true) }
             .create()
         dialog.show()
+        // Pantau jaringan: bila Wi-Fi putus saat menunggu scan, batalkan segera (bukan menunggu 2 menit tanpa kabar).
+        val netLost = java.util.concurrent.atomic.AtomicBoolean(false)
+        val discoveryError = java.util.concurrent.atomic.AtomicInteger(0)
+        var cm: android.net.ConnectivityManager? = null
+        var netCb: android.net.ConnectivityManager.NetworkCallback? = null
+        try {
+            val c = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+            if (c.activeNetwork != null) { // tanpa jaringan aktif (mis. HP teknisi jadi hotspot) pemantauan dilewati
+                val cb = object : android.net.ConnectivityManager.NetworkCallback() {
+                    override fun onLost(network: android.net.Network) {
+                        netLost.set(true); cancel.set(true)
+                        runOnUiThread { if (dialog.isShowing) dialog.dismiss() }
+                    }
+                }
+                c.registerDefaultNetworkCallback(cb)
+                cm = c; netCb = cb
+            }
+        } catch (e: Throwable) { netCb = null }
+        fun stopNetWatch() { try { netCb?.let { cm?.unregisterNetworkCallback(it) } } catch (e: Throwable) { }; netCb = null }
+        dialog.setOnDismissListener { cancel.set(true); stopNetWatch() }
         io.execute {
-            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _ -> name == session.serviceName }
+            val found = try {
+                AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel, { discoveryError.set(it) }) { name, _ -> name == session.serviceName }
+            } catch (e: Throwable) { null }
             if (found == null) {
-                if (!cancel.get()) runOnUiThread {
-                    dialog.dismiss()
-                    log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi.")
+                runOnUiThread {
+                    stopNetWatch()
+                    if (dialog.isShowing) dialog.dismiss()
+                    when {
+                        netLost.get() -> log(LogLevel.ERR, "Pairing QR dibatalkan: jaringan Wi-Fi terputus. Sambungkan kembali Wi-Fi lalu buka QR lagi.")
+                        discoveryError.get() != 0 -> log(LogLevel.ERR, "Pairing QR: pencarian layanan mDNS gagal dimulai (kode ${discoveryError.get()}). Periksa Wi-Fi, lalu coba lagi.")
+                        !cancel.get() -> log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi.")
+                    }
                 }
                 return@execute
             }
             runOnUiThread {
+                stopNetWatch()
                 dialog.dismiss()
                 if (busy) return@runOnUiThread
                 edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString())
@@ -525,8 +553,7 @@ class MainActivity : AppCompatActivity() {
         }
         val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
         runOnUiThread { edtConnIp.setText(ip); edtConnPort.setText(port) }
-        doConnect(ca)
-        return true
+        return doConnect(ca)
     }
 
     // ---------- Langkah (jalan di thread kerja) ----------

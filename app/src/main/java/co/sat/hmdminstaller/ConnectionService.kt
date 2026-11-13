@@ -28,7 +28,21 @@ class ConnectionService : Service() {
         }
     }
 
+    // startForeground secepat mungkin: bila stopService() datang sebelum ini (koneksi gagal/putus cepat),
+    // Android melempar ForegroundServiceDidNotStartInTimeException dan aplikasi crash.
+    override fun onCreate() {
+        super.onCreate()
+        goForeground()
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (!goForeground()) { stopSelf(); return START_NOT_STICKY }
+        handler.removeCallbacks(check)
+        handler.postDelayed(check, 5_000)
+        return START_NOT_STICKY
+    }
+
+    private fun goForeground(): Boolean {
         createChannel()
         val open = PendingIntent.getActivity(
             this, 0, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP),
@@ -41,11 +55,11 @@ class ConnectionService : Service() {
             .setContentIntent(open)
             .setOngoing(true)
             .build()
-        if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        else startForeground(ID, n)
-        handler.removeCallbacks(check)
-        handler.postDelayed(check, 5_000)
-        return START_NOT_STICKY
+        return try {
+            if (Build.VERSION.SDK_INT >= 29) startForeground(ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+            else startForeground(ID, n)
+            true
+        } catch (e: Throwable) { false }
     }
 
     // Aplikasi digeser dari recent apps: putuskan koneksi ADB, lepas semua resource, lalu matikan service.

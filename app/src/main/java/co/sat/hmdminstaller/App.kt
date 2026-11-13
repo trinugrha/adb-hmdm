@@ -22,5 +22,14 @@ class App : Application() {
         super.onCreate()
         // Wireless debugging memakai TLS 1.3; Conscrypt dibutuhkan oleh libadb-android.
         Security.insertProviderAt(Conscrypt.newProvider(), 1)
+        // Jaring pengaman: thread internal library ADB bisa melempar IOException/SocketException yang tak tertangkap
+        // saat jaringan putus. Di thread latar itu jangan sampai mematikan aplikasi; thread utama tetap crash seperti biasa.
+        val prev = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            val netErr = generateSequence(e) { it.cause }.any { it is java.io.IOException }
+            if (netErr && t !== android.os.Looper.getMainLooper().thread) {
+                logListener?.invoke(LogLevel.WARN, "Koneksi bermasalah (${e.javaClass.simpleName}: ${e.message ?: "-"})")
+            } else prev?.uncaughtException(t, e)
+        }
     }
 }
