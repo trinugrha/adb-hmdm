@@ -450,10 +450,10 @@ class MainActivity : AppCompatActivity() {
                 synchronized(adb.probeLock) {
                     if (!busy) {
                         alive = adb.probe()
-                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
+                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 2x gagal beruntun.
                         if (alive) probeFails = 0 else {
                             val n = ++probeFails
-                            if (n < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
+                            if (n < 2) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
                         }
                     }
                 }
@@ -531,7 +531,7 @@ class MainActivity : AppCompatActivity() {
         if (!doPair(f.addr, password)) return false
         // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
         // Beri waktu adbd di HP target siap menerima koneksi TLS setelah pairing.
-        try { Thread.sleep(2_500) } catch (e: InterruptedException) { }
+        try { Thread.sleep(2_000) } catch (e: InterruptedException) { }
         val ca = adb.findConnectAddr(f.host)
         if (ca == null) {
             log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect")

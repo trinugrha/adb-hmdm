@@ -427,7 +427,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             try { manager.disconnect() } catch (e: Throwable) { }
         }
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
-        val maxAttempts = 4
+        val maxAttempts = 2
         var ok = false
         var reason = ""
         forcedDown = false
