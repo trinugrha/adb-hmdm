@@ -444,14 +444,14 @@ class MainActivity : AppCompatActivity() {
             }
             val now = System.currentTimeMillis()
             // Probe sungguhan tiap ±8 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
-            if (alive && !wasBusy && now - lastProbe >= 8_000) {
+            if (alive && !wasBusy && now - lastProbe >= 5_000) {
                 lastProbe = now
                 // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
                 synchronized(adb.probeLock) {
                     if (!busy) {
                         alive = adb.probe()
                         // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
-                        if (alive) probeFails = 0 else if (++probeFails < 3) alive = true
+                        if (alive) probeFails = 0 else if (++probeFails < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
                     }
                 }
             }

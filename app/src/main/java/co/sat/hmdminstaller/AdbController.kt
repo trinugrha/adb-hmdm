@@ -249,20 +249,29 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      */
     fun probe(): Boolean {
         if (!libConnected) return false
-        var stream: io.github.muntashirakon.adb.AdbStream? = null
-        val watchdog = Thread {
-            try { Thread.sleep(8_000); stream?.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
+        val ok = java.util.concurrent.atomic.AtomicBoolean(false)
+        val done = java.util.concurrent.CountDownLatch(1)
+        val holder = java.util.concurrent.atomic.AtomicReference<io.github.muntashirakon.adb.AdbStream?>(null)
+        // openStream() sendiri bisa menggantung di soket yang mati, jadi seluruhnya dijalankan di thread terpisah
+        // dan pemanggil (thread pemantau) menunggu paling lama 6 detik.
+        Thread {
+            try {
+                val s = manager.openStream("shell:echo ok")
+                holder.set(s)
+                ok.set(readAll(s.openInputStream()).contains("ok"))
+            } catch (e: Throwable) {
+            } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
-        return try {
-            val s = manager.openStream("shell:echo ok")
-            stream = s
-            readAll(s.openInputStream()).contains("ok")
-        } catch (e: Throwable) {
-            false
-        } finally {
-            watchdog.interrupt()
-            try { stream?.close() } catch (e: Throwable) { }
-        }
+        val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
+        Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
+        return finished && ok.get()
+    }
+
+    /** Sesi dinyatakan mati (probe gagal berulang): tandai putus dan tutup soket di thread latar. */
+    fun markDead() {
+        forcedDown = true
+        connCache = false
+        Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
 
     /**
