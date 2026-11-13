@@ -68,38 +68,6 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private val manager: AdbManager
         get() = mgr ?: synchronized(this) { mgr ?: AdbManager(appContext).also { mgr = it } }
 
-    // ---------- Ketahanan terhadap jaringan putus ----------
-
-    /**
-     * Jalankan [block] (yang bisa memblokir tanpa batas bila jaringan putus) di thread daemon dengan batas
-     * waktu keras. Bila lewat, [onTimeout] dipanggil dan java.io.IOException dilempar; thread yang macet
-     * dilepas (daemon) dan berhenti sendiri saat socket-nya akhirnya mati.
-     */
-    private fun <T> withDeadline(what: String, timeoutMs: Long, onTimeout: () -> Unit = {}, block: () -> T): T {
-        val done = java.util.concurrent.CountDownLatch(1)
-        val value = java.util.concurrent.atomic.AtomicReference<Any?>(null)
-        val err = java.util.concurrent.atomic.AtomicReference<Throwable?>(null)
-        val t = Thread {
-            try { value.set(block()) } catch (e: Throwable) { err.set(e) } finally { done.countDown() }
-        }.apply { isDaemon = true; name = "adb-$what"; start() }
-        if (!done.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-            try { onTimeout() } catch (e: Throwable) { }
-            t.interrupt()
-            throw java.io.IOException("$what tidak menjawab dalam ${timeoutMs / 1000} dtk (jaringan putus atau HP target tidak merespons)")
-        }
-        err.get()?.let { throw it }
-        @Suppress("UNCHECKED_CAST")
-        return value.get() as T
-    }
-
-    /** Putuskan koneksi Wi-Fi yang sudah mati tanpa memblokir pemanggil (aman dari UI/poller thread). */
-    fun dropWireless() {
-        lastAddr = null
-        sessionLabel = null
-        Thread { try { mgr?.disconnect() } catch (e: Throwable) { } ; keepAlive(false) }
-            .apply { isDaemon = true; start() }
-    }
-
     /** Panggil dari thread latar saat aplikasi dibuka agar kunci siap sebelum dipakai. */
     fun warmUp() {
         try { manager } catch (e: Throwable) { logWarn("Kunci ADB belum siap: ${e.message ?: e.javaClass.simpleName}") }
@@ -206,6 +174,17 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return label
     }
 
+    /**
+     * Wi-Fi HP teknisi hilang. Sesi wireless tidak mungkin hidup lagi, jadi soket ditutup di thread latar.
+     * Dilewati untuk sesi USB dan loopback (127.0.0.1). Pemantau di Activity lalu menandai koneksi terputus.
+     */
+    fun onWifiLost() {
+        if (viaUsb || !isConnected) return
+        if (lastAddr?.startsWith("127.0.0.1:") == true) return
+        logWarn("Wi-Fi terputus, koneksi ADB ditutup.")
+        Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
+    }
+
     /** True bila koneksi lewat USB tetapi kabel sudah dicabut / perangkat hilang dari port. */
     val usbCableGone: Boolean
         get() = viaUsb && !usbBridge.isRunning
@@ -249,33 +228,22 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
      * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
      */
-    @Volatile private var probeThread: Thread? = null
-
     fun probe(): Boolean {
         if (!isConnected) return false
-        // Probe sebelumnya masih macet (jaringan putus): jangan numpuk thread, hitung sebagai gagal.
-        if (probeThread?.isAlive == true) return false
         var stream: io.github.muntashirakon.adb.AdbStream? = null
-        val ok = java.util.concurrent.atomic.AtomicBoolean(false)
-        val done = java.util.concurrent.CountDownLatch(1)
-        val t = Thread {
-            try {
-                val s = manager.openStream("shell:echo ok")
-                stream = s
-                ok.set(readAll(s.openInputStream()).contains("ok"))
-            } catch (e: Throwable) {
-            } finally {
-                try { stream?.close() } catch (e: Throwable) { }
-                done.countDown()
-            }
-        }.apply { isDaemon = true; name = "adb-probe"; start() }
-        probeThread = t
-        // Batas waktu dihitung di thread pemanggil: openStream yang macet tidak lagi menahan probeLock / thread pemantau.
-        if (!done.await(8, java.util.concurrent.TimeUnit.SECONDS)) {
+        val watchdog = Thread {
+            try { Thread.sleep(8_000); stream?.close() } catch (e: InterruptedException) { } catch (e: Throwable) { }
+        }.apply { isDaemon = true; start() }
+        return try {
+            val s = manager.openStream("shell:echo ok")
+            stream = s
+            readAll(s.openInputStream()).contains("ok")
+        } catch (e: Throwable) {
+            false
+        } finally {
+            watchdog.interrupt()
             try { stream?.close() } catch (e: Throwable) { }
-            return false
         }
-        return ok.get()
     }
 
     /**
@@ -383,8 +351,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logCmd("adb pair $addr ******")
         return try {
             // Ditampung sebagai Any? agar aman baik pair() mengembalikan Boolean maupun void.
-            val mgr0 = manager
-            val result: Any? = withDeadline("pairing", 25_000) { mgr0.pair(host, port, code) }
+            val result: Any? = manager.pair(host, port, code)
             if (result == false) {
                 logErr("Pairing gagal: ditolak HP target (cek kode dan port pairing)")
                 false
@@ -429,8 +396,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 Thread.sleep(1500)
             }
             try {
-                val m = manager
-                val result: Any? = withDeadline("connect", 20_000, onTimeout = { try { m.disconnect() } catch (e: Throwable) { } }) { m.connect(host, port) }
+                val result: Any? = manager.connect(host, port)
                 if (result == false || !manager.isConnected) {
                     reason = "tidak terhubung"
                 } else if (probe()) {

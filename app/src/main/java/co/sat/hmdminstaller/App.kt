@@ -1,8 +1,16 @@
 package co.sat.hmdminstaller
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.os.Looper
+import android.util.Log
 import org.conscrypt.Conscrypt
+import java.io.File
 import java.security.Security
+import java.util.Date
 
 class App : Application() {
 
@@ -20,16 +28,47 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        installCrashGuard()
+        watchWifi()
         // Wireless debugging memakai TLS 1.3; Conscrypt dibutuhkan oleh libadb-android.
         Security.insertProviderAt(Conscrypt.newProvider(), 1)
-        // Jaring pengaman: thread internal library ADB bisa melempar IOException/SocketException yang tak tertangkap
-        // saat jaringan putus. Di thread latar itu jangan sampai mematikan aplikasi; thread utama tetap crash seperti biasa.
-        val prev = Thread.getDefaultUncaughtExceptionHandler()
+    }
+
+    /**
+     * Pengaman crash. Saat Wi-Fi putus, soket ADB mati dan thread (termasuk thread internal library ADB)
+     * bisa melempar exception yang tidak tertangkap; itu dulu langsung mematikan aplikasi.
+     * - Thread latar: exception dicatat saja, proses tetap hidup (koneksi dianggap putus oleh pemantau).
+     * - Main thread: jejaknya disimpan ke file lalu crash diteruskan seperti biasa (ditampilkan di log saat dibuka lagi).
+     */
+    private fun installCrashGuard() {
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        val mainThread = Looper.getMainLooper().thread
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            val netErr = generateSequence(e) { it.cause }.any { it is java.io.IOException }
-            if (netErr && t !== android.os.Looper.getMainLooper().thread) {
-                logListener?.invoke(LogLevel.WARN, "Koneksi bermasalah (${e.javaClass.simpleName}: ${e.message ?: "-"})")
-            } else prev?.uncaughtException(t, e)
+            try {
+                File(filesDir, CRASH_FILE).writeText("${Date()}  thread=${t.name}\n${Log.getStackTraceString(e)}")
+            } catch (ignored: Throwable) { }
+            if (t === mainThread) {
+                previous?.uncaughtException(t, e)
+            } else {
+                try { logListener?.invoke(LogLevel.WARN, "Galat di thread '${t.name}': ${e.javaClass.simpleName}: ${e.message ?: ""}") } catch (ignored: Throwable) { }
+            }
         }
+    }
+
+    /** Wi-Fi hilang = sesi ADB wireless pasti mati: tutup lebih awal, tanpa menunggu timeout soket. */
+    private fun watchWifi() {
+        try {
+            val cm = getSystemService(ConnectivityManager::class.java) ?: return
+            val req = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build()
+            cm.registerNetworkCallback(req, object : ConnectivityManager.NetworkCallback() {
+                override fun onLost(network: Network) {
+                    try { adb.onWifiLost() } catch (ignored: Throwable) { }
+                }
+            })
+        } catch (ignored: Throwable) { }
+    }
+
+    companion object {
+        const val CRASH_FILE = "last_crash.txt"
     }
 }

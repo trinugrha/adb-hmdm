@@ -60,7 +60,6 @@ object AdbDiscovery {
     @Suppress("DEPRECATION")
     fun find(
         context: Context, type: String, timeoutMs: Long, cancel: AtomicBoolean,
-        onError: ((Int) -> Unit)? = null,
         accept: (name: String, host: String) -> Boolean
     ): Found? {
         val nsd = context.applicationContext.getSystemService(Context.NSD_SERVICE) as NsdManager
@@ -93,14 +92,14 @@ object AdbDiscovery {
         val listener = object : NsdManager.DiscoveryListener {
             override fun onDiscoveryStarted(serviceType: String) {}
             override fun onDiscoveryStopped(serviceType: String) {}
-            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) { onError?.invoke(errorCode); latch.countDown() }
+            override fun onStartDiscoveryFailed(serviceType: String, errorCode: Int) { latch.countDown() }
             override fun onStopDiscoveryFailed(serviceType: String, errorCode: Int) {}
             override fun onServiceLost(s: NsdServiceInfo) {}
             override fun onServiceFound(s: NsdServiceInfo) { queue.add(s); pump() }
         }
         try {
             nsd.discoverServices(type, NsdManager.PROTOCOL_DNS_SD, listener)
-        } catch (e: Throwable) { onError?.invoke(-1); return null }
+        } catch (e: Throwable) { return null }
         try {
             val end = System.currentTimeMillis() + timeoutMs
             while (result.get() == null && !cancel.get() && System.currentTimeMillis() < end) {
