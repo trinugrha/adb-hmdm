@@ -247,7 +247,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
      * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
      */
-    fun probe(): Boolean {
+    fun probe(addr: String? = lastAddr): Boolean {
         if (!libConnected) return false
         val ok = java.util.concurrent.atomic.AtomicBoolean(false)
         val done = java.util.concurrent.CountDownLatch(1)
@@ -256,15 +256,26 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         // dan pemanggil (thread pemantau) menunggu paling lama 6 detik.
         Thread {
             try {
-                val s = manager.openStream("shell:echo ok")
-                holder.set(s)
-                ok.set(readAll(s.openInputStream()).contains("ok"))
+                // Tes TCP langsung ke adbd (tanpa library): gagal seketika bila Wi-Fi mati / HP target tak terjangkau.
+                if (reachable(addr)) {
+                    val s = manager.openStream("shell:echo ok")
+                    holder.set(s)
+                    ok.set(readAll(s.openInputStream()).contains("ok"))
+                }
             } catch (e: Throwable) {
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
         val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
         return finished && ok.get()
+    }
+
+    private fun reachable(addr: String?): Boolean {
+        val (h, p) = split(addr ?: return true) ?: return true
+        return try {
+            java.net.Socket().use { it.connect(java.net.InetSocketAddress(h, p), 2_000) }
+            true
+        } catch (e: Throwable) { false }
     }
 
     /** Sesi dinyatakan mati (probe gagal berulang): tandai putus dan tutup soket di thread latar. */
@@ -428,7 +439,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 val result: Any? = manager.connect(host, port)
                 if (result == false || !manager.isConnected) {
                     reason = "tidak terhubung"
-                } else if (probe()) {
+                } else if (probe(addr)) {
                     // Terbukti: device menjawab perintah shell, bukan sekadar flag.
                     ok = true
                     lastAddr = addr

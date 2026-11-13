@@ -444,19 +444,25 @@ class MainActivity : AppCompatActivity() {
             }
             val now = System.currentTimeMillis()
             // Probe sungguhan tiap ±8 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
-            if (alive && !wasBusy && now - lastProbe >= 5_000) {
+            if (alive && !wasBusy && now - lastProbe >= 3_000) {
                 lastProbe = now
                 // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
                 synchronized(adb.probeLock) {
                     if (!busy) {
                         alive = adb.probe()
                         // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
-                        if (alive) probeFails = 0 else if (++probeFails < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
+                        if (alive) probeFails = 0 else {
+                            val n = ++probeFails
+                            runOnUiThread { log(LogLevel.WARN, "Cek koneksi gagal ($n/3)") }
+                            if (n < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
+                        }
                     }
                 }
             }
             runOnUiThread { applyLiveState(alive, wasBusy, cableGone) }
-        } catch (e: Throwable) { }
+        } catch (e: Throwable) {
+            runOnUiThread { log(LogLevel.ERR, "Pemantau error: ${e.javaClass.simpleName}: ${e.message ?: ""}") }
+        }
     }
 
     private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean, cableGone: Boolean = false) {
