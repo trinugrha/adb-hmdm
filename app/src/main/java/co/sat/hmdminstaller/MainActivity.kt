@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
                 else -> todo.add(uri to name)
             }
         }
-        if (skipped > 0) log(LogLevel.WARN, "$skipped file dilewati (bukan .apk atau duplikat).")
+        if (skipped > 0) log(LogLevel.WARN, "$skipped file dilewati (bukan .apk atau duplikat)")
         if (todo.isEmpty()) return@registerForActivityResult
         // Penyalinan file (bisa puluhan-ratusan MB) di thread latar.
         io.execute {
@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 apks.clear()
                 apks.addAll(items)
-                if (failed > 0) log(LogLevel.ERR, "Gagal menyalin $failed file APK.")
+                if (failed > 0) log(LogLevel.ERR, "Gagal menyalin $failed file APK")
                 refreshApkList()
             }
         }
@@ -234,7 +234,7 @@ class MainActivity : AppCompatActivity() {
             val txt = try { if (f.exists()) f.readText().take(1500) else null } catch (e: Throwable) { null }
             if (txt != null) {
                 f.delete()
-                runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
+                runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it.trimEnd().take(200)) } }
             }
         }
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
@@ -286,7 +286,7 @@ class MainActivity : AppCompatActivity() {
             if (targets.isEmpty()) {
                 val t0 = System.currentTimeMillis()
                 logHead("Connect USB", t0)
-                log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'.")
+                log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'")
                 logEnd("Connect USB", false, t0)
                 return@setOnClickListener
             }
@@ -453,16 +453,13 @@ class MainActivity : AppCompatActivity() {
                         // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
                         if (alive) probeFails = 0 else {
                             val n = ++probeFails
-                            runOnUiThread { log(LogLevel.WARN, "Cek koneksi gagal ($n/3)") }
                             if (n < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
                         }
                     }
                 }
             }
             runOnUiThread { applyLiveState(alive, wasBusy, cableGone) }
-        } catch (e: Throwable) {
-            runOnUiThread { log(LogLevel.ERR, "Pemantau error: ${e.javaClass.simpleName}: ${e.message ?: ""}") }
-        }
+        } catch (e: Throwable) { }
     }
 
     private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean, cableGone: Boolean = false) {
@@ -471,7 +468,7 @@ class MainActivity : AppCompatActivity() {
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log(LogLevel.ERR, if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus." else "Koneksi ke $addr terputus.")
+            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}")
             showUsbDevice(null)
             lostAddr = addr
             adb.sessionLabel = null
@@ -517,7 +514,7 @@ class MainActivity : AppCompatActivity() {
             if (found == null) {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
-                    log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi.")
+                    log(LogLevel.ERR, "Pairing QR: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                 }
                 return@execute
             }
@@ -535,7 +532,7 @@ class MainActivity : AppCompatActivity() {
         // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
         val ca = adb.findConnectAddr(f.host)
         if (ca == null) {
-            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect.")
+            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect")
             return true
         }
         val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
@@ -667,7 +664,7 @@ class MainActivity : AppCompatActivity() {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "$pct%  (${Fmt.mb(sent)} / ${Fmt.mb(size)})"
+            info.text = "$pct% · ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
         }
     }
 

@@ -142,31 +142,31 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun connectUsb(t: UsbAdbBridge.Target): String? {
         logCmd("adb -d usb (USB debugging)")
         if (!listUsbTargets().any { it.device.deviceName == t.device.deviceName }) {
-            logErr("Perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi.")
+            logErr("Perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
             return null
         }
         logStep("Perangkat USB: ${t.label}")
-        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini.")
+        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini")
         if (!usbBridge.requestPermission(t.device)) {
-            logErr("Izin akses USB ditolak atau tidak dijawab.")
+            logErr("Izin akses USB ditolak atau tidak dijawab")
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
             logErr("Gagal membuka USB: ${e.message ?: e.javaClass.simpleName}")
             return null
         }
-        logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK.")
+        logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
         val label = "USB · ${t.label}"
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..3) {
             if (connect("127.0.0.1:$port", verbose = false)) { ok = true; break }
-            if (attempt < 3) logWarn("Percobaan $attempt/3 gagal ($lastConnectReason), mencoba lagi. Setujui dialog di HP target bila muncul")
+            if (attempt < 3) logWarn("Percobaan $attempt/3 gagal ($lastConnectReason), mencoba lagi...")
         }
         if (!ok) {
             usbBridge.stop()
             viaUsb = false
-            logErr("Connect USB gagal: pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui.")
+            logErr("Connect USB gagal: pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui")
             return null
         }
         viaUsb = true
@@ -183,7 +183,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
         forcedDown = true
         connCache = false
-        logWarn("Wi-Fi terputus, koneksi ADB ditutup.")
+        logWarn("Wi-Fi terputus, koneksi ADB ditutup")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
 
@@ -205,12 +205,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun tryReconnect(): Boolean {
         val addr = lastAddr ?: return false
         logWarn("Koneksi terputus, menyambung ulang ke $addr...")
+        // verbose = false: tanpa "> adb connect" dan "Percobaan ..." per percobaan, cukup satu hasil akhir.
         repeat(3) { i ->
             if (i > 0) Thread.sleep(2000)
-            if (connect(addr)) return true
+            if (connect(addr, verbose = false)) return true
         }
-        if (viaUsb) logErr("Sambung ulang gagal: pastikan kabel USB masih terpasang dan USB debugging di HP target aktif.")
-        else logErr("Sambung ulang gagal: pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi.")
+        val hint = if (viaUsb) "pastikan kabel USB masih terpasang dan USB debugging di HP target aktif"
+                   else "pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi"
+        logErr("Sambung ulang gagal ($lastConnectReason): $hint")
         return false
     }
 
@@ -383,7 +385,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     fun pair(addr: String, code: String): Boolean {
         if (addr.isEmpty() || code.isEmpty()) {
-            logWarn("Isi IP:Port pairing dan kode pairing terlebih dahulu.")
+            logWarn("Isi IP:Port pairing dan kode pairing terlebih dahulu")
             return false
         }
         val (host, port) = split(addr) ?: run { logErr("Alamat pairing tidak valid: $addr"); return false }
@@ -415,7 +417,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB). */
     fun connect(addr: String, verbose: Boolean = true): Boolean {
         if (addr.isEmpty()) {
-            logWarn("Isi IP:Port connect terlebih dahulu.")
+            logWarn("Isi IP:Port connect terlebih dahulu")
             return false
         }
         val (host, port) = split(addr) ?: run { logErr("Alamat connect tidak valid: $addr"); return false }
@@ -468,7 +470,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             manager.disconnect()
             connCache = false
             if (viaUsb) { usbBridge.stop(); viaUsb = false }
-            logOk("Koneksi diputus.")
+            logOk("Koneksi diputus")
             true
         } catch (e: Throwable) {
             logErr("Disconnect gagal: ${e.message ?: e.javaClass.simpleName}")
@@ -480,7 +482,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun install(apks: List<ApkItem>): Boolean {
         if (!ensureConnected()) return false
         if (apks.isEmpty()) {
-            logWarn("Belum ada APK. Pilih file APK terlebih dahulu.")
+            logWarn("Belum ada APK. Pilih file APK terlebih dahulu")
             return false
         }
         var ok = 0
@@ -488,7 +490,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         apks.forEachIndexed { i, apk ->
             logStep("[${i + 1}/${apks.size}] ${apk.name} (${apk.sizeText})")
             if (!apk.file.exists()) {
-                logErr("File tidak ditemukan di penyimpanan sementara.")
+                logErr("File tidak ditemukan di penyimpanan sementara")
                 failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
@@ -508,7 +510,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 out = installTry(apk.file)
                 tries++
                 if (isSuccess(out) || !isTransient(out) || tries >= maxTries) break
-                logWarn("Percobaan $tries/$maxTries gagal (${installFailureReason(out)}), mencoba lagi...")
+                // Alasan singkat saja: saran lengkap baru ditampilkan di baris ✗ bila akhirnya tetap gagal.
+                logWarn("Percobaan $tries/$maxTries gagal (${installFailureReason(out, advice = false)}), mencoba lagi...")
                 if (libConnected) Thread.sleep(1500) else tryReconnect()
                 if (!libConnected) break
             }
@@ -517,7 +520,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 logOk("Terpasang · ${Fmt.duration(System.currentTimeMillis() - t0)}")
             } else {
                 val reason = installFailureReason(out)
-                failed += apk.name to reason
+                // Ringkasan memakai alasan singkat; saran lengkap sudah tampil di baris ✗ di atas.
+                failed += apk.name to installFailureReason(out, advice = false)
                 logErr("Gagal: $reason")
                 if (out != stallError) logRaw(out, reason)
             }
@@ -582,7 +586,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logRaw(out)
             return false
         }
-        logOk("Data Kaspersky dihapus.")
+        logOk("Data Kaspersky dihapus")
         return true
     }
 
@@ -596,9 +600,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!isSuccess(out)) {
             val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    "Device Admin belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)"
+                    "Aplikasi Admin Kaspersky belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
-                    "diblokir kebijakan Device Owner atau Profile Owner"
+                    "diblokir kebijakan device owner atau profile owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
                     "Kaspersky sudah tidak terpasang"
                 else -> "pastikan $KASPERSKY_PACKAGE terpasang di HP target"
@@ -607,7 +611,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logRaw(out, reason)
             return false
         }
-        logOk("Kaspersky di-uninstall.")
+        logOk("Kaspersky di-uninstall")
         return true
     }
 
@@ -615,6 +619,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         // Walau sebagian APK gagal, tetap coba set device owner (HMDM mungkin sudah terpasang).
         val installOk = install(apks)
+        logStep("Set device owner")
         val ownerOk = setDeviceOwner()
         return installOk && ownerOk
     }
@@ -668,13 +673,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
     )
 
-    /** Alasan singkat dari keluaran `cmd package install` yang gagal. */
-    private fun installFailureReason(out: String): String {
+    /** Alasan singkat dari keluaran `cmd package install` yang gagal. [advice] = sertakan saran perbaikan (untuk baris ✗ akhir). */
+    private fun installFailureReason(out: String, advice: Boolean = true): String {
         val code = Regex("INSTALL_[A-Z_]+").find(out)?.value
         val friendly = code?.let { installReasons[it] }
         return when {
             out == stallError ->
-                if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Connect USB ulang"
+                if (!advice) "pengiriman macet"
+                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Connect USB ulang"
                 else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
             friendly != null -> "$friendly ($code)"
             code != null -> code
