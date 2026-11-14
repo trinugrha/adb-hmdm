@@ -516,7 +516,9 @@ class MainActivity : AppCompatActivity() {
             }
             val now = System.currentTimeMillis()
             // Probe sungguhan tiap ±10 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
-            if (alive && !wasBusy && now - lastProbe >= 10_000) {
+            // Sesi USB dilewati: kabel dicabut sudah terdeteksi seketika (usbCableGone) dan soket putus terbaca syncConnected().
+            // Probe `echo` pada USB sering gagal saat HP target idle (adbd menahan balasan) sehingga memutus sesi secara keliru.
+            if (alive && !wasBusy && !adb.isViaUsb && now - lastProbe >= 10_000) {
                 lastProbe = now
                 // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
                 synchronized(adb.probeLock) {
