@@ -49,8 +49,8 @@
     <color name="on_danger_fill">#FFFFFF</color>
 
     <!-- Tombol biru -->
-    <color name="btn_blue">#1E3A8A</color>
+    <color name="btn_blue">#0A1F4D</color>
     <color name="on_btn_blue">#FFFFFF</color>
-    <color name="btn_blue_stroke">#1E3A8A</color>
-    <color name="btn_blue_text">#1E3A8A</color>
+    <color name="btn_blue_stroke">#0A1F4D</color>
+    <color name="btn_blue_text">#0A1F4D</color>
 </resources>
