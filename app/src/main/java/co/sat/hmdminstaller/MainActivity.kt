@@ -193,6 +193,8 @@ class MainActivity : AppCompatActivity() {
                     val item = copyToCache(uri, name)
                     if (item == null) failed++ else items.add(item)
                 }
+                // Baca nama paket tiap APK di thread latar, supaya UI thread tidak perlu mem-parsing file besar.
+                items.forEach { apkPackage(it) }
             } finally {
                 runOnUiThread {
                     apks.clear()
@@ -821,7 +823,9 @@ class MainActivity : AppCompatActivity() {
             // Tombol "Jadikan HMDM Default Launcher" mati bila HMDM sudah menjadi launcher default (status "HMDM aktif ✓").
             val homeActive = b.id == R.id.btnSetHome && connected && homeState is HomeState.Hmdm
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
-            val enabled = !isBusy && !needsApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            // "Otomatis : Pasang Aplikasi + Jadikan Owner" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
+            val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
+            val enabled = !isBusy && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
@@ -935,6 +939,23 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun dp(v: Int) = (v * resources.displayMetrics.density).toInt()
+
+    /** Cache nama paket per file APK (kunci: path + ukuran + waktu ubah) agar file tidak di-parse berulang. */
+    private val apkPkgCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+
+    /** Nama paket (mis. com.hmdm.launcher) dari file APK; "" bila tidak terbaca. */
+    private fun apkPackage(item: ApkItem): String {
+        val f = item.file
+        val key = "${f.absolutePath}|${f.length()}|${f.lastModified()}"
+        return apkPkgCache.getOrPut(key) {
+            try {
+                packageManager.getPackageArchiveInfo(f.absolutePath, 0)?.packageName ?: ""
+            } catch (e: Throwable) { "" }
+        }
+    }
+
+    /** Apakah daftar APK yang dipilih berisi com.hmdm.launcher. */
+    private fun hasHmdmApk(): Boolean = apks.any { apkPackage(it) == AdbController.HMDM_PACKAGE }
 
     /** Tampilkan daftar APK yang akan dipasang (urut sesuai nama) lengkap dengan ukuran & tombol hapus. */
     private fun renderApkList() {
