@@ -179,21 +179,29 @@ class MainActivity : AppCompatActivity() {
         if (skipped > 0) log(LogLevel.WARN, "$skipped file dilewati (bukan .apk atau duplikat)")
         if (todo.isEmpty()) return@registerForActivityResult
         // Penyalinan file (bisa puluhan-ratusan MB) di thread latar.
+        // Tandai sibuk selama menyalin: tombol Pasang dan pilih file mati, jadi daftar tidak dipakai saat APK lama sudah dihapus.
+        val old = apks.toList()
+        busy = true
+        setBusy(true, "Menyalin APK...")
         io.execute {
-            // Hapus file APK lama dari cache dulu (sebelum menyalin, agar nama yang sama tidak ikut terhapus).
-            val old = apks.toList()
-            old.filter { !it.builtIn }.forEach { it.file.delete() }
             val items = mutableListOf<ApkItem>()
             var failed = 0
-            todo.forEach { (uri, name) ->
-                val item = copyToCache(uri, name)
-                if (item == null) failed++ else items.add(item)
-            }
-            runOnUiThread {
-                apks.clear()
-                apks.addAll(items)
-                if (failed > 1) log(LogLevel.ERR, "Salin APK gagal: $failed dari ${todo.size} file. Pilih ulang file yang gagal")
-                refreshApkList()
+            try {
+                // Hapus file APK lama dari cache dulu (sebelum menyalin, agar nama yang sama tidak ikut terhapus).
+                old.filter { !it.builtIn }.forEach { it.file.delete() }
+                todo.forEach { (uri, name) ->
+                    val item = copyToCache(uri, name)
+                    if (item == null) failed++ else items.add(item)
+                }
+            } finally {
+                runOnUiThread {
+                    apks.clear()
+                    apks.addAll(items)
+                    if (failed > 1) log(LogLevel.ERR, "Salin APK gagal: $failed dari ${todo.size} file. Pilih ulang file yang gagal")
+                    busy = false
+                    setBusy(false, if (items.isEmpty()) "Belum ada APK" else "${items.size} APK siap dipasang")
+                    refreshApkList()
+                }
             }
         }
     }

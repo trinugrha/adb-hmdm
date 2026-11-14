@@ -401,6 +401,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             val out = shell("pm list packages --user 0 $pkg", 5_000, quiet = true)
             when {
                 out.lineSequence().any { it.trim() == "package:$pkg" } -> true
+                // Kosong + timeout = HP target belum sempat menjawab, bukan "tidak terpasang".
+                out.isBlank() && lastShellTimedOut -> null
                 out.contains("package:") || out.isBlank() -> false
                 else -> null
             }
