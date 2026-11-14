@@ -66,8 +66,8 @@
     </style>
 
     <style name="Widget.Hmdm.Button.BlueOutlined" parent="Widget.Hmdm.Button.Outlined">
-        <item name="android:textColor">@color/btn_blue</item>
-        <item name="iconTint">@color/btn_blue</item>
+        <item name="android:textColor">@color/btn_blue_text</item>
+        <item name="iconTint">@color/btn_blue_text</item>
         <item name="strokeColor">@color/btn_blue_stroke</item>
         <item name="rippleColor">@color/btn_blue_stroke</item>
     </style>
