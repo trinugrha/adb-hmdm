@@ -25,6 +25,13 @@ object Fmt {
     fun duration(ms: Long): String =
         if (ms < 1000) "$ms ms" else String.format(Locale.US, "%.1f dtk", ms / 1000.0)
 
+    /** Panjang maksimum satu baris DETAIL di log; selebihnya dipotong dan diakhiri "…". */
+    const val DETAIL_MAX = 240
+
+    /** Potong satu baris teks panjang dan akhiri dengan "…" supaya jelas bahwa teksnya tidak utuh. */
+    fun clip(s: String, max: Int = DETAIL_MAX): String =
+        if (s.length > max) s.take(max).trimEnd() + "…" else s
+
     /** 14:02:11 */
     fun clock(epochMs: Long): String = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(epochMs))
 }

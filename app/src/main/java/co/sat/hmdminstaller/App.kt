@@ -52,7 +52,10 @@ class App : Application() {
             } else {
                 // Tanpa ": " menggantung bila exception tidak punya pesan.
                 val detail = e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""
-                try { logListener?.invoke(LogLevel.WARN, "Kesalahan di thread '${t.name}': ${e.javaClass.simpleName}$detail") } catch (ignored: Throwable) { }
+                try {
+                    logListener?.invoke(LogLevel.WARN, "Kesalahan tak terduga di thread '${t.name}', aplikasi tetap berjalan")
+                    logListener?.invoke(LogLevel.DETAIL, "${e.javaClass.simpleName}$detail")
+                } catch (ignored: Throwable) { }
             }
         }
     }

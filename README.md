@@ -60,6 +60,8 @@ Ringkasan: 1 berhasil, 1 gagal dari 2 APK
 ```
 Output mentah HP target (baris rincian) hanya ditampilkan bila menambah informasi: stack trace, baris "Performing ...", dan baris yang mengulang alasan di atasnya dibuang. Proses baru selalu didahului satu baris kosong. Baris yang terlipat sejajar dengan isi pesan.
 
+Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) tampil di baris rincian abu-abu di bawah baris ✗ / !, bukan di dalamnya. Baris rincian yang terlalu panjang dipotong dan diakhiri "…".
+
 Warna ditentukan oleh `LogLevel`, format angka oleh `Fmt`. Aturan penulisan pesan ada di KDoc `LogLevel.kt`.
 
 ## Catatan teknis

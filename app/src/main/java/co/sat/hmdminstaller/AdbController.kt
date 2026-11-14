@@ -49,14 +49,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun logOk(s: String) = sink(LogLevel.OK, s)
     private fun logWarn(s: String) = sink(LogLevel.WARN, s)
     private fun logErr(s: String) = sink(LogLevel.ERR, s)
-    private fun logDetail(s: String) =
-        sink(LogLevel.DETAIL, if (s.length > DETAIL_MAX) s.take(DETAIL_MAX).trimEnd() + "…" else s)
+    private fun logDetail(s: String) = sink(LogLevel.DETAIL, s)
     private fun logSummary(s: String) = sink(LogLevel.SUMMARY, s)
 
     companion object {
-        /** Panjang maksimum satu baris DETAIL; selebihnya dipotong dan diakhiri "…". */
-        private const val DETAIL_MAX = 240
-
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
         const val HMDM_PACKAGE = "com.hmdm.launcher"
@@ -309,7 +305,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Sesi dinyatakan mati (probe gagal berulang): tandai putus dan tutup soket di thread latar. */
     fun markDead() {
-        logWarn("Pemeriksaan koneksi gagal berulang: ${lastDropReason.ifEmpty { "alasan tidak diketahui" }}")
+        logWarn("Pemeriksaan koneksi gagal berulang, koneksi ditutup")
         forcedDown = true
         connCache = false
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
@@ -679,7 +675,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!isSuccess(out)) {
             val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    "Aplikasi Admin Kaspersky belum dimatikan. Ulangi Langkah 2: Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan"
+                    "Kaspersky masih aktif sebagai aplikasi admin perangkat. Ulangi Langkah 2: Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
                     "diblokir kebijakan device owner atau profile owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
@@ -743,13 +739,19 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private val installReasons = mapOf(
         "INSTALL_FAILED_ALREADY_EXISTS" to "sudah terpasang",
         "INSTALL_FAILED_VERSION_DOWNGRADE" to "versi lebih rendah dari yang terpasang",
-        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "tanda tangan berbeda dengan versi terpasang (uninstall dulu)",
+        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "tanda tangan berbeda dengan versi terpasang",
         "INSTALL_FAILED_INSUFFICIENT_STORAGE" to "penyimpanan HP target penuh",
         "INSTALL_FAILED_INVALID_APK" to "file APK rusak atau tidak valid",
         "INSTALL_FAILED_NO_MATCHING_ABIS" to "arsitektur CPU tidak cocok",
         "INSTALL_FAILED_OLDER_SDK" to "versi Android HP target terlalu lama",
         "INSTALL_FAILED_USER_RESTRICTED" to "install dibatasi kebijakan HP target",
         "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
+    )
+
+    /** Saran perbaikan per kode install; hanya dipakai di baris ✗ akhir, ditulis sebagai kalimat sendiri. */
+    private val installAdvice = mapOf(
+        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "Uninstall versi yang terpasang dulu, lalu pasang ulang",
+        "INSTALL_FAILED_INSUFFICIENT_STORAGE" to "Kosongkan penyimpanan HP target, lalu coba lagi"
     )
 
     /** Alasan singkat dari keluaran `cmd package install` yang gagal. [advice] = sertakan saran perbaikan (untuk baris ✗ akhir). */
@@ -761,7 +763,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (!advice) "pengiriman macet"
                 else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Connect USB ulang"
                 else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
-            friendly != null -> "$friendly ($code)"
+            friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
             code != null -> code
             out.isBlank() -> "tidak ada balasan dari HP target"
             else -> out.lines().firstOrNull { it.isNotBlank() }?.trim()?.removePrefix("Error:")?.trim()?.take(120)
@@ -777,7 +779,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
             "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
             "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target"
-            else -> "pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
+            else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
         }
     }
 

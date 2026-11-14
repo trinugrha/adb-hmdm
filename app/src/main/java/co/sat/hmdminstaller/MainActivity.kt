@@ -272,7 +272,7 @@ class MainActivity : AppCompatActivity() {
             val txt = try { if (f.exists()) f.readText().take(1500) else null } catch (e: Throwable) { null }
             if (txt != null) {
                 f.delete()
-                runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it.trimEnd().take(200)) } }
+                runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
             }
         }
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
@@ -540,7 +540,8 @@ class MainActivity : AppCompatActivity() {
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}" + adb.lastDropReason.let { if (it.isEmpty()) "" else "\nPenyebab: $it" })
+            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}")
+            adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
             showUsbDevice(null)
             lostAddr = addr
             adb.sessionLabel = null
@@ -706,7 +707,10 @@ class MainActivity : AppCompatActivity() {
             synchronized(adb.probeLock) { }
             var ok = false
             try { ok = work() } catch (e: Throwable) {
-                runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.javaClass.simpleName}${e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}") }
+                runOnUiThread {
+                    log(LogLevel.ERR, "$title gagal: kesalahan tak terduga. Coba lagi, dan laporkan bila berulang")
+                    log(LogLevel.DETAIL, "${e.javaClass.simpleName}${e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}")
+                }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
             try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it } } } catch (e: Throwable) { }
@@ -1025,7 +1029,7 @@ class MainActivity : AppCompatActivity() {
             // Output mentah device (DETAIL) tidak diubah sama sekali.
             if (level != LogLevel.DETAIL && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
         }
-        val lines = body.lines().map { it.trimEnd() }
+        val lines = body.lines().map { it.trimEnd() }.map { if (level == LogLevel.DETAIL) Fmt.clip(it) else it }
         val text = lines.mapIndexed { i, l -> (if (i == 0) level.marker else indent) + l }.joinToString("\n") + "\n"
         val sp = SpannableString(text)
         sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
@@ -1100,7 +1104,7 @@ class MainActivity : AppCompatActivity() {
             ApkItem(name, f)
         } catch (e: Exception) {
             f.delete() // jangan tinggalkan file setengah jadi
-            runOnUiThread { log(LogLevel.ERR, "Salin $name gagal: ${e.message ?: e.javaClass.simpleName}") }
+            runOnUiThread { log(LogLevel.ERR, "Salin $name gagal: ${e.message ?: e.javaClass.simpleName}. Pilih ulang file APK") }
             null
         }
     }
