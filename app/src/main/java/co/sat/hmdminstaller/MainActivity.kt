@@ -597,7 +597,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 dialog.dismiss()
                 if (busy) return@runOnUiThread
-                edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString())
+                edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString()); edtPairCode.setText(session.password)
                 run("Pairing QR") { doPairQr(found, session.password) }
             }
         }
