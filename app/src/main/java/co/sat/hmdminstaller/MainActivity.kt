@@ -364,7 +364,7 @@ class MainActivity : AppCompatActivity() {
         if (!pinStore.isSet) pinStore.set(PinStore.DEFAULT_PIN)
         onBackPressedDispatcher.addCallback(this, backWhileLocked)
         txtSession = findViewById(R.id.txtSession)
-        findViewById<View>(R.id.btnLogout).setOnClickListener { showLock() }
+        findViewById<View>(R.id.btnLogout).setOnClickListener { confirmExit() }
         showLock()
 
         restorePickedApks()
@@ -396,6 +396,35 @@ class MainActivity : AppCompatActivity() {
         // Hanya lepas pendengar log milik Activity ini.
         (application as App).logListener = null
         adb.onProgress = null
+    }
+
+    /** Minta konfirmasi sebelum keluar; peringatkan bila masih ada proses berjalan. */
+    private fun confirmExit() {
+        if (isFinishing) return
+        val warn = if (busy) "\n\nPerhatian: masih ada proses yang berjalan dan akan ikut terhenti." else ""
+        AlertDialog.Builder(this)
+            .setTitle("Keluar dari aplikasi?")
+            .setMessage("Koneksi ADB akan diputus, service dihentikan, dan daftar APK dikosongkan.$warn")
+            .setNegativeButton("Batal", null)
+            .setPositiveButton("Keluar") { _, _ -> exitApp() }
+            .show()
+    }
+
+    /** Keluar penuh: putuskan ADB, hentikan ConnectionService (lewat adb.close()), bersihkan daftar APK, lalu tutup aplikasi. */
+    private fun exitApp() {
+        findViewById<View>(R.id.btnLogout).isEnabled = false
+        val adbCtl = (application as App).adb
+        val cache = cacheDir
+        val done = java.util.concurrent.atomic.AtomicBoolean(false)
+        val finishOnce = Runnable { if (done.compareAndSet(false, true)) finishAndRemoveTask() }
+        // close() bisa tertahan bila soket sudah mati, jadi jalan di thread latar.
+        Thread {
+            try { adbCtl.close() } catch (e: Throwable) { }
+            try { java.io.File(cache, "picked").deleteRecursively() } catch (e: Throwable) { }
+            runOnUiThread(finishOnce)
+        }.start()
+        // Pengaman: tetap tutup aplikasi walau pemutusan macet lebih dari 3 detik.
+        window.decorView.postDelayed(finishOnce, 3000)
     }
 
     // ---------- Kunci PIN ----------
