@@ -377,6 +377,24 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
     }
 
+    /**
+     * Cek diam-diam (tanpa log) apakah [KASPERSKY_PACKAGE] terpasang di HP target (`pm list packages`).
+     * true = terpasang, false = tidak ada, null = tidak terbaca (mis. koneksi bermasalah).
+     */
+    fun queryKasperskyInstalled(): Boolean? {
+        if (!libConnected) return null
+        return try {
+            val out = shell("pm list packages --user 0 $KASPERSKY_PACKAGE", 5_000, quiet = true)
+            when {
+                out.lineSequence().any { it.trim() == "package:$KASPERSKY_PACKAGE" } -> true
+                out.contains("package:") || out.isBlank() -> false
+                else -> null
+            }
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
     /** Cek manual (tombol status launcher): hasilnya ditulis ke log. */
     fun checkDefaultLauncher(): HomeState {
         if (!ensureConnected()) return HomeState.Unknown

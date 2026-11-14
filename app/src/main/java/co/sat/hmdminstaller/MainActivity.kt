@@ -141,6 +141,8 @@ class MainActivity : AppCompatActivity() {
     private var lostAddr: String? = null
     @Volatile private var ownerState: OwnerState = OwnerState.Unknown
     @Volatile private var homeState: HomeState = HomeState.Unknown
+    /** Apakah com.kaspersky.kes terpasang di HP target: null = belum diketahui (tombol Kaspersky mati). */
+    @Volatile private var kasperskyInstalled: Boolean? = null
 
     // Pemantau status koneksi (live): jalan hanya saat layar terlihat.
     private val poller = Executors.newSingleThreadScheduledExecutor()
@@ -542,7 +544,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null
         }
         refreshHeader()
     }
@@ -636,7 +638,7 @@ class MainActivity : AppCompatActivity() {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null
         }
         runOnUiThread { refreshHeader() }
         return ok
@@ -662,7 +664,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null
             showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
@@ -673,12 +675,13 @@ class MainActivity : AppCompatActivity() {
     private fun updateOwner() {
         ownerState = adb.queryDeviceOwner()
         homeState = adb.queryDefaultLauncher()
+        kasperskyInstalled = adb.queryKasperskyInstalled()
         runOnUiThread { refreshHeader() }
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -703,7 +706,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread { log(LogLevel.ERR, "Kesalahan tak terduga: ${e.javaClass.simpleName}${e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}") }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs } } catch (e: Throwable) { }
+            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it } } } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -793,7 +796,11 @@ class MainActivity : AppCompatActivity() {
     private fun applyButtonState(isBusy: Boolean) {
         val connected = connectedAddr != null && adb.isConnected
         buttons.forEach { b ->
-            val enabled = !isBusy && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            // "Pasang Aplikasi" dan "Otomatis (pasang + owner)" tidak bisa ditekan selama daftar APK masih kosong.
+            // Hapus Data & Uninstall Kaspersky hanya aktif bila com.kaspersky.kes terdeteksi di HP target.
+            val noKaspersky = (b.id == R.id.btnClearKaspersky || b.id == R.id.btnUninstallKaspersky) && kasperskyInstalled != true
+            val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
+            val enabled = !isBusy && !needsApk && !noKaspersky && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
