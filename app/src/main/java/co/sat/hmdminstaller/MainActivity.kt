@@ -625,8 +625,8 @@ class MainActivity : AppCompatActivity() {
         }
         val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
         runOnUiThread { edtConnIp.setText(ip); edtConnPort.setText(port) }
-        doConnect(ca)
-        return true
+        // Hasil connect menentukan penutup proses: jangan "✓ Selesai" tepat setelah "✗ Connect gagal".
+        return doConnect(ca)
     }
 
     // ---------- Langkah (jalan di thread kerja) ----------

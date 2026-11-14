@@ -296,7 +296,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }.apply { isDaemon = true; start() }
         val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
-        if (!finished) why.set("tidak ada jawaban dari HP target dalam 6 detik")
+        if (!finished) why.set("tidak ada jawaban dari HP target dalam 6 dtk")
         val result = finished && ok.get()
         if (!result) lastDropReason = why.get().ifEmpty { "probe gagal" }
         return result
@@ -558,7 +558,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logOk("Koneksi diputus")
             true
         } catch (e: Throwable) {
-            logErr("Disconnect gagal: koneksi tidak bisa ditutup dengan bersih")
+            logErr("Disconnect gagal: koneksi tidak bisa ditutup dengan bersih. Cabut kabel atau matikan Wireless debugging di HP target, lalu cek status koneksi")
             logCause(e)
             false
         }
