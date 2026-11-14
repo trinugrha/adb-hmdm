@@ -25,7 +25,7 @@ package co.sat.hmdminstaller
  * - Percobaan ulang: "Percobaan 1/2 gagal (alasan), mencoba lagi..."; satuan waktu selalu "dtk".
  *   Alasan di sini singkat (tanpa saran perbaikan); saran lengkap hanya di baris ✗ akhir.
  * - Baris ✗ akhir berbentuk "<Aksi> gagal: <alasan singkat>. <Saran diawali huruf besar>" (satu bentuk untuk connect, sambung ulang, install,
- *   pairing, buka USB, salin APK, dst). Awalan "Gagal ..." hanya dipakai di install, karena aksinya sudah jelas dari baris [n/m] di atasnya.
+ *   pairing, buka USB, salin APK, baca status, alamat tidak valid, dst; jangan menulis alasan tanpa awalan aksi). Awalan "Gagal ..." hanya dipakai di install, karena aksinya sudah jelas dari baris [n/m] di atasnya.
  *   Saran tidak ditaruh di dalam kurung dan tidak diawali huruf kecil.
  * - Status "belum ada / belum diset" memakai WARN (sama dengan warna kotak status di layar), bukan OK.
  * - Sambung ulang otomatis (saat install) tidak mencetak "> adb connect" per percobaan, cukup hasil akhirnya.

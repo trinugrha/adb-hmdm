@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 apks.clear()
                 apks.addAll(items)
-                if (failed > 0) log(LogLevel.ERR, "Salin APK gagal: $failed file")
+                if (failed > 1) log(LogLevel.ERR, "Salin APK gagal: $failed dari ${todo.size} file. Pilih ulang file yang gagal")
                 refreshApkList()
             }
         }
@@ -291,7 +291,7 @@ class MainActivity : AppCompatActivity() {
             if (targets.isEmpty()) {
                 val t0 = System.currentTimeMillis()
                 logHead("Connect USB", t0)
-                log(LogLevel.ERR, "Tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'")
+                log(LogLevel.ERR, "Connect USB gagal: tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'")
                 logEnd("Connect USB", false, t0)
                 return@setOnClickListener
             }
@@ -550,7 +550,7 @@ class MainActivity : AppCompatActivity() {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
                     logHead("Pairing QR", shownAt)
-                    log(LogLevel.ERR, "HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    log(LogLevel.ERR, "Pairing QR gagal: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                     logEnd("Pairing QR", false, shownAt)
                 }
                 return@execute

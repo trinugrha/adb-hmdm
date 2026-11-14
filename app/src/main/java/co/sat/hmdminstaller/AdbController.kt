@@ -146,17 +146,17 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun connectUsb(t: UsbAdbBridge.Target): String? {
         logCmd("adb -d usb (USB debugging)")
         if (!listUsbTargets().any { it.device.deviceName == t.device.deviceName }) {
-            logErr("Perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
+            logErr("Connect USB gagal: perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
             return null
         }
         logStep("Perangkat USB: ${t.label}")
         if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
         if (!usbBridge.requestPermission(t.device)) {
-            logErr("Izin akses USB ditolak atau tidak dijawab")
+            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk Connect USB lagi lalu pilih Izinkan")
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
-            logErr("Buka USB gagal: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Buka USB gagal: ${e.message ?: e.javaClass.simpleName}. Colok ulang kabel lalu coba lagi")
             return null
         }
         logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
@@ -303,7 +303,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Sesi dinyatakan mati (probe gagal berulang): tandai putus dan tutup soket di thread latar. */
     fun markDead() {
-        logWarn("Probe gagal berulang: ${lastDropReason.ifEmpty { "alasan tidak diketahui" }}")
+        logWarn("Pemeriksaan koneksi gagal berulang: ${lastDropReason.ifEmpty { "alasan tidak diketahui" }}")
         forcedDown = true
         connCache = false
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
@@ -386,7 +386,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             is HomeState.Hmdm -> logOk("Launcher default: HMDM (${st.component})")
             is HomeState.Other -> logWarn("Launcher default: aplikasi lain (${st.component})")
             is HomeState.None -> logWarn("Belum ada launcher default di HP target")
-            is HomeState.Unknown -> logErr("Launcher default tidak terbaca: HP target tidak menjawab")
+            is HomeState.Unknown -> logErr("Baca launcher default gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
         }
         return st
     }
@@ -400,7 +400,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             is OwnerState.Hmdm -> logOk("Device owner: HMDM (${st.pkg})")
             is OwnerState.Other -> logWarn("Device owner: aplikasi lain (${st.pkg})")
             is OwnerState.None -> logWarn("Belum ada device owner di HP target")
-            is OwnerState.Unknown -> logErr("Status device owner tidak terbaca: HP target tidak menjawab")
+            is OwnerState.Unknown -> logErr("Baca device owner gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
         }
         return st
     }
@@ -410,7 +410,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logWarn("Isi IP:Port pairing dan kode pairing terlebih dahulu")
             return false
         }
-        val (host, port) = split(addr) ?: run { logErr("Alamat pairing tidak valid: $addr"); return false }
+        val (host, port) = split(addr) ?: run { logErr("Pairing gagal: alamat $addr tidak valid. Gunakan format IP:Port"); return false }
         logCmd("adb pair $addr ******")
         return try {
             // Ditampung sebagai Any? agar aman baik pair() mengembalikan Boolean maupun void.
@@ -423,7 +423,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 true
             }
         } catch (e: Throwable) {
-            logErr("Pairing gagal: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Pairing gagal: ${e.message ?: e.javaClass.simpleName}. Cek kode dan port pairing, lalu coba lagi")
             false
         }
     }
@@ -442,7 +442,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logWarn("Isi IP:Port connect terlebih dahulu")
             return false
         }
-        val (host, port) = split(addr) ?: run { logErr("Alamat connect tidak valid: $addr"); return false }
+        val (host, port) = split(addr) ?: run { logErr("Connect gagal: alamat $addr tidak valid. Gunakan format IP:Port"); return false }
         // connect() di library langsung "sukses" bila masih ada koneksi lama (mis. ke IP/port lain),
         // jadi putuskan dulu agar benar-benar menyambung ke alamat yang diminta.
         if (forcedDown || libConnected) {
@@ -540,7 +540,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         apks.forEachIndexed { i, apk ->
             logStep("[${i + 1}/${apks.size}] ${apk.name} (${apk.sizeText})")
             if (!apk.file.exists()) {
-                logErr("Gagal: file tidak ditemukan di penyimpanan sementara")
+                logErr("Gagal: file tidak ditemukan di penyimpanan sementara. Pilih ulang APK")
                 failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
@@ -611,10 +611,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             val reason = when {
                 out.contains("Unknown", ignoreCase = true) || out.contains("not found", ignoreCase = true) ||
                     out.contains("does not exist", ignoreCase = true) ->
-                    "komponen $HOME_COMPONENT tidak ditemukan, pastikan HMDM sudah terpasang"
+                    "komponen $HOME_COMPONENT tidak ditemukan. Pastikan HMDM sudah terpasang"
                 out.contains("Permission", ignoreCase = true) || out.contains("SecurityException") ->
                     "ditolak sistem (izin shell tidak cukup)"
-                else -> "pastikan HMDM sudah terpasang di HP target"
+                else -> "perintah tidak berhasil. Pastikan HMDM sudah terpasang di HP target"
             }
             logErr("Set launcher default gagal: $reason")
             logRaw(out, reason)
@@ -650,7 +650,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!isSuccess(out)) {
             val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    "Aplikasi Admin Kaspersky belum dimatikan. Ulangi Langkah 2 (Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan)"
+                    "Aplikasi Admin Kaspersky belum dimatikan. Ulangi Langkah 2: Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
                     "diblokir kebijakan device owner atau profile owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
@@ -694,7 +694,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             .filter { it.isNotEmpty() && !isRawNoise(it) && !restates(it, shown) }
             .distinct()
         lines.take(max).forEach { logDetail(it) }
-        if (lines.size > max) logDetail("... ${lines.size - max} baris lain tidak ditampilkan")
+        if (lines.size > max) logDetail("… ${lines.size - max} baris lain tidak ditampilkan")
     }
 
     private val stackFrameRe = Regex("^at [\\w.$<>/]+\\(.*\\)$")
