@@ -45,6 +45,10 @@ class UsbAdbBridge(context: Context) {
     private var server: ServerSocket? = null
     @Volatile private var running = false
     @Volatile private var active: Socket? = null
+    private var pumpThreads: List<Thread> = emptyList()
+
+    /** Penyebab terakhir pompa USB berhenti (sebelumnya ditelan diam-diam), untuk diagnosis di log. */
+    @Volatile var lastPumpError: String = ""
 
     /**
      * Kirim paket nol-panjang (ZLP) setelah payload yang panjangnya kelipatan ukuran paket endpoint,
@@ -129,6 +133,7 @@ class UsbAdbBridge(context: Context) {
     @Synchronized
     fun start(d: UsbDevice): Int {
         stop()
+        lastPumpError = ""
         val itf = findAdbInterface(d) ?: throw IllegalStateException("Interface ADB tidak ditemukan di perangkat USB.")
         var inEp: UsbEndpoint? = null
         var outEp: UsbEndpoint? = null
@@ -177,15 +182,31 @@ class UsbAdbBridge(context: Context) {
     }
 
     // Satu koneksi TCP dilayani sekali waktu; koneksi baru (mis. sambung ulang) menggantikan yang lama.
+    // Pompa lama harus benar-benar berhenti dulu: bila tidak, ia ikut membaca endpoint USB dan "mencuri"
+    // paket jawaban (CNXN/AUTH) yang seharusnya untuk sesi baru, sehingga handshake macet.
     private fun acceptLoop(ss: ServerSocket) {
         while (running) {
             val s = try { ss.accept() } catch (e: Throwable) { break }
             try { active?.close() } catch (e: Throwable) { }
             active = s
+            pumpThreads.forEach { try { it.join(3000) } catch (e: InterruptedException) { } }
+            if (active !== s) { try { s.close() } catch (e: Throwable) { }; continue }
+            drainStale()
             s.tcpNoDelay = true
-            Thread({ pumpSocketToUsb(s) }, "usb-adb-up").apply { isDaemon = true; start() }
-            Thread({ pumpUsbToSocket(s) }, "usb-adb-down").apply { isDaemon = true; start() }
+            val up = Thread({ pumpSocketToUsb(s) }, "usb-adb-up").apply { isDaemon = true }
+            val down = Thread({ pumpUsbToSocket(s) }, "usb-adb-down").apply { isDaemon = true }
+            pumpThreads = listOf(up, down)
+            up.start(); down.start()
         }
+    }
+
+    /** Buang paket sisa sesi sebelumnya di endpoint IN (sesi baru belum mengirim apa pun, jadi semuanya basi). */
+    private fun drainStale() {
+        val c = conn ?: return
+        val ep = epIn ?: return
+        val buf = ByteArray(CHUNK)
+        var n = 0
+        while (n < 64 && c.bulkTransfer(ep, buf, buf.size, 50) > 0) n++
     }
 
     private fun readFully(input: InputStream, buf: ByteArray, len: Int) {
@@ -229,7 +250,7 @@ class UsbAdbBridge(context: Context) {
         while (off < len) {
             if (!running || !mine()) throw java.io.IOException("USB ditutup")
             val n = minOf(CHUNK, len - off)
-            val r = c.bulkTransfer(ep, buf, off, n, 1000)
+            val r = c.bulkTransfer(ep, buf, off, n, 250)
             if (r > 0) { off += r; idleSince = System.currentTimeMillis(); continue }
             // r < 0: timeout atau error. Perangkat dicabut = berhenti.
             if (!deviceAttached()) throw java.io.IOException("Kabel USB dicabut")
@@ -264,6 +285,7 @@ class UsbAdbBridge(context: Context) {
                 }
             }
         } catch (e: Throwable) {
+            if (active === s && running) lastPumpError = "PC->USB: ${e.javaClass.simpleName}: ${e.message ?: "-"}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }
@@ -287,6 +309,7 @@ class UsbAdbBridge(context: Context) {
                 out.flush()
             }
         } catch (e: Throwable) {
+            if (active === s && running) lastPumpError = "USB->soket: ${e.javaClass.simpleName}: ${e.message ?: "-"}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }

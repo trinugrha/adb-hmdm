@@ -169,6 +169,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             if (attempt < 3) logWarn("Percobaan $attempt/3 gagal ($lastConnectReason), mencoba lagi...")
         }
         if (!ok) {
+            val pumpErr = usbBridge.lastPumpError
+            if (pumpErr.isNotEmpty()) logDetail("Jembatan USB: $pumpErr")
             usbBridge.stop()
             viaUsb = false
             logErr("Connect USB gagal: ${lastConnectReason.ifBlank { "tidak terhubung" }}. Pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui")
@@ -275,7 +277,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         Thread {
             try {
                 // Tes TCP langsung ke adbd (tanpa library): gagal seketika bila Wi-Fi mati / HP target tak terjangkau.
-                if (reachable(addr)) {
+                // Sesi USB lewat jembatan loopback: JANGAN buka soket uji ke 127.0.0.1:<port>. Jembatan menganggapnya
+                // sebagai klien baru dan menutup soket ADB yang sedang aktif, sehingga probe selalu gagal.
+                val loopback = addr?.startsWith("127.0.0.1:") == true
+                if (loopback || reachable(addr)) {
                     val s = manager.openStream("shell:echo ok")
                     holder.set(s)
                     val out = readAll(s.openInputStream())
