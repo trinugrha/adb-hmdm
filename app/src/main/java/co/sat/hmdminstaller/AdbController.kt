@@ -59,6 +59,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
+        const val HMDM_PACKAGE = "com.hmdm.launcher"
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
@@ -381,12 +382,17 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Cek diam-diam (tanpa log) apakah [KASPERSKY_PACKAGE] terpasang di HP target (`pm list packages`).
      * true = terpasang, false = tidak ada, null = tidak terbaca (mis. koneksi bermasalah).
      */
-    fun queryKasperskyInstalled(): Boolean? {
+    fun queryKasperskyInstalled(): Boolean? = queryPackageInstalled(KASPERSKY_PACKAGE)
+
+    /** Cek diam-diam apakah [pkg] terpasang di HP target: true / false / null (tidak terbaca). */
+    fun queryHmdmInstalled(): Boolean? = queryPackageInstalled(HMDM_PACKAGE)
+
+    private fun queryPackageInstalled(pkg: String): Boolean? {
         if (!libConnected) return null
         return try {
-            val out = shell("pm list packages --user 0 $KASPERSKY_PACKAGE", 5_000, quiet = true)
+            val out = shell("pm list packages --user 0 $pkg", 5_000, quiet = true)
             when {
-                out.lineSequence().any { it.trim() == "package:$KASPERSKY_PACKAGE" } -> true
+                out.lineSequence().any { it.trim() == "package:$pkg" } -> true
                 out.contains("package:") || out.isBlank() -> false
                 else -> null
             }
