@@ -1237,7 +1237,7 @@
                 android:layout_marginTop="18dp"
                 android:layout_marginBottom="8dp"
                 android:gravity="center"
-                android:text="© 2026 PT. Sumber Alfaria Trijaya, Tbk - IT RZ01 Department · Version 4.1"
+                android:text="© 2026 PT. Sumber Alfaria Trijaya, Tbk - IT RZ01 Department · Version 4.2"
                 android:textColor="@color/muted"
                 android:textSize="11sp" />
             </LinearLayout>
