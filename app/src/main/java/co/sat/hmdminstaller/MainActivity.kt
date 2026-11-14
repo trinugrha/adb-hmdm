@@ -1108,7 +1108,10 @@ class MainActivity : AppCompatActivity() {
             ApkItem(name, f)
         } catch (e: Exception) {
             f.delete() // jangan tinggalkan file setengah jadi
-            runOnUiThread { log(LogLevel.ERR, "Salin $name gagal: ${e.message ?: e.javaClass.simpleName}. Pilih ulang file APK") }
+            runOnUiThread {
+                log(LogLevel.ERR, "Salin $name gagal: file tidak bisa dibaca atau disimpan. Pilih ulang file APK")
+                log(LogLevel.DETAIL, e.javaClass.simpleName + (e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""))
+            }
             null
         }
     }

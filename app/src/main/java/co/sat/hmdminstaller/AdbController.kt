@@ -52,6 +52,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun logDetail(s: String) = sink(LogLevel.DETAIL, s)
     private fun logSummary(s: String) = sink(LogLevel.SUMMARY, s)
 
+    /** Penyebab teknis (nama exception + pesan) sebagai baris DETAIL di bawah baris ✗ / !, bukan di dalamnya. */
+    private fun logCause(e: Throwable) {
+        val msg = e.message?.takeIf { it.isNotBlank() }
+        logDetail(e.javaClass.simpleName + (msg?.let { ": $it" } ?: ""))
+    }
+
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
@@ -71,7 +77,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Panggil dari thread latar saat aplikasi dibuka agar kunci siap sebelum dipakai. */
     fun warmUp() {
-        try { manager } catch (e: Throwable) { logWarn("Kunci ADB belum siap: ${e.message ?: e.javaClass.simpleName}") }
+        try { manager } catch (e: Throwable) { logWarn("Kunci ADB belum siap"); logCause(e) }
     }
 
     /** Dipakai agar probe dari thread pemantau tidak tumpang tindih dengan operasi di thread kerja. */
@@ -153,7 +159,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
-            logErr("Buka USB gagal: ${e.message ?: e.javaClass.simpleName}. Colok ulang kabel lalu coba lagi")
+            logErr("Buka USB gagal: jalur USB ke HP target tidak bisa dibuka. Colok ulang kabel lalu coba lagi")
+            logCause(e)
             return null
         }
         logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
@@ -448,7 +455,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 true
             }
         } catch (e: Throwable) {
-            logErr("Pairing gagal: ${e.message ?: e.javaClass.simpleName}. Cek kode dan port pairing, lalu coba lagi")
+            logErr("Pairing gagal: proses pairing tidak selesai. Cek kode dan port pairing, lalu coba lagi")
+            logCause(e)
             false
         }
     }
@@ -548,7 +556,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logOk("Koneksi diputus")
             true
         } catch (e: Throwable) {
-            logErr("Disconnect gagal: ${e.message ?: e.javaClass.simpleName}")
+            logErr("Disconnect gagal: koneksi tidak bisa ditutup dengan bersih")
+            logCause(e)
             false
         }
     }
@@ -766,7 +775,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
             code != null -> code
             out.isBlank() -> "tidak ada balasan dari HP target"
-            else -> out.lines().firstOrNull { it.isNotBlank() }?.trim()?.removePrefix("Error:")?.trim()?.take(120)
+            // Baris pertama yang bukan noise ("Performing Streamed Install", stack trace) dan tidak kosong.
+            else -> out.lines().map { it.trim() }
+                .firstOrNull { it.isNotEmpty() && !isRawNoise(it) }
+                ?.removePrefix("Error:")?.trim()?.takeIf { it.isNotEmpty() }
+                ?.let { Fmt.clip(it, 120) }
                 ?: "tidak diketahui"
         }
     }
