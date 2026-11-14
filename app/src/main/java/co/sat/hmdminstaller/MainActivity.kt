@@ -24,6 +24,10 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.ViewConfiguration
+import android.view.inputmethod.InputMethodManager
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.activity.OnBackPressedCallback
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -60,9 +64,39 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private var touchDownX = 0f
+    private var touchDownY = 0f
+    private var kbHandledForGesture = false
+
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         swipeDetector.onTouchEvent(ev)
+        // Geser layar ke atas/bawah => keyboard menutup.
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                touchDownX = ev.x
+                touchDownY = ev.y
+                kbHandledForGesture = false
+            }
+            MotionEvent.ACTION_MOVE -> if (!kbHandledForGesture) {
+                val dx = Math.abs(ev.x - touchDownX)
+                val dy = Math.abs(ev.y - touchDownY)
+                if (dy > ViewConfiguration.get(this).scaledTouchSlop && dy > dx) {
+                    kbHandledForGesture = true
+                    hideKeyboard()
+                }
+            }
+        }
         return super.dispatchTouchEvent(ev)
+    }
+
+    private fun hideKeyboard() {
+        val visible = ViewCompat.getRootWindowInsets(window.decorView)
+            ?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
+        val focus = currentFocus ?: return
+        if (!visible) return
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .hideSoftInputFromWindow(focus.windowToken, 0)
+        focus.clearFocus()
     }
 
     private lateinit var edtPairIp: TextInputEditText
