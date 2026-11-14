@@ -808,8 +808,12 @@ class MainActivity : AppCompatActivity() {
             val noKaspersky = (b.id == R.id.btnClearKaspersky || b.id == R.id.btnUninstallKaspersky) && kasperskyInstalled != true
             // Jadikan HMDM Device Owner / Default Launcher hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
             val noHmdm = (b.id == R.id.btnOwner || b.id == R.id.btnSetHome) && hmdmInstalled != true
+            // Tombol "Jadikan HMDM Device Owner" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
+            val ownerActive = b.id == R.id.btnOwner && connected && ownerState is OwnerState.Hmdm
+            // Tombol "Jadikan HMDM Default Launcher" mati bila HMDM sudah menjadi launcher default (status "HMDM aktif ✓").
+            val homeActive = b.id == R.id.btnSetHome && connected && homeState is HomeState.Hmdm
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
-            val enabled = !isBusy && !needsApk && !noKaspersky && !noHmdm && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            val enabled = !isBusy && !needsApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
