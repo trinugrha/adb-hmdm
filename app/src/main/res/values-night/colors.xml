@@ -35,4 +35,9 @@
     <color name="amber_text">#FCD34D</color>
     <color name="danger_fill">#FB7185</color>
     <color name="on_danger_fill">#2A0A10</color>
+
+    <!-- Tombol biru -->
+    <color name="btn_blue">#60A5FA</color>
+    <color name="on_btn_blue">#0A1F44</color>
+    <color name="btn_blue_stroke">#1E3A6E</color>
 </resources>

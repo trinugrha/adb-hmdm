@@ -315,6 +315,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnPair"
+                            style="@style/Widget.Hmdm.Button.Blue"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:minHeight="0dp"
@@ -423,7 +424,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnDisconnect"
-                            style="@style/Widget.Hmdm.Button.Outlined"
+                            style="@style/Widget.Hmdm.Button.BlueOutlined"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:minHeight="0dp"
@@ -434,6 +435,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnConnect"
+                            style="@style/Widget.Hmdm.Button.Blue"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:minHeight="0dp"
@@ -490,6 +492,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnConnectUsb"
+                        style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="8dp"
@@ -605,6 +608,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnInstallOnly"
+                        style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
@@ -775,6 +779,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOwner"
+                        style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
@@ -870,6 +875,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSetHome"
+                        style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="8dp"
@@ -925,6 +931,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAll"
+                        style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="12dp"
