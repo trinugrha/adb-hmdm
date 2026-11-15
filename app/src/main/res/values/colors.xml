@@ -53,4 +53,6 @@
     <color name="on_btn_blue">#FFFFFF</color>
     <color name="btn_blue_stroke">#0A1F4D</color>
     <color name="btn_blue_text">#0A1F4D</color>
+    <color name="yellow_fill">#FACC15</color>
+    <color name="on_yellow_fill">#422006</color>
 </resources>

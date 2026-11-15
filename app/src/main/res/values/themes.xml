@@ -84,6 +84,12 @@
         <item name="iconTint">@color/on_danger_fill</item>
     </style>
 
+    <style name="Widget.Hmdm.Button.YellowFilled" parent="Widget.Hmdm.Button">
+        <item name="backgroundTint">@color/yellow_fill</item>
+        <item name="android:textColor">@color/on_yellow_fill</item>
+        <item name="iconTint">@color/on_yellow_fill</item>
+    </style>
+
     <style name="Widget.Hmdm.Button.Text" parent="Widget.Material3.Button.TextButton">
         <item name="shapeAppearance">@style/ShapeAppearance.Hmdm.Button</item>
         <item name="android:textSize">13sp</item>
