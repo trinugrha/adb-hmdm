@@ -930,19 +930,6 @@
                     app:tint="@color/muted" />
             </LinearLayout>
 
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSetHome"
-                style="@style/Widget.Hmdm.Button.Blue"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="8dp"
-                android:minHeight="0dp"
-                android:text="Jadikan HMDM Default Launcher"
-                android:textSize="14sp"
-                app:icon="@drawable/ic_shield"
-                app:iconGravity="textStart"
-                app:iconPadding="8dp" />
-
             <!-- Pemisah: klik "Klik lainnya" untuk menampilkan Uninstall Kaspersky & Hubungkan Lewat Wi-Fi -->
             <LinearLayout
                 android:layout_width="match_parent"

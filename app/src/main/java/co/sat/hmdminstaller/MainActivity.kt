@@ -251,7 +251,6 @@ class MainActivity : AppCompatActivity() {
         val btnDisconnect: MaterialButton = findViewById(R.id.btnDisconnect)
         val btnInstallOnly: MaterialButton = findViewById(R.id.btnInstallOnly)
         val btnOwner: MaterialButton = findViewById(R.id.btnOwner)
-        val btnHome: MaterialButton = findViewById(R.id.btnSetHome)
         val btnAll: MaterialButton = findViewById(R.id.btnAll)
         val btnClearKaspersky: MaterialButton = findViewById(R.id.btnClearKaspersky)
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
@@ -259,8 +258,8 @@ class MainActivity : AppCompatActivity() {
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnPairQr, btnConnect, btnConnectUsb, btnDisconnect,
-            btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
-        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
+            btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
+        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
         blockedWhenConnected = setOf(btnPair, btnPairQr, btnConnect, btnConnectUsb)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
@@ -386,9 +385,6 @@ class MainActivity : AppCompatActivity() {
         }
         btnOwner.setOnClickListener {
             run("Set Device Owner") { doSetOwner() }
-        }
-        btnHome.setOnClickListener {
-            run("Set Launcher Default") { adb.setDefaultLauncher() }
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
@@ -851,12 +847,10 @@ class MainActivity : AppCompatActivity() {
             // "Pasang Aplikasi" dan "Otomatis (pasang + owner)" tidak bisa ditekan selama daftar APK masih kosong.
             // Hapus Data & Uninstall Kaspersky hanya aktif bila com.kaspersky.kes terdeteksi di HP target.
             val noKaspersky = (b.id == R.id.btnClearKaspersky || b.id == R.id.btnUninstallKaspersky) && kasperskyInstalled != true
-            // Jadikan HMDM Device Owner / Default Launcher hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
-            val noHmdm = (b.id == R.id.btnOwner || b.id == R.id.btnSetHome) && hmdmInstalled != true
+            // Jadikan HMDM Device Owner hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
+            val noHmdm = b.id == R.id.btnOwner && hmdmInstalled != true
             // Tombol "Jadikan HMDM Device Owner" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
             val ownerActive = b.id == R.id.btnOwner && connected && ownerState is OwnerState.Hmdm
-            // Tombol "Jadikan HMDM Default Launcher" mati bila HMDM sudah menjadi launcher default (status "HMDM aktif ✓").
-            val homeActive = b.id == R.id.btnSetHome && connected && homeState is HomeState.Hmdm
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Otomatis : Pasang Aplikasi + Jadikan Owner" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
@@ -864,7 +858,7 @@ class MainActivity : AppCompatActivity() {
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
             // Mode TCP/IP sudah aktif di HP target: tombol tidak perlu ditekan lagi.
             val tcpipAlready = b.id == R.id.btnTcpip && connected && tcpipActive == true
-            val enabled = !isBusy && !notUsb && !tcpipAlready && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            val enabled = !isBusy && !notUsb && !tcpipAlready && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
