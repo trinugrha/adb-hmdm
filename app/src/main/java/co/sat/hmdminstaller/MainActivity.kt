@@ -908,8 +908,8 @@ class MainActivity : AppCompatActivity() {
             val noKaspersky = (b.id == R.id.btnClearKaspersky || b.id == R.id.btnUninstallKaspersky) && kasperskyInstalled != true
             // Jadikan MDM Mode hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
             val noHmdm = b.id == R.id.btnOwner && hmdmInstalled != true
-            // Tombol "Jadikan MDM Mode" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
-            val ownerActive = b.id == R.id.btnOwner && connected && ownerState is OwnerState.Hmdm
+            // "Jadikan MDM Mode" dan "Pasang Aplikasi + Jadikan MDM Mode" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
+            val ownerActive = (b.id == R.id.btnOwner || b.id == R.id.btnAll) && connected && ownerState is OwnerState.Hmdm
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Pasang Aplikasi + Jadikan MDM Mode" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
