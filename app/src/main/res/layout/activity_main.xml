@@ -848,19 +848,20 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Installation Status (ketuk untuk cek ulang) -->
-            <LinearLayout
+            <!-- Information Status (dibaca lewat tombol refresh) -->
+            <com.google.android.material.card.MaterialCardView
                 android:id="@+id/appsPill"
+                style="@style/Widget.Hmdm.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_status_box"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?attr/selectableItemBackground"
+                android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="top"
                 android:orientation="horizontal"
-                android:padding="14dp">
+                android:padding="16dp">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -1061,15 +1062,20 @@
                 </LinearLayout>
 
                 <ImageView
+                    android:id="@+id/btnRefreshInfo"
                     android:layout_width="36dp"
                     android:layout_marginStart="12dp"
                     android:layout_height="36dp"
                     android:background="@drawable/bg_chip"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:contentDescription="Cek ulang status"
                     android:padding="8dp"
                     android:src="@drawable/ic_refresh"
                     app:tint="@color/muted" />
             </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
             <!-- Pemisah: klik "Klik lainnya" untuk menampilkan Uninstall Kaspersky & Hubungkan Lewat Wi-Fi -->
             <LinearLayout

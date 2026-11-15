@@ -122,6 +122,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tcpipDot: View
     private lateinit var txtTcpip: TextView
     private lateinit var appsPill: View
+    private lateinit var btnRefreshInfo: View
     private lateinit var appsDot: View
     private lateinit var txtApps: TextView
     private lateinit var txtAppsDetail: TextView
@@ -156,6 +157,8 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, Boolean>? = null
+    /** True sesaat setelah Connect berhasil: Information Status (instalasi, launcher, permission) jangan dibaca otomatis; baru dibaca saat kartunya diketuk. */
+    @Volatile private var skipInfoRefresh = false
     /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
     private var deviceType = "POS"
     private lateinit var typeChips: Map<String, android.widget.CheckBox>
@@ -251,6 +254,7 @@ class MainActivity : AppCompatActivity() {
         tcpipDot = findViewById(R.id.tcpipDot)
         txtTcpip = findViewById(R.id.txtTcpip)
         appsPill = findViewById(R.id.appsPill)
+        btnRefreshInfo = findViewById(R.id.btnRefreshInfo)
         typeChips = mapOf(
             "POS" to findViewById<android.widget.CheckBox>(R.id.typePos),
             "TABLET" to findViewById<android.widget.CheckBox>(R.id.typeTablet),
@@ -334,7 +338,8 @@ class MainActivity : AppCompatActivity() {
                 st != OwnerState.Unknown
             }
         }
-        appsPill.setOnClickListener {
+        // Information Status hanya dibaca lewat tombol refresh (bukan ketuk area kartu).
+        btnRefreshInfo.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
@@ -700,6 +705,7 @@ class MainActivity : AppCompatActivity() {
             lostAddr = null
             lastProbe = connectedSince
             showUsbDevice(null)
+            skipInfoRefresh = true
             updateOwner()
         } else {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
@@ -727,6 +733,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = label; adb.sessionSince = connectedSince
             lostAddr = null
             lastProbe = connectedSince
+            skipInfoRefresh = true
             updateOwner()
         } else {
             connectedAddr = null
@@ -741,12 +748,11 @@ class MainActivity : AppCompatActivity() {
     /** Cek ulang device owner di HP target (panggil dari thread kerja). */
     private fun updateOwner() {
         ownerState = adb.queryDeviceOwner()
-        homeState = adb.queryDefaultLauncher()
+        // Information Status (launcher default, instalasi aplikasi, permission) sengaja TIDAK dibaca di sini:
+        // baru dibaca saat pengguna mengetuk kartu Information Status.
         kasperskyInstalled = adb.queryKasperskyInstalled()
         hmdmInstalled = adb.queryHmdmInstalled()
         tcpipActive = adb.queryTcpipActive()
-        appsInstalled = adb.queryRequiredPackages()
-        hmdmPerms = adb.queryHmdmPermissions()
         runOnUiThread { refreshHeader() }
     }
 
@@ -791,7 +797,22 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it }; adb.queryTcpipActive()?.let { tcpipActive = it }; adb.queryRequiredPackages()?.let { appsInstalled = it }; adb.queryHmdmPermissions()?.let { hmdmPerms = it } } } catch (e: Throwable) { }
+            // Tepat setelah Connect, Information Status (launcher, instalasi, permission) tidak ikut dibaca.
+            val skipInfo = skipInfoRefresh
+            skipInfoRefresh = false
+            try {
+                if (adb.isConnected) {
+                    val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st
+                    adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
+                    adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
+                    adb.queryTcpipActive()?.let { tcpipActive = it }
+                    if (!skipInfo) {
+                        val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs
+                        adb.queryRequiredPackages()?.let { appsInstalled = it }
+                        adb.queryHmdmPermissions()?.let { hmdmPerms = it }
+                    }
+                }
+            } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -916,11 +937,11 @@ class MainActivity : AppCompatActivity() {
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
         // Kotak status Device Owner & Semua Aplikasi (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
-        if (::appsPill.isInitialized) {
+        if (::btnRefreshInfo.isInitialized) {
             val checkEnabled = !isBusy && connected
-            appsPill.isEnabled = checkEnabled
-            appsPill.isClickable = checkEnabled
-            appsPill.alpha = if (checkEnabled) 1f else 0.5f
+            btnRefreshInfo.isEnabled = checkEnabled
+            btnRefreshInfo.isClickable = checkEnabled
+            btnRefreshInfo.alpha = if (checkEnabled) 1f else 0.4f
         }
         if (::ownerPill.isInitialized) {
             val checkEnabled = !isBusy && connected
