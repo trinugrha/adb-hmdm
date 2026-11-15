@@ -1015,15 +1015,6 @@
                             android:textColor="@color/text"
                             android:textSize="14sp" />
                     </LinearLayout>
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginTop="6dp"
-                        android:text="Device administrator · Overlay · Riwayat penggunaan"
-                        android:textColor="@color/muted"
-                        android:textSize="12sp" />
                 </LinearLayout>
 
                 <ImageView
