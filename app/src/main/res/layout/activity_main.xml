@@ -668,16 +668,13 @@
                         android:layout_marginTop="4dp"
                         android:text="Jadikan Headwind MDM sebagai MDM Mode penuh di perangkat Android target." />
 
-                    <!-- Status MDM Mode (ketuk untuk cek ulang) -->
+                    <!-- Status MDM Mode (cek ulang hanya lewat ikon refresh) -->
                     <LinearLayout
                         android:id="@+id/ownerPill"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:background="@drawable/bg_status_box"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
                         android:padding="14dp">
@@ -727,11 +724,15 @@
                         </LinearLayout>
 
                         <ImageView
+                            android:id="@+id/btnRefreshOwner"
                             android:layout_width="36dp"
-                            android:layout_marginStart="12dp"
                             android:layout_height="36dp"
+                            android:layout_marginStart="12dp"
                             android:background="@drawable/bg_chip"
+                            android:clickable="true"
                             android:contentDescription="Cek ulang status"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackgroundBorderless"
                             android:padding="8dp"
                             android:src="@drawable/ic_refresh"
                             app:tint="@color/muted" />

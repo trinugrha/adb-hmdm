@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtApkEmpty: TextView
     private lateinit var txtDropSub: TextView
     private lateinit var dropZone: View
-    private lateinit var ownerPill: View
+    private lateinit var btnRefreshOwner: View
     private lateinit var apkListBox: android.widget.LinearLayout
     private lateinit var tabMode: TabLayout
     private lateinit var statusDot: View
@@ -243,7 +243,7 @@ class MainActivity : AppCompatActivity() {
         txtApkEmpty = findViewById(R.id.txtApkEmpty)
         txtDropSub = findViewById(R.id.txtDropSub)
         dropZone = findViewById(R.id.dropZone)
-        ownerPill = findViewById(R.id.ownerPill)
+        btnRefreshOwner = findViewById(R.id.btnRefreshOwner)
         apkListBox = findViewById(R.id.apkListBox)
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
@@ -325,9 +325,12 @@ class MainActivity : AppCompatActivity() {
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
         logScroll.setOnTouchListener { v, _ -> v.parent.requestDisallowInterceptTouchEvent(true); false }
 
-        ownerPill.setOnClickListener {
+        // Status MDM Mode hanya dicek ulang lewat ikon refresh (bukan ketuk kotak status).
+        btnRefreshOwner.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
+            // Hanya status MDM Mode yang dibaca; instalasi, launcher, dan permission tidak ikut diperbarui.
+            skipInfoRefresh = true
             run("Cek Status MDM Mode") {
                 val st = adb.checkDeviceOwner()
                 if (st != OwnerState.Unknown) ownerState = st
@@ -936,18 +939,18 @@ class MainActivity : AppCompatActivity() {
         setModeTabsEnabled(wirelessEnabled = !(connected && adb.isViaUsb), usbEnabled = !(connected && !adb.isViaUsb))
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
-        // Kotak Status MDM Mode & Semua Aplikasi (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
+        // Ikon refresh Status MDM Mode & tombol Cek Status Semua Aplikasi: hanya bisa ditekan saat terhubung dan tidak sibuk.
         if (::btnRefreshInfo.isInitialized) {
             val checkEnabled = !isBusy && connected
             btnRefreshInfo.isEnabled = checkEnabled
             btnRefreshInfo.isClickable = checkEnabled
             btnRefreshInfo.alpha = if (checkEnabled) 1f else 0.4f
         }
-        if (::ownerPill.isInitialized) {
+        if (::btnRefreshOwner.isInitialized) {
             val checkEnabled = !isBusy && connected
-            ownerPill.isEnabled = checkEnabled
-            ownerPill.isClickable = checkEnabled
-            ownerPill.alpha = if (checkEnabled) 1f else 0.5f
+            btnRefreshOwner.isEnabled = checkEnabled
+            btnRefreshOwner.isClickable = checkEnabled
+            btnRefreshOwner.alpha = if (checkEnabled) 1f else 0.4f
         }
     }
 
