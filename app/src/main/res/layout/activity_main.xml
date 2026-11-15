@@ -867,20 +867,21 @@
                         style="@style/Hmdm.CardHint"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
                         android:text="Tekan refresh untuk cek status" />
 
                     <!-- Pilih jenis perangkat untuk ceklist instalasi -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="8dp"
                         android:orientation="horizontal">
 
                         <CheckBox
                             android:id="@+id/typePos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="0dp"
+                            android:layout_marginStart="-8dp"
                             android:buttonTint="@color/accent"
                             android:minHeight="40dp"
                             android:text="POS"
@@ -917,14 +918,14 @@
                         style="@style/Hmdm.SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
+                        android:layout_marginTop="8dp"
                         android:text="INSTALLATION STATUS"
                         android:textColor="@color/muted" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:background="@drawable/bg_chip"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
@@ -967,14 +968,14 @@
                         style="@style/Hmdm.SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_marginTop="16dp"
                         android:text="HMDM LAUNCHER STATUS"
                         android:textColor="@color/muted" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:background="@drawable/bg_chip"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"
@@ -1007,14 +1008,14 @@
                         style="@style/Hmdm.SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_marginTop="16dp"
                         android:text="PERMISSION STATUS"
                         android:textColor="@color/muted" />
 
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="6dp"
                         android:background="@drawable/bg_chip"
                         android:gravity="center_vertical"
                         android:orientation="horizontal"

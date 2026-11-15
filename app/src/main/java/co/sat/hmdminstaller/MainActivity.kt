@@ -418,10 +418,11 @@ class MainActivity : AppCompatActivity() {
         }
         btnInstallOnly.setOnClickListener {
             val list = apks.toList()
-            run("Install APK") { adb.install(list) }
+            // Selesai pasang: Information Status (instalasi, default launcher, permission) tidak ikut dicek.
+            run("Install APK") { skipInfoRefresh = true; adb.install(list) }
         }
         btnOwner.setOnClickListener {
-            run("Set MDM Mode") { doSetOwner() }
+            run("Set MDM Mode") { skipInfoRefresh = true; doSetOwner() }
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
@@ -449,7 +450,8 @@ class MainActivity : AppCompatActivity() {
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
             val list = apks.toList()
-            run("Pasang Aplikasi + Jadikan MDM Mode") { adb.installAndOwner(list) }
+            // Selesai pasang: Information Status (instalasi, default launcher, permission) tidak ikut dicek.
+            run("Pasang Aplikasi + Jadikan MDM Mode") { skipInfoRefresh = true; adb.installAndOwner(list) }
         }
         btnCopyLog.setOnClickListener {
             if (txtLog.length() > 0) {
