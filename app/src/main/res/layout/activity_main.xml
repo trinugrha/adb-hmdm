@@ -875,6 +875,50 @@
                         android:gravity="center_vertical"
                         android:text="Information Status" />
 
+                    <!-- Pilih jenis perangkat untuk ceklist instalasi -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/typePos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="0dp"
+                            android:buttonTint="@color/accent"
+                            android:minHeight="40dp"
+                            android:text="POS"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/typeTablet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:buttonTint="@color/accent"
+                            android:minHeight="40dp"
+                            android:text="TABLET"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/typePda"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:buttonTint="@color/accent"
+                            android:minHeight="40dp"
+                            android:text="PDA"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
                     <TextView
                         style="@style/Hmdm.SectionLabel"
                         android:layout_width="wrap_content"
@@ -919,7 +963,6 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:layout_marginTop="6dp"
-                        android:maxLines="10"
                         android:text=""
                         android:textColor="@color/muted"
                         android:textSize="12sp"

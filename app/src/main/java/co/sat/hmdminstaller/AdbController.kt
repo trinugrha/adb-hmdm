@@ -77,17 +77,51 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
-        /** Semua aplikasi yang harus terpasang di HP target (dipakai status "Installation Status"). */
-        val REQUIRED_PACKAGES = listOf(
-            "com.alfamart.customerscreen",
-            "com.alfamart.etransv4_pos",
-            "com.finnetpos.mpnappv2",
-            "com.hmdm.launcher",
-            "com.hmdm.control",
-            "com.kaspersky.kes",
-            "com.alfamart.pos",
-            "net.christianbeier.droidvnc_ng"
+        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
+        val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
+            "POS" to listOf(
+                "com.alfamart.customerscreen",
+                "com.alfamart.etransv4_pos",
+                "com.finnetpos.mpnappv2",
+                "com.hmdm.launcher",
+                "com.hmdm.control",
+                "com.kaspersky.kes",
+                "com.alfamart.pos",
+                "net.christianbeier.droidvnc_ng"
+            ),
+            "TABLET" to listOf(
+                "com.alfamart.apo",
+                "sat.co.id.asa",
+                "com.alfastore.ckexpired.v2",
+                "com.gojek.resto",
+                "com.hmdm.launcher",
+                "com.hmdm.emuilauncherrestarter",
+                "com.hmdm.control",
+                "infilect.infiviz",
+                "com.alfastore.maxdipcloud.v4",
+                "com.alfastore.productinfocloud",
+                "com.alfastore.sopda.v2",
+                "com.alfastore.storereportnew",
+                "com.termoneplus",
+                "com.transferlink",
+                "sat.co.id.validasiautobtl",
+                "com.hmdm.wifimanager"
+            ),
+            "PDA" to listOf(
+                "com.alfastore.ckexpired.v2",
+                "com.hmdm.launcher",
+                "com.hmdm.emuilauncherrestarter",
+                "com.alfastore.lpbpda.v2",
+                "com.alfastore.pricetag.v2",
+                "com.alfastore.productinfocloud",
+                "com.alfamart.sopdaaoa",
+                "com.alfastore.sopda.v2",
+                "com.termoneplus",
+                "com.hmdm.wifimanager"
+            )
         )
+        /** Gabungan semua jenis: satu kali `pm list packages` sudah cukup untuk ketiga ceklist. */
+        val REQUIRED_PACKAGES: List<String> = DEVICE_PACKAGES.values.flatten().distinct()
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
@@ -457,22 +491,23 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
     }
 
-    /** Cek manual (ketuk status aplikasi): hasilnya ditulis ke log. */
-    fun checkRequiredPackages(): Map<String, Boolean>? {
+    /** Cek manual (ketuk status aplikasi): hasilnya ditulis ke log. [only] = ceklist jenis perangkat yang dipilih. */
+    fun checkRequiredPackages(only: List<String>? = null): Map<String, Boolean>? {
         if (!ensureConnected()) return null
         logCmd("adb shell pm list packages --user 0")
-        val r = queryRequiredPackages()
-        if (r == null) {
+        val all = queryRequiredPackages()
+        if (all == null) {
             logErr("Baca daftar aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null
         }
+        val r = if (only == null) all else all.filterKeys { it in only }
         val missing = r.filterValues { !it }.keys
         if (missing.isEmpty()) logOk("Semua aplikasi terinstal (${r.size}/${r.size})")
         else {
             logWarn("Belum terinstal ${missing.size} dari ${r.size} aplikasi:")
             missing.forEach { logDetail(it) }
         }
-        return r
+        return all
     }
 
     /**

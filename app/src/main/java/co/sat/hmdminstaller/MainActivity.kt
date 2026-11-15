@@ -156,6 +156,9 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, Boolean>? = null
+    /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
+    private var deviceType = "POS"
+    private lateinit var typeChips: Map<String, android.widget.CheckBox>
     /** Status tiga permission com.hmdm.launcher di HP target: null = belum diketahui. */
     @Volatile private var hmdmPerms: HmdmPermissions? = null
 
@@ -248,6 +251,20 @@ class MainActivity : AppCompatActivity() {
         tcpipDot = findViewById(R.id.tcpipDot)
         txtTcpip = findViewById(R.id.txtTcpip)
         appsPill = findViewById(R.id.appsPill)
+        typeChips = mapOf(
+            "POS" to findViewById<android.widget.CheckBox>(R.id.typePos),
+            "TABLET" to findViewById<android.widget.CheckBox>(R.id.typeTablet),
+            "PDA" to findViewById<android.widget.CheckBox>(R.id.typePda)
+        )
+        val typePrefs = getSharedPreferences("ui_prefs", Context.MODE_PRIVATE)
+        deviceType = typePrefs.getString("device_type", "POS")?.takeIf { it in AdbController.DEVICE_PACKAGES } ?: "POS"
+        typeChips.forEach { (type, chip) ->
+            chip.setOnClickListener {
+                deviceType = type
+                typePrefs.edit().putString("device_type", type).apply()
+                refreshApps()
+            }
+        }
         appsDot = findViewById(R.id.appsDot)
         txtApps = findViewById(R.id.txtApps)
         txtAppsDetail = findViewById(R.id.txtAppsDetail)
@@ -320,8 +337,9 @@ class MainActivity : AppCompatActivity() {
         appsPill.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
+            val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
             run("Cek Installation Status") {
-                val r = adb.checkRequiredPackages()
+                val r = adb.checkRequiredPackages(pkgs)
                 if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()
                 if (st != HomeState.Unknown) homeState = st
@@ -987,22 +1005,37 @@ class MainActivity : AppCompatActivity() {
         if (!::txtApps.isInitialized) return
         val connected = connectedAddr != null && adb.isConnected
         val st = if (connected) appsInstalled else null
-        val total = AdbController.REQUIRED_PACKAGES.size
-        val missing = st?.filterValues { !it }?.keys?.toList() ?: emptyList()
+        val pkgs = AdbController.DEVICE_PACKAGES[deviceType] ?: emptyList()
+        val total = pkgs.size
+        val grey = Color.rgb(148, 163, 184)
+        val green = Color.rgb(74, 222, 128)
+        val red = Color.rgb(248, 113, 113)
+        // Checkbox jenis perangkat: hanya satu yang tercentang (yang dipilih), selalu ada satu terpilih.
+        typeChips.forEach { (type, box) -> box.isChecked = type == deviceType }
+        val missing = if (st == null) emptyList() else pkgs.filter { st[it] != true }
         val (text, color) = when {
-            st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
-            missing.isEmpty() -> "Semua terinstal ✓ ($total/$total)" to Color.rgb(74, 222, 128)
-            else -> "Belum lengkap (${total - missing.size}/$total)" to Color.rgb(248, 113, 113)
+            st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
+            missing.isEmpty() -> "Semua terinstal ✓ ($total/$total)" to green
+            else -> "Belum lengkap (${total - missing.size}/$total)" to red
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
-        if (missing.isNotEmpty()) {
-            txtAppsDetail.text = "Belum terinstal:\n" + missing.joinToString("\n")
-            txtAppsDetail.visibility = View.VISIBLE
-        } else {
-            txtAppsDetail.text = ""
-            txtAppsDetail.visibility = View.GONE
+        // Ceklist: tiap paket satu baris, ✓ hijau bila terpasang, ✗ merah bila belum.
+        val sb = android.text.SpannableStringBuilder()
+        pkgs.forEachIndexed { i, pkg ->
+            if (i > 0) sb.append('\n')
+            val (mark, c) = when {
+                st == null -> "○" to grey
+                st[pkg] == true -> "✓" to green
+                else -> "✗" to red
+            }
+            val start = sb.length
+            sb.append(mark)
+            sb.setSpan(android.text.style.ForegroundColorSpan(c), start, sb.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            sb.append("  ").append(pkg)
         }
+        txtAppsDetail.text = sb
+        txtAppsDetail.visibility = View.VISIBLE
     }
 
     private fun refreshTcpip() {
