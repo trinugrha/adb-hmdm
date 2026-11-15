@@ -847,13 +847,12 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="top"
-                android:orientation="horizontal"
+                android:orientation="vertical"
                 android:padding="16dp">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
                     android:orientation="vertical">
 
                     <TextView
@@ -868,13 +867,21 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Tekan refresh untuk cek status" />
+                        android:text="Tekan Cek Status untuk cek status" />
+
+                    <!-- Kotak status (gaya sama seperti Status Device Owner) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status_box"
+                        android:orientation="vertical"
+                        android:padding="14dp">
 
                     <!-- Pilih jenis perangkat untuk ceklist instalasi -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
                         android:orientation="horizontal">
 
                         <CheckBox
@@ -1041,21 +1048,19 @@
                             android:textColor="@color/text"
                             android:textSize="14sp" />
                     </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
 
-                <ImageView
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRefreshInfo"
-                    android:layout_width="36dp"
-                    android:layout_marginStart="12dp"
-                    android:layout_height="36dp"
-                    android:background="@drawable/bg_chip"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?attr/selectableItemBackground"
+                    style="@style/Widget.Hmdm.Button.Blue"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="16dp"
+                    android:minHeight="0dp"
+                    android:textSize="14sp"
                     android:contentDescription="Cek ulang status"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_refresh"
-                    app:tint="@color/muted" />
+                    android:text="Cek Status" />
             </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
