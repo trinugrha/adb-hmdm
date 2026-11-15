@@ -566,7 +566,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Cek manual (ketuk status): hasilnya ditulis ke log. */
     fun checkHmdmPermissions(): HmdmPermissions? {
         if (!ensureConnected()) return null
-        logCmd("adb shell dumpsys device_policy; appops get $HMDM_PACKAGE SYSTEM_ALERT_WINDOW / GET_USAGE_STATS")
+        logCmd("adb shell dumpsys device_policy")
+        logCmd("adb shell appops get $HMDM_PACKAGE SYSTEM_ALERT_WINDOW")
+        logCmd("adb shell appops get $HMDM_PACKAGE GET_USAGE_STATS")
         val r = queryHmdmPermissions() ?: run {
             logErr("Baca permission gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null
@@ -576,9 +578,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             false -> logWarn("$name: belum aktif")
             null -> logWarn("$name: tidak terbaca")
         }
-        line("Permission to install as device administrator", r.admin)
-        line("Permission to overlay on top of other windows", r.overlay)
-        line("Permission to access the use of history", r.usage)
+        line("Admin perangkat", r.admin)
+        line("Tampil di atas aplikasi lain", r.overlay)
+        line("Akses riwayat penggunaan", r.usage)
         return r
     }
 
