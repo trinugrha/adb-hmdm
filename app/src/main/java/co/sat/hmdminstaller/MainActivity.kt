@@ -328,7 +328,7 @@ class MainActivity : AppCompatActivity() {
         appsPill.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
-            run("Cek Aplikasi & Launcher Default") {
+            run("Cek Installation Status") {
                 val r = adb.checkRequiredPackages()
                 if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()
@@ -410,7 +410,7 @@ class MainActivity : AppCompatActivity() {
             run("Install APK") { adb.install(list) }
         }
         btnOwner.setOnClickListener {
-            run("Set Device Owner") { doSetOwner() }
+            run("Set MDM Mode") { doSetOwner() }
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
@@ -438,7 +438,7 @@ class MainActivity : AppCompatActivity() {
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
             val list = apks.toList()
-            run("Install APK + Set Owner") { adb.installAndOwner(list) }
+            run("Pasang Aplikasi + Jadikan MDM Mode") { adb.installAndOwner(list) }
         }
         btnCopyLog.setOnClickListener {
             if (txtLog.length() > 0) {
@@ -877,12 +877,12 @@ class MainActivity : AppCompatActivity() {
             // "Pasang Aplikasi" dan "Otomatis (pasang + owner)" tidak bisa ditekan selama daftar APK masih kosong.
             // Hapus Data & Uninstall Kaspersky hanya aktif bila com.kaspersky.kes terdeteksi di HP target.
             val noKaspersky = (b.id == R.id.btnClearKaspersky || b.id == R.id.btnUninstallKaspersky) && kasperskyInstalled != true
-            // Jadikan HMDM Device Owner hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
+            // Jadikan MDM Mode hanya aktif bila com.hmdm.launcher terdeteksi di HP target.
             val noHmdm = b.id == R.id.btnOwner && hmdmInstalled != true
-            // Tombol "Jadikan HMDM Device Owner" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
+            // Tombol "Jadikan MDM Mode" mati bila HMDM sudah menjadi device owner (status "HMDM aktif ✓").
             val ownerActive = b.id == R.id.btnOwner && connected && ownerState is OwnerState.Hmdm
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
-            // "Otomatis : Pasang Aplikasi + Jadikan Owner" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
+            // "Pasang Aplikasi + Jadikan MDM Mode" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
             // "Ubah Mode ke TCP/IP" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
