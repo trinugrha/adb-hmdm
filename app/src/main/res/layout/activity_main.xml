@@ -789,102 +789,6 @@
                         app:icon="@drawable/ic_person"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
-
-                    <!-- Status launcher default (ketuk untuk cek ulang) -->
-                    <LinearLayout
-                        android:id="@+id/homePill"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:background="@drawable/bg_status_box"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="14dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/Hmdm.SectionLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="LAUNCHER DEFAULT AKTIF"
-                                android:textColor="@color/muted" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:background="@drawable/bg_chip"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="12dp"
-                                android:paddingTop="7dp"
-                                android:paddingEnd="14dp"
-                                android:paddingBottom="7dp">
-
-                                <View
-                                    android:id="@+id/homeDot"
-                                    android:layout_width="10dp"
-                                    android:layout_height="10dp"
-                                    android:background="@drawable/bg_dot" />
-
-                                <TextView
-                                    android:id="@+id/txtHome"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:maxLines="1"
-                                    android:ellipsize="end"
-                                    android:text="Belum diperiksa"
-                                    android:textColor="@color/text"
-                                    android:textSize="14sp" />
-                            </LinearLayout>
-
-                            <TextView
-                                android:id="@+id/txtHomeDetail"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginTop="6dp"
-                                android:ellipsize="middle"
-                                android:maxLines="1"
-                                android:text=""
-                                android:textColor="@color/muted"
-                                android:textSize="12sp"
-                                android:visibility="gone" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="36dp"
-                            android:layout_marginStart="12dp"
-                            android:layout_height="36dp"
-                            android:background="@drawable/bg_chip"
-                            android:contentDescription="Cek ulang status"
-                            android:padding="8dp"
-                            android:src="@drawable/ic_refresh"
-                            app:tint="@color/muted" />
-                    </LinearLayout>
-
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnSetHome"
-                        style="@style/Widget.Hmdm.Button.Blue"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="8dp"
-                        android:minHeight="0dp"
-                        android:text="Jadikan HMDM Default Launcher"
-                        android:textSize="14sp"
-                        app:icon="@drawable/ic_shield"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -943,6 +847,101 @@
                         app:iconPadding="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Status launcher default (ketuk untuk cek ulang) -->
+            <LinearLayout
+                android:id="@+id/homePill"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_status_box"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="LAUNCHER DEFAULT AKTIF"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp">
+
+                        <View
+                            android:id="@+id/homeDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:id="@+id/txtHome"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="Belum diperiksa"
+                            android:textColor="@color/text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/txtHomeDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="6dp"
+                        android:ellipsize="middle"
+                        android:maxLines="1"
+                        android:text=""
+                        android:textColor="@color/muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+                </LinearLayout>
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_marginStart="12dp"
+                    android:layout_height="36dp"
+                    android:background="@drawable/bg_chip"
+                    android:contentDescription="Cek ulang status"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_refresh"
+                    app:tint="@color/muted" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSetHome"
+                style="@style/Widget.Hmdm.Button.Blue"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="8dp"
+                android:minHeight="0dp"
+                android:text="Jadikan HMDM Default Launcher"
+                android:textSize="14sp"
+                app:icon="@drawable/ic_shield"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
 
             <!-- Pemisah: klik "Klik lainnya" untuk menampilkan Uninstall Kaspersky & Hubungkan Lewat Wi-Fi -->
             <LinearLayout
