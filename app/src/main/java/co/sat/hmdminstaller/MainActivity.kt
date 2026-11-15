@@ -313,6 +313,16 @@ class MainActivity : AppCompatActivity() {
                 st != HomeState.Unknown
             }
         }
+        val btnMoreToggle: View = findViewById(R.id.btnMoreToggle)
+        val moreContainer: View = findViewById(R.id.moreContainer)
+        val txtMoreToggle: TextView = findViewById(R.id.txtMoreToggle)
+        val icMoreToggle: View = findViewById(R.id.icMoreToggle)
+        btnMoreToggle.setOnClickListener {
+            val show = moreContainer.visibility != View.VISIBLE
+            moreContainer.visibility = if (show) View.VISIBLE else View.GONE
+            txtMoreToggle.text = if (show) "Sembunyikan" else "Klik lainnya"
+            icMoreToggle.rotation = if (show) 180f else 0f
+        }
         tabMode = findViewById(R.id.tabMode)
         val tabWireless: View = findViewById(R.id.tabWireless)
         val tabUsb: View = findViewById(R.id.tabUsb)
