@@ -848,9 +848,9 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Status launcher default (ketuk untuk cek ulang) -->
+            <!-- Status semua aplikasi terinstal (ketuk untuk cek ulang) -->
             <LinearLayout
-                android:id="@+id/homePill"
+                android:id="@+id/appsPill"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -872,7 +872,58 @@
                         style="@style/Hmdm.SectionLabel"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="LAUNCHER DEFAULT AKTIF"
+                        android:text="SEMUA APLIKASI TERINSTAL"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp">
+
+                        <View
+                            android:id="@+id/appsDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:id="@+id/txtApps"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/txtAppsDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="6dp"
+                        android:maxLines="10"
+                        android:text=""
+                        android:textColor="@color/muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <!-- Status default launcher com.hmdm.launcher -->
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="DEFAULT LAUNCHER (COM.HMDM.LAUNCHER)"
                         android:textColor="@color/muted" />
 
                     <LinearLayout
@@ -900,7 +951,7 @@
                             android:layout_marginStart="8dp"
                             android:maxLines="1"
                             android:ellipsize="end"
-                            android:text="Belum diperiksa"
+                            android:text="Belum terhubung"
                             android:textColor="@color/text"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -917,6 +968,114 @@
                         android:textColor="@color/muted"
                         android:textSize="12sp"
                         android:visibility="gone" />
+
+                    <!-- Status permission com.hmdm.launcher -->
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="PERMISSION (COM.HMDM.LAUNCHER)"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/permAdminDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="Permission to install as device administrator"
+                            android:textColor="@color/text"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/txtPermAdmin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/muted"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/permOverlayDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="Permission to overlay on top of other windows"
+                            android:textColor="@color/text"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/txtPermOverlay"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/muted"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:id="@+id/permUsageDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:text="Permission to access the use of history"
+                            android:textColor="@color/text"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/txtPermUsage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/muted"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <ImageView

@@ -119,12 +119,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
     private lateinit var txtOwnerDetail: TextView
-    private lateinit var homePill: View
-    private lateinit var homeDot: View
-    private lateinit var txtHome: TextView
     private lateinit var tcpipDot: View
     private lateinit var txtTcpip: TextView
+    private lateinit var appsPill: View
+    private lateinit var appsDot: View
+    private lateinit var txtApps: TextView
+    private lateinit var txtAppsDetail: TextView
+    private lateinit var homeDot: View
+    private lateinit var txtHome: TextView
     private lateinit var txtHomeDetail: TextView
+    private lateinit var permAdminDot: View
+    private lateinit var txtPermAdmin: TextView
+    private lateinit var permOverlayDot: View
+    private lateinit var txtPermOverlay: TextView
+    private lateinit var permUsageDot: View
+    private lateinit var txtPermUsage: TextView
     private lateinit var progress: ProgressBar
     private lateinit var buttons: List<MaterialButton>
     // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
@@ -149,6 +158,10 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var hmdmInstalled: Boolean? = null
     /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah Mode ke TCP/IP" dimatikan. */
     @Volatile private var tcpipActive: Boolean? = null
+    /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
+    @Volatile private var appsInstalled: Map<String, Boolean>? = null
+    /** Status tiga permission com.hmdm.launcher di HP target: null = belum diketahui. */
+    @Volatile private var hmdmPerms: HmdmPermissions? = null
 
     // Pemantau status koneksi (live): jalan hanya saat layar terlihat.
     private val poller = Executors.newSingleThreadScheduledExecutor()
@@ -236,12 +249,21 @@ class MainActivity : AppCompatActivity() {
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
         txtOwnerDetail = findViewById(R.id.txtOwnerDetail)
-        homePill = findViewById(R.id.homePill)
-        homeDot = findViewById(R.id.homeDot)
-        txtHome = findViewById(R.id.txtHome)
         tcpipDot = findViewById(R.id.tcpipDot)
         txtTcpip = findViewById(R.id.txtTcpip)
+        appsPill = findViewById(R.id.appsPill)
+        appsDot = findViewById(R.id.appsDot)
+        txtApps = findViewById(R.id.txtApps)
+        txtAppsDetail = findViewById(R.id.txtAppsDetail)
+        homeDot = findViewById(R.id.homeDot)
+        txtHome = findViewById(R.id.txtHome)
         txtHomeDetail = findViewById(R.id.txtHomeDetail)
+        permAdminDot = findViewById(R.id.permAdminDot)
+        txtPermAdmin = findViewById(R.id.txtPermAdmin)
+        permOverlayDot = findViewById(R.id.permOverlayDot)
+        txtPermOverlay = findViewById(R.id.txtPermOverlay)
+        permUsageDot = findViewById(R.id.permUsageDot)
+        txtPermUsage = findViewById(R.id.txtPermUsage)
         progress = findViewById(R.id.progress)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
@@ -303,13 +325,17 @@ class MainActivity : AppCompatActivity() {
                 st != OwnerState.Unknown
             }
         }
-        homePill.setOnClickListener {
+        appsPill.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
-            run("Cek Launcher Default") {
+            run("Cek Aplikasi & Launcher Default") {
+                val r = adb.checkRequiredPackages()
+                if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()
                 if (st != HomeState.Unknown) homeState = st
-                st != HomeState.Unknown
+                val pr = adb.checkHmdmPermissions()
+                if (pr != null) hmdmPerms = pr
+                r != null || st != HomeState.Unknown || pr != null
             }
         }
         val btnMoreToggle: View = findViewById(R.id.btnMoreToggle)
@@ -575,7 +601,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null
         }
         refreshHeader()
     }
@@ -669,7 +695,7 @@ class MainActivity : AppCompatActivity() {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null
         }
         runOnUiThread { refreshHeader() }
         return ok
@@ -695,7 +721,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null
             showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
@@ -709,6 +735,8 @@ class MainActivity : AppCompatActivity() {
         kasperskyInstalled = adb.queryKasperskyInstalled()
         hmdmInstalled = adb.queryHmdmInstalled()
         tcpipActive = adb.queryTcpipActive()
+        appsInstalled = adb.queryRequiredPackages()
+        hmdmPerms = adb.queryHmdmPermissions()
         runOnUiThread { refreshHeader() }
     }
 
@@ -718,14 +746,14 @@ class MainActivity : AppCompatActivity() {
         val already = adb.queryTcpipActive() == true
         val ok = adb.enableTcpip()
         if (ok && already) { tcpipActive = true; runOnUiThread { refreshHeader() }; return true }
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -753,7 +781,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it }; adb.queryTcpipActive()?.let { tcpipActive = it } } } catch (e: Throwable) { }
+            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it }; adb.queryTcpipActive()?.let { tcpipActive = it }; adb.queryRequiredPackages()?.let { appsInstalled = it }; adb.queryHmdmPermissions()?.let { hmdmPerms = it } } } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -832,7 +860,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
         refreshOwner()
+        refreshApps()
         refreshHome()
+        refreshPerms()
         refreshTcpip()
         applyButtonState(busy)
     }
@@ -875,12 +905,12 @@ class MainActivity : AppCompatActivity() {
         setModeTabsEnabled(wirelessEnabled = !(connected && adb.isViaUsb), usbEnabled = !(connected && !adb.isViaUsb))
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
-        // Kotak status Device Owner (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
-        if (::homePill.isInitialized) {
+        // Kotak status Device Owner & Semua Aplikasi (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
+        if (::appsPill.isInitialized) {
             val checkEnabled = !isBusy && connected
-            homePill.isEnabled = checkEnabled
-            homePill.isClickable = checkEnabled
-            homePill.alpha = if (checkEnabled) 1f else 0.5f
+            appsPill.isEnabled = checkEnabled
+            appsPill.isClickable = checkEnabled
+            appsPill.alpha = if (checkEnabled) 1f else 0.5f
         }
         if (::ownerPill.isInitialized) {
             val checkEnabled = !isBusy && connected
@@ -915,12 +945,37 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Status tiga permission com.hmdm.launcher (admin perangkat, overlay, riwayat penggunaan). */
+    private fun refreshPerms() {
+        if (!::txtPermAdmin.isInitialized) return
+        val connected = connectedAddr != null && adb.isConnected
+        val p = if (connected) hmdmPerms else null
+        fun show(dot: View, txt: TextView, v: Boolean?) {
+            val (text, color) = when {
+                !connected -> "Belum terhubung" to Color.rgb(148, 163, 184)
+                p == null -> "Belum diperiksa" to Color.rgb(148, 163, 184)
+                v == true -> "Aktif ✓" to Color.rgb(74, 222, 128)
+                v == false -> "Belum aktif" to Color.rgb(248, 113, 113)
+                else -> "Belum diperiksa" to Color.rgb(148, 163, 184)
+            }
+            txt.text = text
+            txt.setTextColor(color)
+            dot.backgroundTintList = ColorStateList.valueOf(color)
+        }
+        // Device owner otomatis juga admin perangkat aktif.
+        show(permAdminDot, txtPermAdmin, if (p?.admin == true || (connected && ownerState is OwnerState.Hmdm)) true else p?.admin)
+        show(permOverlayDot, txtPermOverlay, p?.overlay)
+        show(permUsageDot, txtPermUsage, p?.usage)
+    }
+
+    /** Status default launcher: aktif bila launcher home default HP target adalah com.hmdm.launcher. */
     private fun refreshHome() {
+        if (!::txtHome.isInitialized) return
         val connected = connectedAddr != null && adb.isConnected
         val st = if (connected) homeState else HomeState.Unknown
         val (text, color) = when (st) {
-            is HomeState.Hmdm -> "HMDM aktif ✓" to Color.rgb(74, 222, 128)
-            is HomeState.Other -> "Launcher lain" to Color.rgb(248, 113, 113)
+            is HomeState.Hmdm -> "Aktif ✓" to Color.rgb(74, 222, 128)
+            is HomeState.Other -> "Belum aktif · launcher lain" to Color.rgb(248, 113, 113)
             HomeState.None -> "Belum ada default" to Color.rgb(251, 191, 36)
             HomeState.Unknown ->
                 (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
@@ -934,6 +989,28 @@ class MainActivity : AppCompatActivity() {
         }
         txtHomeDetail.text = detail ?: ""
         txtHomeDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
+    }
+
+    private fun refreshApps() {
+        if (!::txtApps.isInitialized) return
+        val connected = connectedAddr != null && adb.isConnected
+        val st = if (connected) appsInstalled else null
+        val total = AdbController.REQUIRED_PACKAGES.size
+        val missing = st?.filterValues { !it }?.keys?.toList() ?: emptyList()
+        val (text, color) = when {
+            st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
+            missing.isEmpty() -> "Semua terinstal ✓ ($total/$total)" to Color.rgb(74, 222, 128)
+            else -> "Belum lengkap (${total - missing.size}/$total)" to Color.rgb(248, 113, 113)
+        }
+        txtApps.text = text
+        appsDot.backgroundTintList = ColorStateList.valueOf(color)
+        if (missing.isNotEmpty()) {
+            txtAppsDetail.text = "Belum terinstal:\n" + missing.joinToString("\n")
+            txtAppsDetail.visibility = View.VISIBLE
+        } else {
+            txtAppsDetail.text = ""
+            txtAppsDetail.visibility = View.GONE
+        }
     }
 
     private fun refreshTcpip() {

@@ -14,6 +14,21 @@ data class ApkItem(val name: String, val file: File, val builtIn: Boolean = fals
         get() = Fmt.size(file.length())
 }
 
+/**
+ * Status tiga permission com.hmdm.launcher di HP target. Tiap nilai: true = aktif, false = belum aktif,
+ * null = tidak terbaca (mis. timeout).
+ */
+data class HmdmPermissions(
+    /** Permission to install as device administrator (admin perangkat aktif). */
+    val admin: Boolean?,
+    /** Permission to overlay on top of other windows (SYSTEM_ALERT_WINDOW). */
+    val overlay: Boolean?,
+    /** Permission to access the use of history (akses penggunaan / GET_USAGE_STATS). */
+    val usage: Boolean?
+) {
+    val allActive: Boolean get() = admin == true && overlay == true && usage == true
+}
+
 /** Status device owner di HP target. */
 sealed class OwnerState {
     /** Belum terhubung / belum dicek / gagal dicek. */
@@ -62,6 +77,17 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
+        /** Semua aplikasi yang harus terpasang di HP target (dipakai status "Semua aplikasi terinstal"). */
+        val REQUIRED_PACKAGES = listOf(
+            "com.alfamart.customerscreen",
+            "com.alfamart.etransv4_pos",
+            "com.finnetpos.mpnappv2",
+            "com.hmdm.launcher",
+            "com.hmdm.control",
+            "com.kaspersky.kes",
+            "com.alfamart.pos",
+            "net.christianbeier.droidvnc_ng"
+        )
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
@@ -409,6 +435,109 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         } catch (e: Throwable) {
             null
         }
+    }
+
+    /**
+     * Cek diam-diam (tanpa log) apakah setiap paket di [REQUIRED_PACKAGES] terpasang di HP target.
+     * Satu kali `pm list packages`. Hasil: paket -> terpasang?; null = daftar tidak terbaca utuh
+     * (kosong / timeout), supaya tidak salah menyimpulkan "belum terpasang".
+     */
+    fun queryRequiredPackages(): Map<String, Boolean>? {
+        if (!libConnected) return null
+        return try {
+            val out = shell("pm list packages --user 0", 8_000, quiet = true)
+            if (lastShellTimedOut || !out.contains("package:")) return null
+            val installed = out.lineSequence().map { it.trim() }
+                .filter { it.startsWith("package:") }
+                .map { it.removePrefix("package:") }
+                .toSet()
+            REQUIRED_PACKAGES.associateWith { it in installed }
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    /** Cek manual (ketuk status aplikasi): hasilnya ditulis ke log. */
+    fun checkRequiredPackages(): Map<String, Boolean>? {
+        if (!ensureConnected()) return null
+        logCmd("adb shell pm list packages --user 0")
+        val r = queryRequiredPackages()
+        if (r == null) {
+            logErr("Baca daftar aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            return null
+        }
+        val missing = r.filterValues { !it }.keys
+        if (missing.isEmpty()) logOk("Semua aplikasi terinstal (${r.size}/${r.size})")
+        else {
+            logWarn("Belum terinstal ${missing.size} dari ${r.size} aplikasi:")
+            missing.forEach { logDetail(it) }
+        }
+        return r
+    }
+
+    /**
+     * Cek diam-diam tiga permission [HMDM_PACKAGE]: admin perangkat (dumpsys device_policy),
+     * overlay (appops SYSTEM_ALERT_WINDOW) dan akses riwayat penggunaan (appops GET_USAGE_STATS).
+     * null = belum terhubung.
+     */
+    fun queryHmdmPermissions(): HmdmPermissions? {
+        if (!libConnected) return null
+        return try {
+            HmdmPermissions(
+                admin = queryHmdmAdminActive(),
+                overlay = queryAppOpAllowed("SYSTEM_ALERT_WINDOW", "android.permission.SYSTEM_ALERT_WINDOW"),
+                usage = queryAppOpAllowed("GET_USAGE_STATS", "android.permission.PACKAGE_USAGE_STATS")
+            )
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    /** Admin perangkat aktif bila HMDM tercatat di daftar device admin (device owner otomatis termasuk). */
+    private fun queryHmdmAdminActive(): Boolean? {
+        val out = shell("dumpsys device_policy | grep -F 'ComponentInfo{$HMDM_PACKAGE/'", 8_000, quiet = true)
+        return when {
+            out.contains("$HMDM_PACKAGE/") -> true
+            out.isBlank() && lastShellTimedOut -> null
+            else -> false
+        }
+    }
+
+    /**
+     * Cek mode appops [op] milik [HMDM_PACKAGE]: "allow" = aktif; "ignore/deny/errored" = belum aktif.
+     * Bila mode masih default, status diambil dari izin [permName] di `dumpsys package` (granted=true).
+     */
+    private fun queryAppOpAllowed(op: String, permName: String): Boolean? {
+        val out = shell("appops get $HMDM_PACKAGE $op", 5_000, quiet = true)
+        if (out.isBlank() && lastShellTimedOut) return null
+        val line = out.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("$op:") }
+        if (line != null) {
+            val mode = line.removePrefix("$op:").trim()
+            if (mode.startsWith("allow")) return true
+            if (mode.startsWith("ignore") || mode.startsWith("deny") || mode.startsWith("errored")) return false
+        }
+        val dump = shell("dumpsys package $HMDM_PACKAGE | grep -F $permName", 8_000, quiet = true)
+        if (dump.isBlank() && lastShellTimedOut) return null
+        return dump.contains("$permName: granted=true")
+    }
+
+    /** Cek manual (ketuk status): hasilnya ditulis ke log. */
+    fun checkHmdmPermissions(): HmdmPermissions? {
+        if (!ensureConnected()) return null
+        logCmd("adb shell dumpsys device_policy; appops get $HMDM_PACKAGE SYSTEM_ALERT_WINDOW / GET_USAGE_STATS")
+        val r = queryHmdmPermissions() ?: run {
+            logErr("Baca permission gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            return null
+        }
+        fun line(name: String, v: Boolean?) = when (v) {
+            true -> logOk("$name: aktif")
+            false -> logWarn("$name: belum aktif")
+            null -> logWarn("$name: tidak terbaca")
+        }
+        line("Permission to install as device administrator", r.admin)
+        line("Permission to overlay on top of other windows", r.overlay)
+        line("Permission to access the use of history", r.usage)
+        return r
     }
 
     private fun queryPackageInstalled(pkg: String): Boolean? {
