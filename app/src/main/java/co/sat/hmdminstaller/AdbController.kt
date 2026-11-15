@@ -77,7 +77,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
-        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
+        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Instalasi Status"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
             "POS" to listOf(
                 "com.alfamart.customerscreen",

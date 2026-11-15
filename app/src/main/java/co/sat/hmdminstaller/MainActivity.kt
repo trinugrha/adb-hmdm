@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, Boolean>? = null
-    /** True sesaat setelah Connect berhasil: Information Status (instalasi, launcher, permission) jangan dibaca otomatis; baru dibaca saat kartunya diketuk. */
+    /** True sesaat setelah Connect berhasil: Informasi Status (instalasi, launcher, permission) jangan dibaca otomatis; baru dibaca saat kartunya diketuk. */
     @Volatile private var skipInfoRefresh = false
     /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
     private var deviceType = "POS"
@@ -337,14 +337,14 @@ class MainActivity : AppCompatActivity() {
                 st != OwnerState.Unknown
             }
         }
-        // Information Status hanya dibaca lewat tombol refresh (bukan ketuk area kartu).
+        // Informasi Status hanya dibaca lewat tombol refresh (bukan ketuk area kartu).
         btnRefreshInfo.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
             skipInfoRefresh = true
-            run("Cek Information Status") {
+            run("Cek Informasi Status") {
                 val r = adb.checkRequiredPackages(pkgs)
                 if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()
@@ -423,7 +423,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnInstallOnly.setOnClickListener {
             val list = apks.toList()
-            // Selesai pasang: Information Status (instalasi, default launcher, permission) tidak ikut dicek.
+            // Selesai pasang: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
             run("Install APK") { skipInfoRefresh = true; adb.install(list) }
         }
         btnOwner.setOnClickListener {
@@ -431,21 +431,21 @@ class MainActivity : AppCompatActivity() {
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Hapus data Kaspersky?")
+                .setTitle("Hapus data aplikasi Kaspersky?")
                 .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ ->
-                    run("Hapus Data Kaspersky") { adb.clearKasperskyData() }
+                    run("Hapus Data Aplikasi Kaspersky") { adb.clearKasperskyData() }
                 }
                 .show()
         }
         btnUninstallKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Uninstall Kaspersky?")
+                .setTitle("Uninstall Aplikasi Kaspersky?")
                 .setMessage("Menjalankan: pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\n\nPastikan Langkah 2 (Aplikasi Admin Kaspersky) sudah dinonaktifkan, kalau tidak uninstall akan ditolak.")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Uninstall") { _, _ ->
-                    run("Uninstall Kaspersky") { adb.uninstallKaspersky() }
+                    run("Uninstall Aplikasi Kaspersky") { adb.uninstallKaspersky() }
                 }
                 .show()
         }
@@ -455,7 +455,7 @@ class MainActivity : AppCompatActivity() {
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
             val list = apks.toList()
-            // Selesai pasang: Information Status (instalasi, default launcher, permission) tidak ikut dicek.
+            // Selesai pasang: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
             run("Pasang Aplikasi + Jadikan MDM Mode") { skipInfoRefresh = true; adb.installAndOwner(list) }
         }
         btnCopyLog.setOnClickListener {
@@ -751,8 +751,8 @@ class MainActivity : AppCompatActivity() {
     /** Cek ulang device owner di HP target (panggil dari thread kerja). */
     private fun updateOwner() {
         ownerState = adb.queryDeviceOwner()
-        // Information Status (launcher default, instalasi aplikasi, permission) sengaja TIDAK dibaca di sini:
-        // baru dibaca saat pengguna mengetuk kartu Information Status.
+        // Informasi Status (launcher default, instalasi aplikasi, permission) sengaja TIDAK dibaca di sini:
+        // baru dibaca saat pengguna mengetuk kartu Informasi Status.
         kasperskyInstalled = adb.queryKasperskyInstalled()
         hmdmInstalled = adb.queryHmdmInstalled()
         tcpipActive = adb.queryTcpipActive()
@@ -800,7 +800,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            // Tepat setelah Connect, Information Status (launcher, instalasi, permission) tidak ikut dibaca.
+            // Tepat setelah Connect, Informasi Status (launcher, instalasi, permission) tidak ikut dibaca.
             val skipInfo = skipInfoRefresh
             skipInfoRefresh = false
             try {
@@ -1078,11 +1078,11 @@ class MainActivity : AppCompatActivity() {
         if (apks.isEmpty()) {
             txtApkEmpty.text = "Pilih File APK Di Sini"
             txtDropSub.text = "Dapat memilih lebih dari satu file APK"
-            txtApkTitle.text = "Unggah File APK (Bisa Banyak)"
+            txtApkTitle.text = "Pilih File APK (Bisa Banyak)"
         } else {
             txtApkEmpty.text = "${apks.size} APK dipilih"
             txtDropSub.text = "Ketuk untuk memilih ulang (daftar sebelumnya diganti)"
-            txtApkTitle.text = "Unggah File APK (${apks.size})"
+            txtApkTitle.text = "Pilih File APK (${apks.size})"
         }
         renderApkList()
         refreshHeader()
