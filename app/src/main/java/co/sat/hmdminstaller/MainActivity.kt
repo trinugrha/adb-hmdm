@@ -118,7 +118,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
     private lateinit var txtOwner: TextView
-    private lateinit var txtOwnerDetail: TextView
     private lateinit var tcpipDot: View
     private lateinit var txtTcpip: TextView
     private lateinit var appsPill: View
@@ -249,7 +248,6 @@ class MainActivity : AppCompatActivity() {
         statusDot = findViewById(R.id.statusDot)
         ownerDot = findViewById(R.id.ownerDot)
         txtOwner = findViewById(R.id.txtOwner)
-        txtOwnerDetail = findViewById(R.id.txtOwnerDetail)
         tcpipDot = findViewById(R.id.tcpipDot)
         txtTcpip = findViewById(R.id.txtTcpip)
         appsPill = findViewById(R.id.appsPill)
@@ -1067,13 +1065,6 @@ class MainActivity : AppCompatActivity() {
         }
         txtOwner.text = text
         ownerDot.backgroundTintList = ColorStateList.valueOf(color)
-        val detail = when (st) {
-            is OwnerState.Hmdm -> st.pkg
-            is OwnerState.Other -> st.pkg
-            else -> null
-        }
-        txtOwnerDetail.text = detail ?: ""
-        txtOwnerDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
     }
 
     private fun refreshApkList() {

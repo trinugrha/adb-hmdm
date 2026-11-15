@@ -724,19 +724,6 @@
                                     android:textColor="@color/text"
                                     android:textSize="14sp" />
                             </LinearLayout>
-
-                            <TextView
-                                android:id="@+id/txtOwnerDetail"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginTop="6dp"
-                                android:ellipsize="middle"
-                                android:maxLines="1"
-                                android:text=""
-                                android:textColor="@color/muted"
-                                android:textSize="12sp"
-                                android:visibility="gone" />
                         </LinearLayout>
 
                         <ImageView
@@ -875,6 +862,12 @@
                         android:layout_height="36dp"
                         android:gravity="center_vertical"
                         android:text="Information Status" />
+
+                    <TextView
+                        style="@style/Hmdm.CardHint"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tekan refresh untuk cek status" />
 
                     <!-- Pilih jenis perangkat untuk ceklist instalasi -->
                     <LinearLayout
