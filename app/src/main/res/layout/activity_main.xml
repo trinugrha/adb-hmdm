@@ -859,15 +859,15 @@
                     <TextView
                         style="@style/Hmdm.CardTitle"
                         android:layout_width="wrap_content"
-                        android:layout_height="36dp"
-                        android:gravity="center_vertical"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
                         android:text="Information Status" />
 
                     <TextView
                         style="@style/Hmdm.CardHint"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="4dp"
                         android:text="Tekan refresh untuk cek status" />
 
                     <!-- Pilih jenis perangkat untuk ceklist instalasi -->
