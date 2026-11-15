@@ -328,7 +328,7 @@ class MainActivity : AppCompatActivity() {
         ownerPill.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
-            run("Cek Device Owner") {
+            run("Cek Status MDM Mode") {
                 val st = adb.checkDeviceOwner()
                 if (st != OwnerState.Unknown) ownerState = st
                 st != OwnerState.Unknown
@@ -936,7 +936,7 @@ class MainActivity : AppCompatActivity() {
         setModeTabsEnabled(wirelessEnabled = !(connected && adb.isViaUsb), usbEnabled = !(connected && !adb.isViaUsb))
         // Tombol hapus di daftar aplikasi: hanya bisa ditekan saat terhubung dan tidak sedang ada proses.
         setApkRemoveButtonsEnabled(!isBusy && connected)
-        // Kotak status Device Owner & Semua Aplikasi (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
+        // Kotak Status MDM Mode & Semua Aplikasi (ketuk untuk cek ulang): hanya bisa ditekan saat terhubung dan tidak sibuk.
         if (::btnRefreshInfo.isInitialized) {
             val checkEnabled = !isBusy && connected
             btnRefreshInfo.isEnabled = checkEnabled

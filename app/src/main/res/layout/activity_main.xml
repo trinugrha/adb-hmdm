@@ -666,9 +666,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Jadikan Headwind MDM sebagai Device Owner penuh di perangkat Android target." />
+                        android:text="Jadikan Headwind MDM sebagai MDM Mode penuh di perangkat Android target." />
 
-                    <!-- Status device owner (ketuk untuk cek ulang) -->
+                    <!-- Status MDM Mode (ketuk untuk cek ulang) -->
                     <LinearLayout
                         android:id="@+id/ownerPill"
                         android:layout_width="match_parent"
@@ -692,7 +692,7 @@
                                 style="@style/Hmdm.SectionLabel"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="STATUS DEVICE OWNER"
+                                android:text="STATUS MDM MODE"
                                 android:textColor="@color/muted" />
 
                             <LinearLayout
@@ -818,7 +818,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Pasang semua APK lalu atur Device Owner sekaligus dalam satu klik. Pair &amp; Connect harus sudah dilakukan lebih dulu." />
+                        android:text="Pasang APK lalu atur MDM Mode sekaligus dalam satu klik. Pair &amp; Connect harus sudah dilakukan lebih dulu." />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAll"
@@ -869,7 +869,7 @@
                         android:layout_marginTop="4dp"
                         android:text="Tekan Cek Status Untuk Cek Information Status" />
 
-                    <!-- Kotak status (gaya sama seperti Status Device Owner) -->
+                    <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -614,7 +614,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return st
     }
 
-    /** Cek manual (tombol status Device Owner): hasilnya ditulis ke log. Unknown bila tidak terbaca. */
+    /** Cek manual (tombol Status MDM Mode): hasilnya ditulis ke log. Unknown bila tidak terbaca. */
     fun checkDeviceOwner(): OwnerState {
         if (!ensureConnected()) return OwnerState.Unknown
         logCmd("adb shell dpm list-owners")
