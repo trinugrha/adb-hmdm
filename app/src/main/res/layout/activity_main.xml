@@ -1178,6 +1178,61 @@
                             android:minHeight="0dp"
                             android:text="Ubah Mode ke TCP/IP"
                             android:textSize="14sp" />
+
+                        <!-- Status mode TCP/IP (Wi-Fi) di HP target -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:background="@drawable/bg_status_box"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal"
+                            android:padding="14dp">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    style="@style/Hmdm.SectionLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="STATUS WI-FI (TCP/IP)"
+                                    android:textColor="@color/muted" />
+
+                                <LinearLayout
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:background="@drawable/bg_chip"
+                                    android:gravity="center_vertical"
+                                    android:orientation="horizontal"
+                                    android:paddingStart="12dp"
+                                    android:paddingTop="7dp"
+                                    android:paddingEnd="14dp"
+                                    android:paddingBottom="7dp">
+
+                                    <View
+                                        android:id="@+id/tcpipDot"
+                                        android:layout_width="10dp"
+                                        android:layout_height="10dp"
+                                        android:background="@drawable/bg_dot" />
+
+                                    <TextView
+                                        android:id="@+id/txtTcpip"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:maxLines="1"
+                                        android:ellipsize="end"
+                                        android:text="Belum terhubung"
+                                        android:textColor="@color/text"
+                                        android:textSize="14sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+                        </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

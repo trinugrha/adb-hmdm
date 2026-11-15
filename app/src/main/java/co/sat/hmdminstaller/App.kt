@@ -50,11 +50,9 @@ class App : Application() {
             if (t === mainThread) {
                 previous?.uncaughtException(t, e)
             } else {
-                // Tanpa ": " menggantung bila exception tidak punya pesan.
-                val detail = e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""
                 try {
                     logListener?.invoke(LogLevel.WARN, "Kesalahan tak terduga di thread '${t.name}', aplikasi tetap berjalan")
-                    logListener?.invoke(LogLevel.DETAIL, "${e.javaClass.simpleName}$detail")
+                    logListener?.invoke(LogLevel.DETAIL, Fmt.cause(e))
                 } catch (ignored: Throwable) { }
             }
         }

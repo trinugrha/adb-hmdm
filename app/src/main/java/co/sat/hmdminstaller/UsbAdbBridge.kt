@@ -134,7 +134,7 @@ class UsbAdbBridge(context: Context) {
     fun start(d: UsbDevice): Int {
         stop()
         lastPumpError = ""
-        val itf = findAdbInterface(d) ?: throw IllegalStateException("Interface ADB tidak ditemukan di perangkat USB.")
+        val itf = findAdbInterface(d) ?: throw IllegalStateException("Interface ADB tidak ditemukan di perangkat USB")
         var inEp: UsbEndpoint? = null
         var outEp: UsbEndpoint? = null
         for (i in 0 until itf.endpointCount) {
@@ -142,11 +142,11 @@ class UsbAdbBridge(context: Context) {
             if (ep.type != UsbConstants.USB_ENDPOINT_XFER_BULK) continue
             if (ep.direction == UsbConstants.USB_DIR_IN) inEp = ep else outEp = ep
         }
-        if (inEp == null || outEp == null) throw IllegalStateException("Endpoint bulk USB tidak lengkap.")
-        val c = usb.openDevice(d) ?: throw IllegalStateException("Gagal membuka perangkat USB (izin belum diberikan?).")
+        if (inEp == null || outEp == null) throw IllegalStateException("Endpoint bulk USB tidak lengkap")
+        val c = usb.openDevice(d) ?: throw IllegalStateException("Perangkat USB tidak bisa dibuka, izin belum diberikan")
         if (!c.claimInterface(itf, true)) {
             c.close()
-            throw IllegalStateException("Gagal mengambil interface ADB (dipakai aplikasi lain? Matikan adb server di PC).")
+            throw IllegalStateException("Interface ADB tidak bisa diambil, mungkin dipakai aplikasi lain")
         }
         conn = c; iface = itf; epIn = inEp; epOut = outEp; device = d
         val ss = ServerSocket(0, 2, InetAddress.getByName("127.0.0.1"))
@@ -285,7 +285,7 @@ class UsbAdbBridge(context: Context) {
                 }
             }
         } catch (e: Throwable) {
-            if (active === s && running) lastPumpError = "PC->USB: ${e.javaClass.simpleName}: ${e.message ?: "-"}"
+            if (active === s && running) lastPumpError = "soket->USB: ${Fmt.cause(e)}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }
@@ -309,7 +309,7 @@ class UsbAdbBridge(context: Context) {
                 out.flush()
             }
         } catch (e: Throwable) {
-            if (active === s && running) lastPumpError = "USB->soket: ${e.javaClass.simpleName}: ${e.message ?: "-"}"
+            if (active === s && running) lastPumpError = "USB->soket: ${Fmt.cause(e)}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }

@@ -122,6 +122,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var homePill: View
     private lateinit var homeDot: View
     private lateinit var txtHome: TextView
+    private lateinit var tcpipDot: View
+    private lateinit var txtTcpip: TextView
     private lateinit var txtHomeDetail: TextView
     private lateinit var progress: ProgressBar
     private lateinit var buttons: List<MaterialButton>
@@ -237,6 +239,8 @@ class MainActivity : AppCompatActivity() {
         homePill = findViewById(R.id.homePill)
         homeDot = findViewById(R.id.homeDot)
         txtHome = findViewById(R.id.txtHome)
+        tcpipDot = findViewById(R.id.tcpipDot)
+        txtTcpip = findViewById(R.id.txtTcpip)
         txtHomeDetail = findViewById(R.id.txtHomeDetail)
         progress = findViewById(R.id.progress)
 
@@ -739,7 +743,7 @@ class MainActivity : AppCompatActivity() {
             try { ok = work() } catch (e: Throwable) {
                 runOnUiThread {
                     log(LogLevel.ERR, "$title gagal: kesalahan tak terduga. Coba lagi, dan laporkan bila berulang")
-                    log(LogLevel.DETAIL, "${e.javaClass.simpleName}${e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""}")
+                    log(LogLevel.DETAIL, Fmt.cause(e))
                 }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
@@ -823,6 +827,7 @@ class MainActivity : AppCompatActivity() {
         }
         refreshOwner()
         refreshHome()
+        refreshTcpip()
         applyButtonState(busy)
     }
 
@@ -925,6 +930,19 @@ class MainActivity : AppCompatActivity() {
         }
         txtHomeDetail.text = detail ?: ""
         txtHomeDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
+    }
+
+    private fun refreshTcpip() {
+        if (!::txtTcpip.isInitialized) return
+        val connected = connectedAddr != null && adb.isConnected
+        val st = if (connected) tcpipActive else null
+        val (text, color) = when (st) {
+            true -> "Aktif ✓" to Color.rgb(74, 222, 128)
+            false -> "Belum aktif" to Color.rgb(251, 191, 36)
+            null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
+        }
+        txtTcpip.text = text
+        tcpipDot.backgroundTintList = ColorStateList.valueOf(color)
     }
 
     private fun refreshOwner() {
@@ -1163,7 +1181,7 @@ class MainActivity : AppCompatActivity() {
             f.delete() // jangan tinggalkan file setengah jadi
             runOnUiThread {
                 log(LogLevel.ERR, "Salin $name gagal: file tidak bisa dibaca atau disimpan. Pilih ulang file APK")
-                log(LogLevel.DETAIL, e.javaClass.simpleName + (e.message?.takeIf { it.isNotBlank() }?.let { ": $it" } ?: ""))
+                log(LogLevel.DETAIL, Fmt.cause(e))
             }
             null
         }

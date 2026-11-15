@@ -53,15 +53,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun logSummary(s: String) = sink(LogLevel.SUMMARY, s)
 
     /** Penyebab teknis (nama exception + pesan) sebagai baris DETAIL di bawah baris ✗ / !, bukan di dalamnya. */
-    private fun logCause(e: Throwable) {
-        val msg = e.message?.takeIf { it.isNotBlank() }
-        logDetail(e.javaClass.simpleName + (msg?.let { ": $it" } ?: ""))
-    }
+    private fun logCause(e: Throwable) = logDetail(Fmt.cause(e))
 
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
         const val TCPIP_PORT = 5555
+        /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
+        private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
@@ -160,7 +159,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
-            logErr("Buka USB gagal: jalur USB ke HP target tidak bisa dibuka. Colok ulang kabel lalu coba lagi")
+            logErr("Buka USB gagal: jalur USB ke HP target tidak bisa dibuka. Colok ulang kabel, matikan adb server di PC bila berjalan, lalu coba lagi")
             logCause(e)
             return null
         }
@@ -168,9 +167,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val label = "USB · ${t.label}"
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
-        for (attempt in 1..3) {
+        for (attempt in 1..USB_CONNECT_ATTEMPTS) {
             if (connect("127.0.0.1:$port", verbose = false)) { ok = true; break }
-            if (attempt < 3) logWarn("Percobaan $attempt/3 gagal ($lastConnectReason), mencoba lagi...")
+            if (attempt < USB_CONNECT_ATTEMPTS) logWarn("Percobaan $attempt/$USB_CONNECT_ATTEMPTS gagal ($lastConnectReason), mencoba lagi...")
         }
         if (!ok) {
             val pumpErr = usbBridge.lastPumpError
@@ -292,7 +291,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     if (!ok.get()) why.set("jawaban shell tidak sesuai: '${out.take(40)}'")
                 } else why.set("TCP ke $addr tidak terjangkau")
             } catch (e: Throwable) {
-                why.set("${e.javaClass.simpleName}: ${e.message ?: "-"}")
+                why.set(Fmt.cause(e))
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
         val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
@@ -535,7 +534,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 reason = connectErrorReason(e)
                 advice = "Pastikan satu jaringan Wi-Fi dan Wireless debugging aktif. Port connect berubah setiap Wireless debugging dinyalakan ulang, jadi cek port terbaru"
                 detail = generateSequence(e) { it.cause }.take(4)
-                    .joinToString(" <- ") { "${it.javaClass.simpleName}: ${it.message ?: "-"}" }
+                    .joinToString(" <- ") { Fmt.cause(it) }
                 try { manager.disconnect() } catch (e: Throwable) { }
             }
         }
@@ -673,7 +672,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logRaw(out, reason)
             return false
         }
-        logOk("Launcher default: $HOME_COMPONENT")
+        logOk("Launcher default aktif: $HOME_COMPONENT")
         return true
     }
 
@@ -984,7 +983,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 writeError = e
             }
             if (stalled.get()) {
-                val fase = if (sendingDone.get()) "menunggu hasil dari HP target (180 dtk)" else "mengirim APK (20 dtk tanpa kemajuan)"
+                val fase = if (sendingDone.get()) "menunggu hasil dari HP target (180 dtk tanpa jawaban)" else "mengirim APK (20 dtk tanpa kemajuan)"
                 logWarn("Macet saat $fase, terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)}")
                 if (viaUsb) logDetail("USB: ${usbBridge.stats()}")
                 return stallError

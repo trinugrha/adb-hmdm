@@ -32,6 +32,12 @@ object Fmt {
     fun clip(s: String, max: Int = DETAIL_MAX): String =
         if (s.length > max) s.take(max).trimEnd() + "…" else s
 
+    /** "IOException: pesan"; tanpa ": " menggantung bila exception tidak punya pesan. Untuk baris DETAIL. */
+    fun cause(e: Throwable): String {
+        val msg = e.message?.takeIf { it.isNotBlank() }
+        return e.javaClass.simpleName + (msg?.let { ": $it" } ?: "")
+    }
+
     /** 14:02:11 */
     fun clock(epochMs: Long): String = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(epochMs))
 }
