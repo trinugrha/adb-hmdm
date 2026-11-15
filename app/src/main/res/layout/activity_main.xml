@@ -875,13 +875,16 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:background="@drawable/bg_status_box"
+                        android:clipToPadding="false"
                         android:orientation="vertical"
                         android:padding="14dp">
 
-                    <!-- Pilih jenis perangkat untuk ceklist instalasi -->
+                    <!-- Pilih jenis perangkat untuk ceklist instalasi (dinaikkan; clipToPadding=false agar checkbox tidak terpotong) -->
                     <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="-8dp"
+                        android:clipChildren="false"
                         android:orientation="horizontal">
 
                         <CheckBox
