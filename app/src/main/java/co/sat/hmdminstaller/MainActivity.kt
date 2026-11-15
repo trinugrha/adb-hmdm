@@ -957,7 +957,6 @@ class MainActivity : AppCompatActivity() {
             else -> "Belum lengkap (${values.count { it == true }}/3)" to amber
         }
         txtPermAdmin.text = text
-        txtPermAdmin.setTextColor(color)
         permAdminDot.backgroundTintList = ColorStateList.valueOf(color)
     }
 
