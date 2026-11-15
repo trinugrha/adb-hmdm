@@ -1008,18 +1008,6 @@
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/txtHomeDetail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginTop="6dp"
-                        android:ellipsize="middle"
-                        android:maxLines="1"
-                        android:text=""
-                        android:textColor="@color/muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
 
                     <!-- Status permission com.hmdm.launcher -->
                     <TextView

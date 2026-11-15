@@ -128,7 +128,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtAppsDetail: TextView
     private lateinit var homeDot: View
     private lateinit var txtHome: TextView
-    private lateinit var txtHomeDetail: TextView
     private lateinit var permAdminDot: View
     private lateinit var txtPermAdmin: TextView
     private lateinit var progress: ProgressBar
@@ -274,7 +273,6 @@ class MainActivity : AppCompatActivity() {
         txtAppsDetail = findViewById(R.id.txtAppsDetail)
         homeDot = findViewById(R.id.homeDot)
         txtHome = findViewById(R.id.txtHome)
-        txtHomeDetail = findViewById(R.id.txtHomeDetail)
         permAdminDot = findViewById(R.id.permAdminDot)
         txtPermAdmin = findViewById(R.id.txtPermAdmin)
         progress = findViewById(R.id.progress)
@@ -1013,13 +1011,6 @@ class MainActivity : AppCompatActivity() {
         }
         txtHome.text = text
         homeDot.backgroundTintList = ColorStateList.valueOf(color)
-        val detail = when (st) {
-            is HomeState.Hmdm -> st.component
-            is HomeState.Other -> st.component
-            else -> null
-        }
-        txtHomeDetail.text = detail ?: ""
-        txtHomeDetail.visibility = if (detail != null) View.VISIBLE else View.GONE
     }
 
     private fun refreshApps() {
@@ -1041,12 +1032,12 @@ class MainActivity : AppCompatActivity() {
         val missing = if (st == null) emptyList() else pkgs.filter { st[it] != true }
         val (text, color) = when {
             st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
-            missing.isEmpty() -> "Semua terinstal ✓ ($total/$total)" to green
+            missing.isEmpty() -> "Semua terpasang ✓ ($total/$total)" to green
             else -> "Belum lengkap (${total - missing.size}/$total)" to red
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
-        // Daftar paket tidak ditampilkan; hanya ringkasan jumlah terinstal.
+        // Daftar paket tidak ditampilkan; hanya ringkasan jumlah terpasang.
         txtAppsDetail.text = ""
         txtAppsDetail.visibility = View.GONE
     }

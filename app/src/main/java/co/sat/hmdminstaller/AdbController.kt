@@ -502,9 +502,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
         val r = if (only == null) all else all.filterKeys { it in only }
         val missing = r.filterValues { !it }.keys
-        if (missing.isEmpty()) logOk("Semua aplikasi terinstal (${r.size}/${r.size})")
+        if (missing.isEmpty()) logOk("Semua aplikasi terpasang (${r.size}/${r.size})")
         else {
-            logWarn("Belum terinstal ${missing.size} dari ${r.size} aplikasi:")
+            logWarn("Belum terpasang ${missing.size} dari ${r.size} aplikasi:")
             missing.forEach { logDetail(it) }
         }
         return all
