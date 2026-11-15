@@ -145,6 +145,8 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var kasperskyInstalled: Boolean? = null
     /** Apakah com.hmdm.launcher terpasang di HP target: null = belum diketahui (tombol Owner/Launcher mati). */
     @Volatile private var hmdmInstalled: Boolean? = null
+    /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah Mode ke TCP/IP" dimatikan. */
+    @Volatile private var tcpipActive: Boolean? = null
 
     // Pemantau status koneksi (live): jalan hanya saat layar terlihat.
     private val poller = Executors.newSingleThreadScheduledExecutor()
@@ -563,7 +565,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
         }
         refreshHeader()
     }
@@ -657,7 +659,7 @@ class MainActivity : AppCompatActivity() {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
         }
         runOnUiThread { refreshHeader() }
         return ok
@@ -683,7 +685,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null
             showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
@@ -696,20 +698,24 @@ class MainActivity : AppCompatActivity() {
         homeState = adb.queryDefaultLauncher()
         kasperskyInstalled = adb.queryKasperskyInstalled()
         hmdmInstalled = adb.queryHmdmInstalled()
+        tcpipActive = adb.queryTcpipActive()
         runOnUiThread { refreshHeader() }
     }
 
     /** `adb tcpip 5555`: adbd di HP target restart dalam mode TCP, sesi USB ini otomatis putus. */
     private fun doEnableTcpip(): Boolean {
+        // Bila TCP/IP sudah aktif di HP target, sesi USB dibiarkan tetap tersambung (tidak ada yang diubah).
+        val already = adb.queryTcpipActive() == true
         val ok = adb.enableTcpip()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; showUsbDevice(null) }
+        if (ok && already) { tcpipActive = true; runOnUiThread { refreshHeader() }; return true }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -737,7 +743,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
-            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it } } } catch (e: Throwable) { }
+            try { if (adb.isConnected) { val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st; val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs; adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }; adb.queryHmdmInstalled()?.let { hmdmInstalled = it }; adb.queryTcpipActive()?.let { tcpipActive = it } } } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -841,7 +847,9 @@ class MainActivity : AppCompatActivity() {
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
             // "Ubah Mode ke TCP/IP" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
-            val enabled = !isBusy && !notUsb && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            // Mode TCP/IP sudah aktif di HP target: tombol tidak perlu ditekan lagi.
+            val tcpipAlready = b.id == R.id.btnTcpip && connected && tcpipActive == true
+            val enabled = !isBusy && !notUsb && !tcpipAlready && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f

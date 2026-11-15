@@ -396,6 +396,22 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Cek diam-diam apakah [pkg] terpasang di HP target: true / false / null (tidak terbaca). */
     fun queryHmdmInstalled(): Boolean? = queryPackageInstalled(HMDM_PACKAGE)
 
+    /**
+     * Cek apakah adbd HP target sudah dalam mode TCP/IP (setara hasil `adb tcpip`):
+     * properti service.adb.tcp.port / persist.adb.tcp.port berisi port > 0.
+     * null = belum bisa dipastikan.
+     */
+    fun queryTcpipActive(): Boolean? {
+        if (!libConnected) return null
+        return try {
+            val out = shell("getprop service.adb.tcp.port; getprop persist.adb.tcp.port", 5_000, quiet = true)
+            if (out.isBlank() && lastShellTimedOut) return null
+            out.lineSequence().any { (it.trim().toIntOrNull() ?: 0) > 0 }
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
     private fun queryPackageInstalled(pkg: String): Boolean? {
         if (!libConnected) return null
         return try {
@@ -711,6 +727,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!viaUsb) {
             logErr("Ubah Mode ke TCP/IP gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
             return false
+        }
+        if (queryTcpipActive() == true) {
+            logOk("Mode TCP/IP sudah aktif di HP target, tidak perlu diubah lagi")
+            return true
         }
         logCmd("adb tcpip $TCPIP_PORT")
         val out = try {
