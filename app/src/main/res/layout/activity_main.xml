@@ -1169,21 +1169,11 @@
                             android:layout_marginTop="4dp"
                             android:text="Menjalankan adb tcpip 5555 agar HP target bisa dihubungkan lewat Wi-Fi. Koneksi USB akan terputus otomatis setelahnya." />
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTcpip"
-                            style="@style/Widget.Hmdm.Button.YellowFilled"
-                            android:layout_width="match_parent"
-                            android:layout_height="44dp"
-                            android:layout_marginTop="10dp"
-                            android:minHeight="0dp"
-                            android:text="Ubah Mode ke TCP/IP"
-                            android:textSize="14sp" />
-
                         <!-- Status mode TCP/IP (Wi-Fi) di HP target -->
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="10dp"
                             android:background="@drawable/bg_status_box"
                             android:gravity="center_vertical"
                             android:orientation="horizontal"
@@ -1233,6 +1223,16 @@
                                 </LinearLayout>
                             </LinearLayout>
                         </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTcpip"
+                            style="@style/Widget.Hmdm.Button.YellowFilled"
+                            android:layout_width="match_parent"
+                            android:layout_height="44dp"
+                            android:layout_marginTop="8dp"
+                            android:minHeight="0dp"
+                            android:text="Ubah Mode ke TCP/IP"
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
