@@ -341,7 +341,7 @@ class MainActivity : AppCompatActivity() {
             val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
             skipInfoRefresh = true
-            run("Cek Installation Status") {
+            run("Cek Information Status") {
                 val r = adb.checkRequiredPackages(pkgs)
                 if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()

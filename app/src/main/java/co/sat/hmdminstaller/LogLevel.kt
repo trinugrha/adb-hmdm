@@ -29,6 +29,8 @@ package co.sat.hmdminstaller
  *   Saran tidak ditaruh di dalam kurung dan tidak diawali huruf kecil.
  * - Status "belum ada / belum diset" memakai WARN (sama dengan warna kotak status di layar), bukan OK.
  * - Sambung ulang otomatis (saat install) tidak mencetak "> adb connect" per percobaan, cukup hasil akhirnya.
+ * - Koneksi USB selalu disebut dengan label "USB · <nama perangkat>", tidak pernah dengan alamat loopback internal (127.0.0.1:<port>).
+ * - Judul proses (HEAD/END) memakai nama yang sama dengan tombol atau kartu di layar.
  * - Istilah Android ditulis huruf kecil di tengah kalimat: "device owner", "profile owner".
  * - Rantai exception teknis (mis. "IOException: ... <- ...") hanya di baris DETAIL; baris ✗ memuat alasan singkat + saran.
  * - DETAIL hanya untuk output mentah yang menambah informasi (bukan pengulangan alasan di baris ✗).

@@ -1202,7 +1202,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="Hubungkan perangkat, lalu klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data Kaspersky berhasil dihapus.&quot;"
+                                    android:text="Hubungkan perangkat, lalu klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data Kaspersky dihapus&quot;."
                                     android:textSize="13sp" />
 
                                 <com.google.android.material.button.MaterialButton
@@ -1297,7 +1297,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
-                                    android:text="Klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Kaspersky berhasil di-uninstall.&quot;"
+                                    android:text="Klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Kaspersky di-uninstall&quot;."
                                     android:textSize="13sp" />
 
                                 <com.google.android.material.button.MaterialButton

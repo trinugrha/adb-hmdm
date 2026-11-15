@@ -228,7 +228,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..USB_CONNECT_ATTEMPTS) {
-            if (connect("127.0.0.1:$port", verbose = false)) { ok = true; break }
+            if (connect("127.0.0.1:$port", verbose = false, label = label)) { ok = true; break }
             if (attempt < USB_CONNECT_ATTEMPTS) logWarn("Percobaan $attempt/$USB_CONNECT_ATTEMPTS gagal ($lastConnectReason), mencoba lagi...")
         }
         if (!ok) {
@@ -275,11 +275,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     private fun tryReconnect(): Boolean {
         val addr = lastAddr ?: return false
-        logWarn("Koneksi terputus, menyambung ulang ke $addr...")
+        logWarn("Koneksi terputus, menyambung ulang ke ${sessionLabel ?: addr}...")
         // verbose = false: tanpa "> adb connect" dan "Percobaan ..." per percobaan, cukup satu hasil akhir.
         repeat(3) { i ->
             if (i > 0) Thread.sleep(2000)
-            if (connect(addr, verbose = false)) return true
+            if (connect(addr, verbose = false, label = sessionLabel)) return true
         }
         val hint = if (viaUsb) "Pastikan kabel USB masih terpasang dan USB debugging di HP target aktif"
                    else "Pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi"
@@ -660,8 +660,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     @Volatile private var lastConnectReason = ""
 
-    /** [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB). */
-    fun connect(addr: String, verbose: Boolean = true): Boolean {
+    /**
+     * [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB).
+     * [label] = nama yang ditampilkan di baris ✓ menggantikan alamat (USB memakai port loopback internal yang tidak berarti bagi teknisi).
+     */
+    fun connect(addr: String, verbose: Boolean = true, label: String? = null): Boolean {
         if (addr.isEmpty()) {
             logWarn("Isi IP:Port connect terlebih dahulu")
             return false
@@ -714,7 +717,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         lastConnectReason = reason
         syncConnected()
         if (ok) {
-            logOk("Terhubung: $addr")
+            logOk("Terhubung: ${label ?: addr}")
         } else if (verbose) {
             logErr("Connect gagal: $reason. $advice")
             if (detail.isNotEmpty()) logDetail(detail)
