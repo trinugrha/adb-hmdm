@@ -1156,9 +1156,17 @@
                         android:padding="16dp">
 
                         <TextView
+                            style="@style/Hmdm.CardTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="Hubungkan Lewat Wi-Fi"
+                            android:textSize="15sp" />
+
+                        <TextView
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
                             android:text="Menjalankan adb tcpip 5555 agar HP target bisa dihubungkan lewat Wi-Fi. Koneksi USB akan terputus otomatis setelahnya." />
 
                         <com.google.android.material.button.MaterialButton
