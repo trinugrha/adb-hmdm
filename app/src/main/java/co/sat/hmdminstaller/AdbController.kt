@@ -723,13 +723,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val failed = out.contains("error", ignoreCase = true) || out.contains("failed", ignoreCase = true)
         val restarted = out.contains("restarting", ignoreCase = true)
         if (failed || (!restarted && out.isNotBlank())) {
-            logErr("Ubah Mode ke TCP/IP gagal: HP target menolak perintah tcpip")
-            logRaw(out)
+            val reason = "HP target menolak perintah tcpip. Cek koneksi USB, lalu coba lagi"
+            logErr("Ubah Mode ke TCP/IP gagal: $reason")
+            logRaw(out, reason)
             return false
         }
         // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
-        logOk("ADB Connect aktif di port $TCPIP_PORT")
-        logDetail("Koneksi USB terputus otomatis. Cabut kabel, buka tab Wireless debugging, lalu Connect ke IP HP target:$TCPIP_PORT")
+        logOk("Mode TCP/IP aktif di port $TCPIP_PORT · koneksi USB terputus otomatis")
+        logStep("Berikutnya: cabut kabel, buka tab Wireless debugging, lalu Connect ke <IP HP target>:$TCPIP_PORT")
         lastAddr = null
         sessionLabel = null
         keepAlive(false)

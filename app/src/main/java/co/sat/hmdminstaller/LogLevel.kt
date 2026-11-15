@@ -35,6 +35,7 @@ package co.sat.hmdminstaller
  *   Baris DETAIL yang terlalu panjang dipotong otomatis dan diakhiri "…" supaya jelas bahwa teksnya tidak utuh.
  * - Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) selalu di baris DETAIL di bawah baris ✗ / !, tidak digabung ke dalamnya.
  * - Saran per kode install (mis. INSTALL_FAILED_UPDATE_INCOMPATIBLE) ditulis sebagai kalimat sendiri setelah alasan, tidak di dalam kurung.
+ * - Petunjuk langkah berikutnya setelah proses berhasil (bukan output mentah) memakai STEP diawali "Berikutnya:", bukan DETAIL.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {
