@@ -485,7 +485,14 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 .filter { it.startsWith("package:") }
                 .map { it.removePrefix("package:") }
                 .toSet()
-            REQUIRED_PACKAGES.associateWith { it in installed }
+            // Di mode WiFi daftar paket bisa terpotong. Paket yang tidak muncul dikonfirmasi satu per satu;
+            // bila ada yang tidak terbaca, hasil dianggap tidak utuh (null) supaya status lama tidak tertimpa.
+            val result = LinkedHashMap<String, Boolean>()
+            for (pkg in REQUIRED_PACKAGES) {
+                if (pkg in installed) { result[pkg] = true; continue }
+                result[pkg] = queryPackageInstalled(pkg) ?: return null
+            }
+            result
         } catch (e: Throwable) {
             null
         }

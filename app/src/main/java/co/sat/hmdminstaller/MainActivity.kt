@@ -339,6 +339,8 @@ class MainActivity : AppCompatActivity() {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
+            // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
+            skipInfoRefresh = true
             run("Cek Installation Status") {
                 val r = adb.checkRequiredPackages(pkgs)
                 if (r != null) appsInstalled = r
