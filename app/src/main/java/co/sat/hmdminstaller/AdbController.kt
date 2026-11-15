@@ -709,7 +709,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun enableTcpip(): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
-            logErr("Aktifkan ADB Connect gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
+            logErr("Ubah Mode ke TCP/IP gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
             return false
         }
         logCmd("adb tcpip $TCPIP_PORT")
@@ -723,7 +723,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val failed = out.contains("error", ignoreCase = true) || out.contains("failed", ignoreCase = true)
         val restarted = out.contains("restarting", ignoreCase = true)
         if (failed || (!restarted && out.isNotBlank())) {
-            logErr("Aktifkan ADB Connect gagal: HP target menolak perintah tcpip")
+            logErr("Ubah Mode ke TCP/IP gagal: HP target menolak perintah tcpip")
             logRaw(out)
             return false
         }

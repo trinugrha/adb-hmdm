@@ -395,7 +395,7 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
         btnTcpip.setOnClickListener {
-            run("Aktifkan ADB Connect") { doEnableTcpip() }
+            run("Ubah Mode ke TCP/IP") { doEnableTcpip() }
         }
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
@@ -839,7 +839,7 @@ class MainActivity : AppCompatActivity() {
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Otomatis : Pasang Aplikasi + Jadikan Owner" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
-            // "Aktifkan ADB Connect" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
+            // "Ubah Mode ke TCP/IP" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
             val enabled = !isBusy && !notUsb && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled

@@ -1135,7 +1135,7 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Aktifkan ADB Connect (adb tcpip 5555) - hanya tampil di tab USB debugging -->
+            <!-- Ubah Mode ke TCP/IP (adb tcpip 5555) - hanya tampil di tab USB debugging -->
             <LinearLayout
                 android:id="@+id/cardTcpip"
                 android:layout_width="match_parent"
@@ -1168,7 +1168,7 @@
                             android:layout_height="44dp"
                             android:layout_marginTop="10dp"
                             android:minHeight="0dp"
-                            android:text="Aktifkan ADB Connect"
+                            android:text="Ubah Mode ke TCP/IP"
                             android:textSize="14sp" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
