@@ -867,7 +867,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Tekan Cek Status untuk cek status" />
+                        android:text="Tekan Cek Status Untuk Cek Information Status" />
 
                     <!-- Kotak status (gaya sama seperti Status Device Owner) -->
                     <LinearLayout
