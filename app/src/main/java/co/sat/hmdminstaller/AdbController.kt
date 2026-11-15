@@ -61,6 +61,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     companion object {
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
+        const val TCPIP_PORT = 5555
         const val HMDM_PACKAGE = "com.hmdm.launcher"
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
@@ -701,6 +702,44 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return true
     }
 
+    /**
+     * Setara `adb tcpip 5555`: adbd di HP target restart dalam mode TCP di port 5555.
+     * Setelah itu sesi USB ini pasti putus, jadi sesi dibersihkan di sini tanpa log error.
+     */
+    fun enableTcpip(): Boolean {
+        if (!ensureConnected()) return false
+        if (!viaUsb) {
+            logErr("Aktifkan ADB Connect gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
+            return false
+        }
+        logCmd("adb tcpip $TCPIP_PORT")
+        val out = try {
+            shell("$TCPIP_PORT", timeoutMs = 6_000, quiet = true, service = "tcpip") {
+                it.contains("restarting", ignoreCase = true) || it.contains("error", ignoreCase = true) || it.contains("failed", ignoreCase = true)
+            }
+        } catch (e: Throwable) {
+            "Error: ${e.message ?: e.javaClass.simpleName}"
+        }
+        val failed = out.contains("error", ignoreCase = true) || out.contains("failed", ignoreCase = true)
+        val restarted = out.contains("restarting", ignoreCase = true)
+        if (failed || (!restarted && out.isNotBlank())) {
+            logErr("Aktifkan ADB Connect gagal: HP target menolak perintah tcpip")
+            logRaw(out)
+            return false
+        }
+        // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
+        logOk("ADB Connect aktif di port $TCPIP_PORT")
+        logDetail("Koneksi USB terputus otomatis. Cabut kabel, buka tab Wireless debugging, lalu Connect ke IP HP target:$TCPIP_PORT")
+        lastAddr = null
+        sessionLabel = null
+        keepAlive(false)
+        try { manager.disconnect() } catch (e: Throwable) { }
+        connCache = false
+        try { usbBridge.stop() } catch (e: Throwable) { }
+        viaUsb = false
+        return true
+    }
+
     fun installAndOwner(apks: List<ApkItem>): Boolean {
         if (!ensureConnected()) return false
         // Walau sebagian APK gagal, tetap coba set device owner (HMDM mungkin sudah terpasang).
@@ -815,6 +854,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         cmd: String,
         timeoutMs: Long = 15_000,
         quiet: Boolean = false,
+        service: String = "shell",
         doneWhen: ((String) -> Boolean)? = null
     ): String {
         val bos = ByteArrayOutputStream()
@@ -823,7 +863,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         var error: Throwable? = null
         Thread {
             try {
-                val s = manager.openStream("shell:$cmd")
+                val s = manager.openStream("$service:$cmd")
                 stream = s
                 val input = s.openInputStream()
                 val buf = ByteArray(4096)

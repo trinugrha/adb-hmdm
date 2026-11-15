@@ -249,11 +249,12 @@ class MainActivity : AppCompatActivity() {
         val btnAll: MaterialButton = findViewById(R.id.btnAll)
         val btnClearKaspersky: MaterialButton = findViewById(R.id.btnClearKaspersky)
         val btnUninstallKaspersky: MaterialButton = findViewById(R.id.btnUninstallKaspersky)
+        val btnTcpip: MaterialButton = findViewById(R.id.btnTcpip)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
         buttons = listOf(btnPair, btnPairQr, btnConnect, btnConnectUsb, btnDisconnect,
-            btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
-        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky)
+            btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
+        needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnHome, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
         blockedWhenConnected = setOf(btnPair, btnPairQr, btnConnect, btnConnectUsb)
 
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
@@ -309,11 +310,13 @@ class MainActivity : AppCompatActivity() {
         tabMode = findViewById(R.id.tabMode)
         val tabWireless: View = findViewById(R.id.tabWireless)
         val tabUsb: View = findViewById(R.id.tabUsb)
+        val cardTcpip: View = findViewById(R.id.cardTcpip)
         tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 val usb = tab.position == 1
                 tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
                 tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
+                cardTcpip.visibility = if (usb) View.VISIBLE else View.GONE
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
@@ -390,6 +393,9 @@ class MainActivity : AppCompatActivity() {
                     run("Uninstall Kaspersky") { adb.uninstallKaspersky() }
                 }
                 .show()
+        }
+        btnTcpip.setOnClickListener {
+            run("Aktifkan ADB Connect") { doEnableTcpip() }
         }
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
@@ -693,6 +699,14 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread { refreshHeader() }
     }
 
+    /** `adb tcpip 5555`: adbd di HP target restart dalam mode TCP, sesi USB ini otomatis putus. */
+    private fun doEnableTcpip(): Boolean {
+        val ok = adb.enableTcpip()
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; showUsbDevice(null) }
+        runOnUiThread { refreshHeader() }
+        return ok
+    }
+
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
         if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; showUsbDevice(null) }
@@ -825,7 +839,9 @@ class MainActivity : AppCompatActivity() {
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Otomatis : Pasang Aplikasi + Jadikan Owner" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
-            val enabled = !isBusy && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
+            // "Aktifkan ADB Connect" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
+            val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
+            val enabled = !isBusy && !notUsb && !needsApk && !noHmdmApk && !noKaspersky && !noHmdm && !ownerActive && !homeActive && (connected || b !in needsConnection) && !(connected && b in blockedWhenConnected)
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
