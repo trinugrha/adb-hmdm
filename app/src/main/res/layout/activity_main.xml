@@ -891,7 +891,7 @@
                             android:id="@+id/typePos"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="-8dp"
+                            android:layout_marginStart="0dp"
                             android:button="@drawable/btn_check_round"
                             android:minHeight="40dp"
                             android:paddingStart="6dp"
@@ -1323,7 +1323,7 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Ubah Mode ke TCP/IP (adb tcpip 5555) - hanya tampil di tab USB debugging -->
+                <!-- Ubah Mode Nirkabel (TCP/IP) (adb tcpip 5555) - hanya tampil di tab USB debugging -->
                 <LinearLayout
                     android:id="@+id/cardTcpip"
                     android:layout_width="match_parent"
@@ -1377,7 +1377,7 @@
                                         style="@style/Hmdm.SectionLabel"
                                         android:layout_width="wrap_content"
                                         android:layout_height="wrap_content"
-                                        android:text="STATUS WI-FI (TCP/IP)"
+                                        android:text="STATUS NIRKABEL (TCP/IP)"
                                         android:textColor="@color/muted" />
 
                                     <LinearLayout
@@ -1419,7 +1419,7 @@
                                 android:layout_height="44dp"
                                 android:layout_marginTop="8dp"
                                 android:minHeight="0dp"
-                                android:text="Ubah Mode ke TCP/IP"
+                                android:text="Ubah Mode Nirkabel (TCP/IP)"
                                 android:textSize="14sp" />
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>

@@ -900,7 +900,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun enableTcpip(): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
-            logErr("Ubah Mode ke TCP/IP gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
+            logErr("Ubah Mode Nirkabel (TCP/IP) gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
             return false
         }
         if (queryTcpipActive() == true) {
@@ -919,7 +919,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val restarted = out.contains("restarting", ignoreCase = true)
         if (failed || (!restarted && out.isNotBlank())) {
             val reason = "HP target menolak perintah tcpip. Cek koneksi USB, lalu coba lagi"
-            logErr("Ubah Mode ke TCP/IP gagal: $reason")
+            logErr("Ubah Mode Nirkabel (TCP/IP) gagal: $reason")
             logRaw(out, reason)
             return false
         }

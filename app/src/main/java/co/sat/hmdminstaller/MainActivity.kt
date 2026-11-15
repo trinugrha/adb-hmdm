@@ -151,7 +151,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var kasperskyInstalled: Boolean? = null
     /** Apakah com.hmdm.launcher terpasang di HP target: null = belum diketahui (tombol Owner/Launcher mati). */
     @Volatile private var hmdmInstalled: Boolean? = null
-    /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah Mode ke TCP/IP" dimatikan. */
+    /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah Mode Nirkabel (TCP/IP)" dimatikan. */
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, Boolean>? = null
@@ -450,7 +450,7 @@ class MainActivity : AppCompatActivity() {
                 .show()
         }
         btnTcpip.setOnClickListener {
-            run("Ubah Mode ke TCP/IP") { doEnableTcpip() }
+            run("Ubah Mode Nirkabel (TCP/IP)") { doEnableTcpip() }
         }
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
@@ -918,7 +918,7 @@ class MainActivity : AppCompatActivity() {
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Pasang Aplikasi + Jadikan MDM Mode" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
-            // "Ubah Mode ke TCP/IP" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
+            // "Ubah Mode Nirkabel (TCP/IP)" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
             // Mode TCP/IP sudah aktif di HP target: tombol tidak perlu ditekan lagi.
             val tcpipAlready = b.id == R.id.btnTcpip && connected && tcpipActive == true
