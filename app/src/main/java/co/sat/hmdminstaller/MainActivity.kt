@@ -1011,7 +1011,12 @@ class MainActivity : AppCompatActivity() {
         val green = Color.rgb(74, 222, 128)
         val red = Color.rgb(248, 113, 113)
         // Checkbox jenis perangkat: hanya satu yang tercentang (yang dipilih), selalu ada satu terpilih.
-        typeChips.forEach { (type, box) -> box.isChecked = type == deviceType }
+        // Selama belum terhubung, checkbox dinonaktifkan (tidak bisa diubah) dan tampil redup.
+        typeChips.forEach { (type, box) ->
+            box.isChecked = type == deviceType
+            box.isEnabled = connected
+            box.alpha = if (connected) 1f else 0.4f
+        }
         val missing = if (st == null) emptyList() else pkgs.filter { st[it] != true }
         val (text, color) = when {
             st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
@@ -1020,22 +1025,9 @@ class MainActivity : AppCompatActivity() {
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
-        // Ceklist: tiap paket satu baris, ✓ hijau bila terpasang, ✗ merah bila belum.
-        val sb = android.text.SpannableStringBuilder()
-        pkgs.forEachIndexed { i, pkg ->
-            if (i > 0) sb.append('\n')
-            val (mark, c) = when {
-                st == null -> "○" to grey
-                st[pkg] == true -> "✓" to green
-                else -> "✗" to red
-            }
-            val start = sb.length
-            sb.append(mark)
-            sb.setSpan(android.text.style.ForegroundColorSpan(c), start, sb.length, android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            sb.append("  ").append(pkg)
-        }
-        txtAppsDetail.text = sb
-        txtAppsDetail.visibility = View.VISIBLE
+        // Daftar paket tidak ditampilkan; hanya ringkasan jumlah terinstal.
+        txtAppsDetail.text = ""
+        txtAppsDetail.visibility = View.GONE
     }
 
     private fun refreshTcpip() {
