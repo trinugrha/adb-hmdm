@@ -125,7 +125,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
-        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) dulu"
+        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) terlebih dahulu"
     }
 
     private val appContext = context.applicationContext
