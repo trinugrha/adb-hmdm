@@ -215,7 +215,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logStep("Perangkat USB: ${t.label}")
         if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
         if (!usbBridge.requestPermission(t.device)) {
-            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk Connect USB lagi lalu pilih Izinkan")
+            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk Pilih Perangkat lagi lalu pilih Izinkan")
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
@@ -511,8 +511,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val missing = r.filterValues { !it }.keys
         if (missing.isEmpty()) logOk("Semua aplikasi terpasang (${r.size}/${r.size})")
         else {
-            logWarn("Belum terpasang ${missing.size} dari ${r.size} aplikasi:")
-            missing.forEach { logDetail(it) }
+            // Nama aplikasi yang belum ada bukan output mentah device, jadi bukan DETAIL.
+            logWarn("Belum terpasang ${missing.size} dari ${r.size} aplikasi: ${missing.joinToString(", ")}")
         }
         return all
     }
@@ -860,11 +860,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
         if (!isSuccess(out)) {
-            logErr("Hapus data Kaspersky gagal: perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target")
+            logErr("Hapus data aplikasi Kaspersky gagal: perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target")
             logRaw(out)
             return false
         }
-        logOk("Data Kaspersky dihapus")
+        logOk("Data aplikasi Kaspersky dihapus")
         return true
     }
 
@@ -885,11 +885,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     "Kaspersky sudah tidak terpasang"
                 else -> "perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target"
             }
-            logErr("Uninstall Kaspersky gagal: $reason")
+            logErr("Uninstall aplikasi Kaspersky gagal: $reason")
             logRaw(out, reason)
             return false
         }
-        logOk("Kaspersky di-uninstall")
+        logOk("Aplikasi Kaspersky di-uninstall")
         return true
     }
 
@@ -1007,7 +1007,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return when {
             out == stallError ->
                 if (!advice) "pengiriman macet"
-                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Connect USB ulang"
+                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Pilih Perangkat ulang"
                 else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
             friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
             code != null -> code
