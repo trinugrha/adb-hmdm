@@ -956,7 +956,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun logOut(s: String) = sink(LogLevel.OUT, s)
 
     private val terminalHelp = listOf(
-        "Perintah yang didukung (awalan 'adb ' boleh ditulis atau tidak):",
+        "Semua perintah wajib diawali 'adb ', mis. adb shell pm list packages:",
         "  shell <perintah>         jalankan perintah shell di HP target",
         "  exec-out <perintah>      seperti shell, tanpa terminal (output biner/bersih)",
         "  logcat [opsi]            log sistem (otomatis -d -t 200 bila tanpa opsi waktu)",
@@ -972,7 +972,6 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         "  push [file] <tujuan>     kirim file ke HP target (tanpa file lokal = buka pemilih file)",
         "  pull <file di HP target> ambil file dari HP target (lalu pilih tempat simpan)",
         "  disconnect               putuskan koneksi",
-        "Mode 'adb shell': semua teks langsung dijalankan sebagai perintah shell.",
         "Tidak didukung: shell interaktif, pull folder, forward. Pair QR dan Connect USB lewat kartu di atas."
     )
 
@@ -1097,7 +1096,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 false
             }
             else -> {
-                logErr("Perintah '$head' tidak dikenal. Ketik help untuk daftar perintah, atau ganti mode ke 'adb shell'")
+                logErr("Perintah '$head' tidak dikenal. Ketik help untuk daftar perintah. Perintah di HP target: adb shell <perintah>")
                 false
             }
         }

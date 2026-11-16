@@ -220,6 +220,7 @@ class MainActivity : AppCompatActivity() {
                     busy = false
                     setBusy(false, if (items.isEmpty()) "Belum ada APK" else "${items.size} APK siap dipasang")
                     refreshApkList()
+                    drainTermQueue()
                 }
             }
         }
@@ -790,7 +791,7 @@ class MainActivity : AppCompatActivity() {
     private val consoleScroll by lazy { findViewById<ScrollView>(R.id.consoleScroll) }
     private val txtPrompt by lazy { findViewById<TextView>(R.id.txtPrompt) }
     /** true = mode "adb shell" (semua teks jadi perintah shell); false = mode "adb" (perintah non-shell). */
-    private var termShell = true
+    private val termShell = false
     private val termHistory = mutableListOf<String>()
     private var termIdx = 0
     /** true selama proses yang dijalankan dari Terminal: seluruh log diarahkan ke console, bukan ke Log halaman. */
@@ -798,15 +799,9 @@ class MainActivity : AppCompatActivity() {
     /** Posisi awal baris progres di console (-1 = tidak ada); baris ini ditimpa terus sampai ada baris lain. */
     private var conProgStart = -1
 
-    private fun promptText() = if (termShell) "adb shell>" else "adb>"
+    private fun promptText() = "adb>"
 
     private fun setupTerminal(btnRun: MaterialButton) {
-        val toggle = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleTermMode)
-        toggle.addOnButtonCheckedListener { _, id, checked ->
-            if (!checked) return@addOnButtonCheckedListener
-            termShell = id == R.id.btnTermShell
-            txtPrompt.text = promptText()
-        }
         btnRun.setOnClickListener { submitTerminal() }
         edtTerminal.setOnEditorActionListener { _, actionId, event ->
             val enter = event != null && event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_DOWN
@@ -825,8 +820,8 @@ class MainActivity : AppCompatActivity() {
         txtConsole.text = ""
         conProgStart = -1
         tlog(LogLevel.STEP, "HMDM Installer [Terminal ADB]")
-        tlog(LogLevel.DETAIL, "Ketik help untuk daftar perintah. Mode adb shell: semua teks dijalankan di HP target.")
-        tlog(LogLevel.DETAIL, "Untuk menyambung: ganti ke mode adb (non-shell), lalu adb pair <ip:port> <kode> dan adb connect <ip:port>.")
+        tlog(LogLevel.DETAIL, "Ketik help untuk daftar perintah. Semua perintah diawali adb. Contoh: adb shell getprop ro.product.model")
+        tlog(LogLevel.DETAIL, "Untuk menyambung: adb pair <ip:port> <kode>, lalu adb connect <ip:port>.")
         txtConsole.append("\n")
     }
 
@@ -1004,21 +999,52 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /** Perintah yang diketik saat masih ada proses berjalan: diantre dan dijalankan otomatis berurutan. */
+    private val termQueue = ArrayDeque<Pair<String, Boolean>>()
+
+    private fun maskPair(text: String, shellMode: Boolean): String {
+        val body = text.removePrefix("adb ").trim()
+        if (shellMode || body.substringBefore(' ') != "pair") return text
+        val parts = body.split(" ")
+        return if (parts.size >= 3) parts.dropLast(1).joinToString(" ") + " ******" else body
+    }
+
     private fun submitTerminal() {
         val text = edtTerminal.text?.toString()?.trim().orEmpty()
         if (text.isEmpty()) { conAppend("\n", Color.WHITE); return }
-        if (busy) { tlog(LogLevel.WARN, "Masih ada proses berjalan. Tunggu sampai selesai, lalu jalankan lagi"); return }
-        val body = text.removePrefix("adb ").trim()
-        val head = body.substringBefore(' ')
+        // Satu terminal untuk semua: perintah wajib diawali "adb" (adb shell ... untuk perintah di HP target).
+        if (text != "adb" && !text.startsWith("adb ") && text !in setOf("cls", "clear", "help", "--help", "-h")) {
+            conAppend("$ $text\n", Color.WHITE, bold = true)
+            tlog(LogLevel.WARN, "Perintah harus diawali 'adb'. Contoh: adb shell $text")
+            return
+        }
+        val head = text.removePrefix("adb ").trim().substringBefore(' ')
         // Kode pairing bersifat sementara tapi rahasia: perintah pair tidak disimpan di riwayat dan disensor di layar.
         if (head != "pair" && termHistory.lastOrNull() != text) termHistory.add(text)
         if (termHistory.size > 50) termHistory.removeAt(0)
         termIdx = termHistory.size
         edtTerminal.setText("")
-        val shownText = if (!termShell && head == "pair") body.split(" ").let { if (it.size >= 3) it.dropLast(1).joinToString(" ") + " ******" else body } else text
-        conAppend(promptText() + " " + shownText + "\n", Color.WHITE, bold = true)
+        if (busy) {
+            termQueue.addLast(text to termShell)
+            tlog(LogLevel.DETAIL, "Antre: ${maskPair(text, termShell)} (menunggu proses sebelumnya selesai)")
+            return
+        }
+        executeTerminal(text, termShell)
+    }
+
+    /** Jalankan perintah antrean berikutnya selama tidak ada proses berjalan. Dipanggil di UI thread setiap proses selesai. */
+    private fun drainTermQueue() {
+        while (!busy && termQueue.isNotEmpty()) {
+            val (t, m) = termQueue.removeFirst()
+            executeTerminal(t, m)
+        }
+    }
+
+    private fun executeTerminal(text: String, shellMode: Boolean) {
+        val body = text.removePrefix("adb ").trim()
+        val head = body.substringBefore(' ')
+        conAppend((if (shellMode) "adb shell>" else "adb>") + " " + maskPair(text, shellMode) + "\n", Color.WHITE, bold = true)
         if (text == "cls" || text == "clear") { clearConsole(); return }
-        val shellMode = termShell
         if (!shellMode && (head == "pair" || head == "connect")) { terminalPairConnect(head, body.removePrefix(head).trim()); return }
         if (!shellMode && (head == "push" || head == "pull")) { terminalTransfer(head, body.removePrefix(head).trim()); return }
         // Status (device owner, aplikasi terpasang) dibaca ulang hanya bila perintah kemungkinan mengubahnya.
@@ -1086,6 +1112,7 @@ class MainActivity : AppCompatActivity() {
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
+                drainTermQueue()
             }
         }
     }

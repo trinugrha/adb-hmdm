@@ -580,36 +580,6 @@
                     </LinearLayout>
                 </ScrollView>
 
-                <com.google.android.material.button.MaterialButtonToggleGroup
-                    android:id="@+id/toggleTermMode"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    app:checkedButton="@+id/btnTermShell"
-                    app:selectionRequired="true"
-                    app:singleSelection="true">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnTermShell"
-                        style="@style/Widget.Hmdm.Button.Outlined"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minHeight="0dp"
-                        android:text="adb shell"
-                        android:textSize="13sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnTermAdb"
-                        style="@style/Widget.Hmdm.Button.Outlined"
-                        android:layout_width="0dp"
-                        android:layout_height="40dp"
-                        android:layout_weight="1"
-                        android:minHeight="0dp"
-                        android:text="adb (non-shell)"
-                        android:textSize="13sp" />
-                </com.google.android.material.button.MaterialButtonToggleGroup>
-
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
