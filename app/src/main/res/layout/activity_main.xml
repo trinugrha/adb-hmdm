@@ -552,7 +552,7 @@
                                 android:layout_height="wrap_content"
                                 android:fontFamily="monospace"
                                 android:paddingTop="1dp"
-                                android:text="adb shell&gt;"
+                                android:text="adb&gt;"
                                 android:textColor="@color/console_prompt"
                                 android:textSize="12sp"
                                 android:textStyle="bold" />

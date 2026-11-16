@@ -67,6 +67,29 @@ class MainActivity : AppCompatActivity() {
     private var touchDownX = 0f
     private var touchDownY = 0f
     private var kbHandledForGesture = false
+    private var tapStartedWithSelection = false
+
+    /** Titik sentuh (koordinat layar) berada di dalam [v]? */
+    private fun hitView(v: View, ev: MotionEvent): Boolean {
+        val loc = IntArray(2)
+        v.getLocationOnScreen(loc)
+        return ev.rawX >= loc[0] && ev.rawX <= loc[0] + v.width && ev.rawY >= loc[1] && ev.rawY <= loc[1] + v.height
+    }
+
+    /** Di tab Terminal: ketuk area console mana pun (bukan geser / pilih teks) => kursor kembali ke baris adb>. */
+    private fun handleConsoleTap(ev: MotionEvent) {
+        if (!::tabMode.isInitialized || findViewById<View>(R.id.tabTerminal).visibility != View.VISIBLE) return
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> tapStartedWithSelection = txtConsole.hasSelection()
+            MotionEvent.ACTION_UP -> {
+                val slop = ViewConfiguration.get(this).scaledTouchSlop
+                val tap = Math.abs(ev.x - touchDownX) <= slop && Math.abs(ev.y - touchDownY) <= slop
+                if (tap && !tapStartedWithSelection && hitView(consoleScroll, ev) && !hitView(edtTerminal, ev)) {
+                    focusTerminal()
+                }
+            }
+        }
+    }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
         swipeDetector.onTouchEvent(ev)
@@ -86,7 +109,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        return super.dispatchTouchEvent(ev)
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) handleConsoleTap(ev) // baca status seleksi sebelum disentuh
+        val handled = super.dispatchTouchEvent(ev)
+        if (ev.actionMasked != MotionEvent.ACTION_DOWN) handleConsoleTap(ev)
+        return handled
     }
 
     private fun hideKeyboard() {
@@ -1161,6 +1187,8 @@ class MainActivity : AppCompatActivity() {
         applyButtonState(on)
         apkListBox.alpha = if (on) 0.5f else 1f
         progress.visibility = if (on) View.VISIBLE else View.GONE
+        // Selama proses berjalan, prompt "adb>" disembunyikan.
+        txtPrompt.visibility = if (on) View.GONE else View.VISIBLE
         txtStatus.text = status
     }
 
