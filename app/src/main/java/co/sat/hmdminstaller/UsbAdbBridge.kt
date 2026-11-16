@@ -172,8 +172,6 @@ class UsbAdbBridge(context: Context) {
         conn = null; iface = null; epIn = null; epOut = null; device = null
     }
 
-    /** Kunci jenis HP target (vendor:product ID USB), atau null bila tidak ada perangkat aktif. */
-
     val isRunning: Boolean get() = running && deviceAttached()
 
     private fun deviceAttached(): Boolean {

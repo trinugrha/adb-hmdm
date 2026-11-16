@@ -322,13 +322,13 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return c
     }
 
-    /**
-     * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
-     * Dipanggil dari thread pemantau; stream ditutup paksa bila tidak membalas dalam 8 detik.
-     */
     /** Alasan probe/sesi terakhir gagal, untuk diagnosis. Ditampilkan di log saat koneksi dinyatakan putus. */
     @Volatile var lastDropReason: String = ""
 
+    /**
+     * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
+     * Dipanggil dari thread pemantau; menunggu paling lama 6 detik.
+     */
     fun probe(addr: String? = lastAddr): Boolean {
         if (!libConnected) { lastDropReason = "library melaporkan soket sudah tertutup (HP target atau jaringan menutup koneksi)"; return false }
         val ok = java.util.concurrent.atomic.AtomicBoolean(false)

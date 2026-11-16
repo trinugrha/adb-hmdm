@@ -228,6 +228,8 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Sembunyikan isi aplikasi dari recent apps / screenshot (layar PIN hanya overlay).
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
 
         edtPairIp = findViewById(R.id.edtPairIp)
@@ -306,9 +308,13 @@ class MainActivity : AppCompatActivity() {
             lastProbe = System.currentTimeMillis()
         }
         // Izin notifikasi (Android 13+) agar notifikasi "koneksi aktif" terlihat.
+        // Hanya diminta sekali; bila ditolak tidak diminta lagi tiap aplikasi dibuka.
         if (Build.VERSION.SDK_INT >= 33 &&
-            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+            checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            !typePrefs.getBoolean("notif_asked", false)) {
+            typePrefs.edit().putBoolean("notif_asked", true).apply()
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 100)
+        }
         adb.onProgress = { idx, total, name, sent, size -> runOnUiThread { showInstallProgress(idx, total, name, sent, size) } }
 
         // Siapkan kunci ADB di thread latar (bukan UI thread).
@@ -1097,9 +1103,11 @@ class MainActivity : AppCompatActivity() {
     private val apkPkgCache = java.util.concurrent.ConcurrentHashMap<String, String>()
 
     /** Nama paket (mis. com.hmdm.launcher) dari file APK; "" bila tidak terbaca. */
+    private fun apkKey(f: File) = "${f.absolutePath}|${f.length()}|${f.lastModified()}"
+
     private fun apkPackage(item: ApkItem): String {
         val f = item.file
-        val key = "${f.absolutePath}|${f.length()}|${f.lastModified()}"
+        val key = apkKey(f)
         return apkPkgCache.getOrPut(key) {
             try {
                 packageManager.getPackageArchiveInfo(f.absolutePath, 0)?.packageName ?: ""
@@ -1108,7 +1116,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Apakah daftar APK yang dipilih berisi com.hmdm.launcher. */
-    private fun hasHmdmApk(): Boolean = apks.any { apkPackage(it) == AdbController.HMDM_PACKAGE }
+    /** Hanya membaca cache (aman di UI thread); cache diisi di thread latar oleh [apkPackage]. */
+    private fun hasHmdmApk(): Boolean = apks.any { apkPkgCache[apkKey(it.file)] == AdbController.HMDM_PACKAGE }
 
     /** Tampilkan daftar APK yang akan dipasang (urut sesuai nama) lengkap dengan ukuran & tombol hapus. */
     private fun renderApkList() {
@@ -1267,6 +1276,12 @@ class MainActivity : AppCompatActivity() {
         val dir = File(cacheDir, "picked")
         val files = dir.listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) } ?: return
         files.sortedBy { it.name.lowercase() }.forEach { apks.add(ApkItem(it.name, it)) }
+        // Parse nama paket di thread latar (bukan UI thread), lalu segarkan status tombol.
+        val snapshot = apks.toList()
+        io.execute {
+            snapshot.forEach { apkPackage(it) }
+            runOnUiThread { if (!isFinishing) refreshHeader() }
+        }
     }
 
     private fun displayName(uri: Uri): String {

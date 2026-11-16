@@ -74,8 +74,12 @@ object AdbDiscovery {
             try {
                 nsd.resolveService(si, object : NsdManager.ResolveListener {
                     override fun onResolveFailed(s: NsdServiceInfo, errorCode: Int) {
-                        if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) queue.add(s)
-                        resolving.set(false); pump()
+                        if (errorCode == NsdManager.FAILURE_ALREADY_ACTIVE) {
+                            // Coba lagi setelah jeda singkat, bukan seketika (hindari putaran cepat tanpa henti).
+                            queue.add(s)
+                            Thread { try { Thread.sleep(300) } catch (e: InterruptedException) { }; resolving.set(false); pump() }
+                                .apply { isDaemon = true; start() }
+                        } else { resolving.set(false); pump() }
                     }
                     override fun onServiceResolved(s: NsdServiceInfo) {
                         val host = s.host?.hostAddress?.substringBefore('%')

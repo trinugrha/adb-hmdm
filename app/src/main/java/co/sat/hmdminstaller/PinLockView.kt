@@ -44,6 +44,7 @@ class PinLockView(
     private val eyeText = TextView(context)
     private val btnLogin = MaterialButton(context)
     private var showPin = false
+    private val autoSubmit = Runnable { submit() }
 
     // ---- Terkunci sementara karena terlalu banyak salah ----
     // Harus dideklarasikan sebelum blok init, karena init memanggil startLockTicker().
@@ -152,7 +153,7 @@ class PinLockView(
                     paintBoxes()
                     if (message.tag == "err") hideMessage()
                     // Digit terakhir terisi → langsung diperiksa; jika benar langsung masuk.
-                    if ((s?.length ?: 0) == PinStore.PIN_LENGTH) this@PinLockView.handler.postDelayed({ submit() }, 100)
+                    if ((s?.length ?: 0) == PinStore.PIN_LENGTH) { this@PinLockView.handler.removeCallbacks(autoSubmit); this@PinLockView.handler.postDelayed(autoSubmit, 100) }
                 }
             })
             setOnEditorActionListener { _, id, _ -> if (id == EditorInfo.IME_ACTION_DONE) { submit(); true } else false }
@@ -226,6 +227,7 @@ class PinLockView(
     private fun hideMessage() { message.tag = null; message.visibility = View.GONE }
 
     private fun submit() {
+        handler.removeCallbacks(autoSubmit)   // cegah hitung ganda (auto-submit + Done/Masuk)
         if (store.lockRemainingMs() > 0) return
         val pin = input.text?.toString().orEmpty()
         if (pin.length < PinStore.PIN_LENGTH) {
