@@ -288,8 +288,9 @@ class MainActivity : AppCompatActivity() {
         val btnTcpip: MaterialButton = findViewById(R.id.btnTcpip)
         val btnCopyLog: MaterialButton = findViewById(R.id.btnCopyLog)
         val btnClearLog: MaterialButton = findViewById(R.id.btnClearLog)
+        val btnTerminalRun: MaterialButton = findViewById(R.id.btnTerminalRun)
         buttons = listOf(btnPair, btnPairQr, btnConnect, btnConnectUsb, btnDisconnect,
-            btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
+            btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip, btnTerminalRun)
         needsConnection = setOf(btnDisconnect, btnInstallOnly, btnOwner, btnAll, btnClearKaspersky, btnUninstallKaspersky, btnTcpip)
         blockedWhenConnected = setOf(btnPair, btnPairQr, btnConnect, btnConnectUsb)
 
@@ -322,6 +323,7 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
             }
         }
+        setupTerminal(btnTerminalRun)
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
         logScroll.setOnTouchListener { v, _ -> v.parent.requestDisallowInterceptTouchEvent(true); false }
 
@@ -777,13 +779,193 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
+    // ---------- Terminal ----------
+
+    private val edtTerminal by lazy { findViewById<TextInputEditText>(R.id.edtTerminal) }
+    /** true = mode "adb shell" (semua teks jadi perintah shell); false = mode "adb" (perintah non-shell). */
+    private var termShell = true
+    private val termHistory = mutableListOf<String>()
+    private var termIdx = 0
+
+    private fun setupTerminal(btnRun: MaterialButton) {
+        val til = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilTerminal)
+        val toggle = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleTermMode)
+        toggle.addOnButtonCheckedListener { _, id, checked ->
+            if (!checked) return@addOnButtonCheckedListener
+            termShell = id == R.id.btnTermShell
+            til.hint = if (termShell) "adb shell ..." else "adb ... (mis. devices, install, reboot)"
+        }
+        btnRun.setOnClickListener { submitTerminal() }
+        edtTerminal.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) { submitTerminal(); true } else false
+        }
+        findViewById<View>(R.id.btnTermPrev).setOnClickListener { termRecall(-1) }
+        findViewById<View>(R.id.btnTermNext).setOnClickListener { termRecall(+1) }
+    }
+
+    /** Panggil kembali perintah lama: delta -1 = lebih lama, +1 = lebih baru (melewati yang terbaru = kolom kosong). */
+    private fun termRecall(delta: Int) {
+        if (termHistory.isEmpty()) return
+        termIdx = (termIdx + delta).coerceIn(0, termHistory.size)
+        val t = if (termIdx >= termHistory.size) "" else termHistory[termIdx]
+        edtTerminal.setText(t)
+        edtTerminal.setSelection(t.length)
+    }
+
+    private var pendingPushRemote: String? = null
+    private var pendingPullRemote: String? = null
+
+    private val pickPushFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val remote = pendingPushRemote
+        pendingPushRemote = null
+        if (uri == null || remote == null) { log(LogLevel.WARN, "Push dibatalkan: tidak ada file yang dipilih"); return@registerForActivityResult }
+        val name = displayName(uri)
+        var size = -1L
+        try {
+            contentResolver.query(uri, arrayOf(OpenableColumns.SIZE), null, null, null)?.use { c ->
+                if (c.moveToFirst() && !c.isNull(0)) size = c.getLong(0)
+            }
+        } catch (e: Exception) { }
+        run("Push", refresh = false) {
+            val input = try { contentResolver.openInputStream(uri) } catch (e: Exception) { null }
+            if (input == null) {
+                runOnUiThread { log(LogLevel.ERR, "Push gagal: file '$name' tidak bisa dibuka. Pilih ulang file-nya") }
+                false
+            } else input.use { adb.push(name, it, size, remote) }
+        }
+    }
+
+    private val pickPullDest = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
+        val remote = pendingPullRemote
+        pendingPullRemote = null
+        if (uri == null || remote == null) { log(LogLevel.WARN, "Pull dibatalkan: tempat simpan tidak dipilih"); return@registerForActivityResult }
+        run("Pull", refresh = false) {
+            val out = try { contentResolver.openOutputStream(uri) } catch (e: Exception) { null }
+            val ok = if (out == null) {
+                runOnUiThread { log(LogLevel.ERR, "Pull gagal: tempat simpan tidak bisa ditulis. Pilih lokasi lain") }
+                false
+            } else out.use { adb.pull(remote, it) }
+            // Jangan tinggalkan file kosong bila pull gagal.
+            if (!ok) try { android.provider.DocumentsContract.deleteDocument(contentResolver, uri) } catch (e: Exception) { }
+            ok
+        }
+    }
+
+    /**
+     * `adb push [file] <tujuan>` dan `adb pull <file di HP target> [tujuan]`.
+     * Tanpa path lokal yang bisa dibaca aplikasi, pemilih file Android dibuka (aplikasi tidak boleh membaca /sdcard bebas).
+     */
+    private fun terminalTransfer(cmd: String, argText: String) {
+        val args = argText.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val t0 = System.currentTimeMillis()
+        fun fail(msg: String) { logHead("Terminal", t0); log(LogLevel.ERR, msg); logEnd("Terminal", false, t0) }
+        if (!adb.isConnected) {
+            logHead("Terminal", t0); log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); logEnd("Terminal", false, t0); return
+        }
+        if (cmd == "push") {
+            when (args.size) {
+                1 -> {
+                    pendingPushRemote = args[0]
+                    log(LogLevel.STEP, "Pilih file di HP ini untuk dikirim ke ${args[0]}")
+                    pickPushFile.launch(arrayOf("*/*"))
+                }
+                2 -> {
+                    val f = java.io.File(args[0])
+                    if (!f.isFile || !f.canRead()) {
+                        fail("Push gagal: file '${args[0]}' tidak bisa dibaca aplikasi. Tulis hanya tujuannya (adb push ${args[1]}) agar muncul pemilih file")
+                    } else run("Push", refresh = false) { f.inputStream().use { adb.push(f.name, it, f.length(), args[1]) } }
+                }
+                else -> fail("Push gagal: format salah. Tulis: adb push <tujuan di HP target>  atau  adb push <file> <tujuan>")
+            }
+        } else {
+            when (args.size) {
+                1 -> {
+                    pendingPullRemote = args[0]
+                    log(LogLevel.STEP, "Pilih tempat menyimpan hasil pull dari ${args[0]}")
+                    pickPullDest.launch(args[0].trimEnd('/').substringAfterLast('/').ifEmpty { "pull.bin" })
+                }
+                2 -> {
+                    val f = java.io.File(args[1])
+                    val dir = if (f.isDirectory) f else f.absoluteFile.parentFile
+                    if (dir == null || !dir.isDirectory || !dir.canWrite()) {
+                        fail("Pull gagal: folder '${args[1]}' tidak bisa ditulis aplikasi. Tulis hanya sumbernya (adb pull ${args[0]}) agar muncul pemilih lokasi simpan")
+                    } else {
+                        val dest = if (f.isDirectory) java.io.File(f, args[0].trimEnd('/').substringAfterLast('/').ifEmpty { "pull.bin" }) else f
+                        run("Pull", refresh = false) {
+                            val ok = dest.outputStream().use { adb.pull(args[0], it) }
+                            if (!ok) dest.delete()
+                            ok
+                        }
+                    }
+                }
+                else -> fail("Pull gagal: format salah. Tulis: adb pull <file di HP target>  atau  adb pull <file di HP target> <tujuan>")
+            }
+        }
+    }
+
+    /** `adb pair <ip:port> <kode>` dan `adb connect <ip[:port]>`: memakai langkah yang sama dengan kartu Pair / Connect. */
+    private fun terminalPairConnect(cmd: String, argText: String) {
+        val args = argText.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        val title = if (cmd == "pair") "Pairing" else "Connect"
+        fun fail(msg: String) {
+            val t0 = System.currentTimeMillis()
+            logHead(title, t0); log(LogLevel.ERR, msg); logEnd(title, false, t0)
+        }
+        if (connectedAddr != null && adb.isConnected) {
+            fail("$title gagal: HP target masih terhubung. Jalankan adb disconnect dulu"); return
+        }
+        if (cmd == "pair") {
+            if (args.size != 2) { fail("Pairing gagal: format salah. Tulis: adb pair <IP:Port pairing> <kode pairing>"); return }
+            val addr = clean(args[0]); val code = clean(args[1])
+            run(title) { doPair(addr, code) }
+        } else {
+            if (args.size != 1) { fail("Connect gagal: format salah. Tulis: adb connect <IP:Port> (port kosong = 5555)"); return }
+            val a = clean(args[0])
+            val addr = if (a.contains(':')) a else "$a:${AdbController.TCPIP_PORT}"
+            run(title) { doConnect(addr) }
+        }
+    }
+
+    private fun submitTerminal() {
+        if (busy) return
+        val text = edtTerminal.text?.toString()?.trim().orEmpty()
+        if (text.isEmpty()) return
+        val body = text.removePrefix("adb ").trim()
+        val head = body.substringBefore(' ')
+        // Kode pairing bersifat sementara tapi rahasia: perintah pair tidak disimpan di riwayat.
+        if (head != "pair" && termHistory.lastOrNull() != text) termHistory.add(text)
+        if (termHistory.size > 50) termHistory.removeAt(0)
+        termIdx = termHistory.size
+        edtTerminal.setText("")
+        hideKeyboard()
+        val shellMode = termShell
+        if (!shellMode && (head == "pair" || head == "connect")) { terminalPairConnect(head, body.removePrefix(head).trim()); return }
+        if (!shellMode && (head == "push" || head == "pull")) { terminalTransfer(head, body.removePrefix(head).trim()); return }
+        // Status (device owner, aplikasi terpasang) dibaca ulang hanya bila perintah kemungkinan mengubahnya.
+        val refresh = if (shellMode || head == "shell") Regex("\\b(dpm|pm|cmd|am|install|uninstall|settings|appops)\\b").containsMatchIn(body)
+                      else head == "install" || head == "install-multiple" || head == "uninstall"
+        val picked = apks.toList()
+        run("Terminal", refresh) {
+            val ok = adb.terminal(text, shellMode, picked)
+            // Perintah seperti reboot / tcpip / usb / disconnect memutus sesi: samakan tampilan dengan kenyataan.
+            if (!adb.isConnected && connectedAddr != null) {
+                connectedAddr = null; connectedSince = 0L; lostAddr = null
+                ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null
+                hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null
+                showUsbDevice(null)
+            }
+            runOnUiThread { refreshHeader() }
+            ok
+        }
+    }
+
     private fun doSetOwner(): Boolean {
         val ok = adb.setDeviceOwner()
         runOnUiThread { refreshHeader() }
         return ok
     }
 
-    private fun run(title: String, work: () -> Boolean) {
+    private fun run(title: String, refresh: Boolean = true, work: () -> Boolean) {
         if (busy) return
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
@@ -804,7 +986,7 @@ class MainActivity : AppCompatActivity() {
             val skipInfo = skipInfoRefresh
             skipInfoRefresh = false
             try {
-                if (adb.isConnected) {
+                if (refresh && adb.isConnected) {
                     val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st
                     adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
                     adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
@@ -841,8 +1023,14 @@ class MainActivity : AppCompatActivity() {
             // Gulir halaman sekali agar progress terlihat.
             box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
         }
-        n.text = "Memasang APK $idx dari $total: $name"
-        if (size > 0 && sent >= size) {
+        val transfer = total == 0
+        n.text = if (transfer) "Transfer file: $name" else "Memasang APK $idx dari $total: $name"
+        if (transfer) {
+            bar.isIndeterminate = false
+            val pct = if (size > 0) (sent * 100 / size).toInt().coerceAtMost(100) else 0
+            bar.progress = if (size > 0) (sent * 1000 / size).toInt().coerceAtMost(1000) else 0
+            info.text = if (size > 0) "$pct% · ${Fmt.size(sent)} / ${Fmt.size(size)}" else Fmt.size(sent)
+        } else if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
             info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
         } else {
@@ -926,6 +1114,14 @@ class MainActivity : AppCompatActivity() {
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
+        }
+        // Kolom Terminal: hanya bisa diketik saat terhubung dan tidak sedang ada proses.
+        // Terminal aktif walau belum terhubung: pair / connect bisa diketik di sini.
+        val termOn = !isBusy
+        edtTerminal.isEnabled = termOn
+        findViewById<View>(R.id.tilTerminal).alpha = if (termOn) 1f else 0.4f
+        listOf(R.id.btnTermPrev, R.id.btnTermNext).forEach { id ->
+            findViewById<View>(id).apply { isEnabled = termOn; alpha = if (termOn) 1f else 0.4f }
         }
         // Area pilih file APK: hanya bisa ditekan saat sudah terhubung dan tidak sedang ada proses.
         if (::dropZone.isInitialized) {
@@ -1210,7 +1406,7 @@ class MainActivity : AppCompatActivity() {
         val indent = " ".repeat(level.marker.length)
         val body = s.trimEnd().let {
             // Output mentah device (DETAIL) tidak diubah sama sekali.
-            if (level != LogLevel.DETAIL && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
+            if (level != LogLevel.DETAIL && level != LogLevel.OUT && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
         }
         val lines = body.lines().map { it.trimEnd() }.map { if (level == LogLevel.DETAIL) Fmt.clip(it) else it }
         val text = lines.mapIndexed { i, l -> (if (i == 0) level.marker else indent) + l }.joinToString("\n") + "\n"
@@ -1243,6 +1439,7 @@ class MainActivity : AppCompatActivity() {
         LogLevel.WARN -> Color.rgb(251, 191, 36)
         LogLevel.ERR, LogLevel.END_ERR -> Color.rgb(248, 113, 113)
         LogLevel.DETAIL -> Color.rgb(148, 163, 184)
+        LogLevel.OUT -> Color.rgb(226, 232, 240)
     }
 
     private fun clean(s: String) = s.trim().replace("\"", "").replace(" ", "")

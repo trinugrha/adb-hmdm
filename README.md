@@ -35,6 +35,15 @@ Alternatif tanpa Wi-Fi / Pair:
 4. Lanjut seperti biasa: Pasang APK, set-device-owner, atau Proses Otomatis.
 Cara kerja: paket ADB dikirim lewat soket loopback lalu diteruskan ke endpoint bulk USB (`UsbAdbBridge.kt`).
 
+## Terminal ADB (perintah manual)
+Kartu **Terminal ADB** (di atas Log) untuk mengetik perintah sendiri. Hasil tampil di Log. Sebelum terhubung hanya `pair`, `connect`, dan `help` yang berfungsi; perintah lain butuh koneksi (Wi-Fi atau USB).
+- Mode **adb shell**: seluruh teks dijalankan sebagai perintah shell di HP target, mis. `getprop ro.product.model`, `pm list packages`, `dumpsys battery`. Awalan `adb shell` boleh ditulis.
+- Mode **adb (non-shell)**: `devices`, `get-state`, `get-serialno`, `wait-for-device`, `version`, `shell <perintah>`, `exec-out <perintah>`, `logcat [opsi]`, `install [path.apk]` (tanpa path = pakai daftar APK di kartu Instalasi Aplikasi), `uninstall [-k] <paket>`, `reboot [bootloader|recovery|sideload|fastboot]`, `tcpip [port]`, `usb`, `root`, `unroot`, `pair <ip:port> <kode>`, `connect <ip[:port]>` (port kosong = 5555), `push [file] <tujuan>`, `pull <file> [tujuan]`, `disconnect`. Ketik `help` untuk daftar lengkap.
+- Tombol ▲ / ▼ memanggil riwayat perintah; Enter di keyboard = Jalankan.
+- Batas: satu perintah maks. 60 dtk (lalu dihentikan), output maks. 400 baris. Kode keluar perintah shell tidak ditampilkan. Tidak didukung: shell interaktif, `push`/`pull`, `forward`, Pair QR dan Connect USB tetap lewat kartunya. Perintah `pair` tidak disimpan di riwayat (kode pairing rahasia).
+- **push / pull**: `adb push /sdcard/Download/` membuka pemilih file Android, lalu file dikirim ke folder itu (nama file ditambahkan otomatis; bila tujuan berupa file, dipakai apa adanya). `adb pull /sdcard/Download/a.txt` membuka pemilih lokasi simpan. Bentuk dua argumen (`adb push <file> <tujuan>`, `adb pull <file> <tujuan>`) hanya bila path HP teknisi bisa dibaca/ditulis aplikasi (mis. folder cache aplikasi); Android membatasi akses folder lain. Progres tampil di atas Log. Tujuan yang tidak boleh ditulis user shell (mis. `/system`) ditolak HP target.
+- Perintah yang memutus sesi (`reboot`, `tcpip`, `usb`, `disconnect`) otomatis mereset status koneksi di layar.
+
 ## Login PIN
 - PIN 4 digit. PIN awal: **4321** (dibuat otomatis saat pertama kali dibuka). Untuk mengganti PIN, ubah `DEFAULT_PIN` di `PinStore.kt` lalu build ulang.
 - Setelah itu setiap buka aplikasi harus memasukkan PIN (otomatis diperiksa setelah digit ke-4; PIN benar langsung masuk).

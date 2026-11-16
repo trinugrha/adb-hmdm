@@ -74,6 +74,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         const val OWNER_COMPONENT = "com.hmdm.launcher/.AdminReceiver"
         const val KASPERSKY_PACKAGE = "com.kaspersky.kes"
         const val TCPIP_PORT = 5555
+        /** Batas waktu satu perintah terminal; perintah yang tak kunjung selesai (mis. logcat tanpa -d) dihentikan. */
+        private const val TERMINAL_TIMEOUT_MS = 60_000L
+        /** Batas baris output terminal yang ditampilkan di log. */
+        private const val TERMINAL_MAX_LINES = 400
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
@@ -897,19 +901,19 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * Setara `adb tcpip 5555`: adbd di HP target restart dalam mode TCP di port 5555.
      * Setelah itu sesi USB ini pasti putus, jadi sesi dibersihkan di sini tanpa log error.
      */
-    fun enableTcpip(): Boolean {
+    fun enableTcpip(port: Int = TCPIP_PORT): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
             logErr("Ubah Mode Nirkabel (TCP/IP) gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
             return false
         }
-        if (queryTcpipActive() == true) {
+        if (port == TCPIP_PORT && queryTcpipActive() == true) {
             logOk("Mode TCP/IP sudah aktif di HP target, tidak perlu diubah lagi")
             return true
         }
-        logCmd("adb tcpip $TCPIP_PORT")
+        logCmd("adb tcpip $port")
         val out = try {
-            shell("$TCPIP_PORT", timeoutMs = 6_000, quiet = true, service = "tcpip") {
+            shell("$port", timeoutMs = 6_000, quiet = true, service = "tcpip") {
                 it.contains("restarting", ignoreCase = true) || it.contains("error", ignoreCase = true) || it.contains("failed", ignoreCase = true)
             }
         } catch (e: Throwable) {
@@ -924,8 +928,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return false
         }
         // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
-        logOk("Mode TCP/IP aktif di port $TCPIP_PORT · koneksi USB terputus otomatis")
-        logStep("Berikutnya: cabut kabel, buka tab Wireless debugging, lalu Connect ke <IP HP target>:$TCPIP_PORT")
+        logOk("Mode TCP/IP aktif di port $port · koneksi USB terputus otomatis")
+        logStep("Berikutnya: cabut kabel, buka tab Wireless debugging, lalu Connect ke <IP HP target>:$port")
         lastAddr = null
         sessionLabel = null
         keepAlive(false)
@@ -943,6 +947,378 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logStep("Set device owner")
         val ownerOk = setDeviceOwner()
         return installOk && ownerOk
+    }
+
+
+    // ---------- Terminal manual ----------
+
+    /** Output perintah terminal ke log tanpa dipotong (level OUT). */
+    private fun logOut(s: String) = sink(LogLevel.OUT, s)
+
+    private val terminalHelp = listOf(
+        "Perintah yang didukung (awalan 'adb ' boleh ditulis atau tidak):",
+        "  shell <perintah>         jalankan perintah shell di HP target",
+        "  exec-out <perintah>      seperti shell, tanpa terminal (output biner/bersih)",
+        "  logcat [opsi]            log sistem (otomatis -d -t 200 bila tanpa opsi waktu)",
+        "  install [path.apk ...]   pasang APK; tanpa path = pakai daftar di kartu Instalasi Aplikasi",
+        "  uninstall [-k] <paket>   hapus aplikasi",
+        "  devices | get-state | get-serialno | wait-for-device | version",
+        "  reboot [bootloader|recovery|sideload|fastboot]",
+        "  tcpip [port]             pindah ke mode Wi-Fi (hanya lewat USB)",
+        "  usb                      kembali ke mode USB (dari sesi Wi-Fi)",
+        "  root | unroot            restart adbd (hanya bila build HP target mengizinkan)",
+        "  pair <ip:port> <kode>    pairing Wireless debugging (bisa saat belum terhubung)",
+        "  connect <ip[:port]>      sambung ke HP target (port kosong = 5555; bisa saat belum terhubung)",
+        "  push [file] <tujuan>     kirim file ke HP target (tanpa file lokal = buka pemilih file)",
+        "  pull <file di HP target> ambil file dari HP target (lalu pilih tempat simpan)",
+        "  disconnect               putuskan koneksi",
+        "Mode 'adb shell': semua teks langsung dijalankan sebagai perintah shell.",
+        "Tidak didukung: shell interaktif, pull folder, forward. Pair QR dan Connect USB lewat kartu di atas."
+    )
+
+    private val NO_QUOTE = '\u0000'
+
+    /** Pecah baris perintah dengan memperhatikan tanda kutip ' dan ". */
+    private fun tokenize(s: String): List<String> {
+        val out = mutableListOf<String>()
+        val cur = StringBuilder()
+        var quote = NO_QUOTE
+        var has = false
+        for (c in s) {
+            when {
+                quote != NO_QUOTE -> if (c == quote) quote = NO_QUOTE else cur.append(c)
+                c == '\'' || c == '"' -> { quote = c; has = true }
+                c.isWhitespace() -> if (cur.isNotEmpty() || has) { out.add(cur.toString()); cur.setLength(0); has = false }
+                else -> cur.append(c)
+            }
+        }
+        if (cur.isNotEmpty() || has) out.add(cur.toString())
+        return out
+    }
+
+    private fun showOutput(out: String) {
+        val t = out.replace("\r\n", "\n").replace("\r", "\n").trimEnd()
+        if (t.isEmpty()) { logDetail("(tidak ada output)"); return }
+        val lines = t.lines()
+        if (lines.size > TERMINAL_MAX_LINES) {
+            logOut(lines.take(TERMINAL_MAX_LINES).joinToString("\n"))
+            logWarn("Output dipotong: ${lines.size} baris, ditampilkan $TERMINAL_MAX_LINES baris pertama. Persempit dengan grep, head, atau opsi perintah")
+        } else logOut(t)
+    }
+
+    /** Jalankan satu perintah lewat service shell/exec. true bila terkirim dan selesai tepat waktu (kode keluar tidak diketahui). */
+    private fun runShellLine(cmd: String, service: String = "shell"): Boolean {
+        if (cmd.isBlank()) {
+            logWarn("Perintah shell kosong. Shell interaktif tidak didukung, tulis perintahnya, mis. adb shell getprop ro.product.model")
+            return false
+        }
+        logCmd(if (service == "exec") "adb exec-out $cmd" else "adb shell $cmd")
+        val out = try {
+            shell(cmd, timeoutMs = TERMINAL_TIMEOUT_MS, quiet = true, service = service)
+        } catch (e: Throwable) {
+            logErr("Terminal gagal: perintah tidak terkirim ke HP target. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        }
+        showOutput(out)
+        if (lastShellTimedOut) {
+            logWarn("Perintah belum selesai dalam ${Fmt.duration(TERMINAL_TIMEOUT_MS)} dan dihentikan, output di atas mungkin belum lengkap")
+            return false
+        }
+        return true
+    }
+
+    /** Putuskan sesi lokal setelah adbd di HP target restart / reboot. */
+    private fun dropSession() {
+        lastAddr = null
+        sessionLabel = null
+        keepAlive(false)
+        try { manager.disconnect() } catch (e: Throwable) { }
+        connCache = false
+        try { usbBridge.stop() } catch (e: Throwable) { }
+        viaUsb = false
+    }
+
+    /**
+     * Terminal manual: jalankan satu baris perintah seperti di `adb`.
+     * [shellMode] true = seluruh teks adalah perintah shell (setara `adb shell <teks>`).
+     * [pickedApks] = daftar APK dari kartu Instalasi Aplikasi, dipakai oleh `install` tanpa path.
+     * Panggil dari thread latar. Mengembalikan false bila perintah gagal.
+     */
+    fun terminal(raw: String, shellMode: Boolean, pickedApks: List<ApkItem> = emptyList()): Boolean {
+        var line = raw.trim()
+        if (line.isEmpty()) { logWarn("Perintah kosong. Tulis perintah lalu tekan Jalankan"); return false }
+        if (line == "adb") { terminalHelp.forEach { logOut(it) }; return true }
+        if (line.startsWith("adb ")) line = line.removePrefix("adb ").trim()
+        if (line == "help" || line == "--help" || line == "-h") { terminalHelp.forEach { logOut(it) }; return true }
+        if (!ensureConnected()) return false
+
+        val head = line.substringBefore(' ')
+        val rest = if (line.contains(' ')) line.substringAfter(' ').trim() else ""
+
+        if (shellMode) {
+            // Mode shell: "shell ..." di depan boleh ditulis, selebihnya langsung perintah shell.
+            return runShellLine(if (head == "shell") rest else line)
+        }
+        val args by lazy { tokenize(rest) }
+        return when (head) {
+            "shell" -> runShellLine(rest)
+            "exec-out" -> runShellLine(rest, service = "exec")
+            "logcat" -> {
+                val noLimit = args.none { it in setOf("-d", "-c", "-g", "-t", "-T", "-S", "-L", "--help") }
+                runShellLine("logcat " + (if (noLimit) "-d -t 200 " else "") + rest)
+            }
+            "devices" -> {
+                logCmd("adb devices")
+                logOut("List of devices attached")
+                logOut("${sessionLabel ?: lastAddr ?: "target"}\tdevice")
+                true
+            }
+            "get-state" -> { logCmd("adb get-state"); logOut("device"); true }
+            "wait-for-device" -> { logCmd("adb wait-for-device"); logOk("HP target sudah terhubung"); true }
+            "version" -> { logCmd("adb version"); logOut("Terminal HMDM Installer (ADB lewat libadb-android)"); true }
+            "get-serialno" -> runShellLine("getprop ro.serialno")
+            "install", "install-multiple" -> terminalInstall(args, pickedApks)
+            "uninstall" -> terminalUninstall(args)
+            "reboot" -> terminalService("reboot", args.firstOrNull().orEmpty(), alwaysDrop = true)
+            "usb" -> terminalService("usb", "", alwaysDrop = false)
+            "root" -> terminalService("root", "", alwaysDrop = false)
+            "unroot" -> terminalService("unroot", "", alwaysDrop = false)
+            "tcpip" -> {
+                val port = args.firstOrNull()?.toIntOrNull()
+                if (args.isNotEmpty() && (port == null || port !in 1..65535)) {
+                    logErr("tcpip gagal: port '${args[0]}' tidak valid. Tulis angka 1-65535, mis. adb tcpip 5555")
+                    false
+                } else enableTcpip(port ?: TCPIP_PORT)
+            }
+            "disconnect" -> disconnect()
+            "forward", "bugreport", "sideload", "kill-server", "start-server" -> {
+                logErr("adb $head belum didukung di terminal ini. Untuk file gunakan 'adb shell' (mis. cat, ls) atau kartu Instalasi Aplikasi")
+                false
+            }
+            else -> {
+                logErr("Perintah '$head' tidak dikenal. Ketik help untuk daftar perintah, atau ganti mode ke 'adb shell'")
+                false
+            }
+        }
+    }
+
+    private fun terminalInstall(args: List<String>, picked: List<ApkItem>): Boolean {
+        val paths = args.filter { !it.startsWith("-") }
+        if (paths.isEmpty()) {
+            if (picked.isEmpty()) {
+                logErr("Install gagal: tidak ada APK. Tulis path file (adb install /path/app.apk) atau pilih APK di kartu Instalasi Aplikasi")
+                return false
+            }
+            return install(picked)
+        }
+        val items = mutableListOf<ApkItem>()
+        for (p in paths) {
+            val f = File(p)
+            if (!f.isFile || !f.canRead()) {
+                logErr("Install gagal: file '$p' tidak ditemukan atau tidak bisa dibaca aplikasi. Pilih APK lewat kartu Instalasi Aplikasi, lalu jalankan: adb install")
+                return false
+            }
+            items.add(ApkItem(f.name, f))
+        }
+        return install(items)
+    }
+
+    private fun terminalUninstall(args: List<String>): Boolean {
+        val keep = "-k" in args
+        val pkg = args.firstOrNull { !it.startsWith("-") }
+        if (pkg == null || !Regex("[A-Za-z0-9_.]+").matches(pkg)) {
+            logErr("Uninstall gagal: nama paket tidak valid. Contoh: adb uninstall com.contoh.app")
+            return false
+        }
+        logCmd("adb uninstall${if (keep) " -k" else ""} $pkg")
+        val out = try { shell("pm uninstall ${if (keep) "-k " else ""}$pkg", timeoutMs = 60_000, quiet = true) } catch (e: Throwable) {
+            logErr("Uninstall gagal: perintah tidak terkirim ke HP target. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        }
+        showOutput(out)
+        return isSuccess(out)
+    }
+
+    /** Service adb non-shell (reboot:, usb:, root:, unroot:). Sesi diputus bila adbd/HP restart. */
+    private fun terminalService(svc: String, arg: String, alwaysDrop: Boolean): Boolean {
+        if (svc == "reboot" && arg !in setOf("", "bootloader", "recovery", "sideload", "fastboot")) {
+            logErr("reboot gagal: tujuan '$arg' tidak dikenal. Pilih bootloader, recovery, sideload, atau fastboot")
+            return false
+        }
+        if (svc == "usb" && viaUsb) { logOk("Sesi ini sudah lewat USB, tidak perlu diubah"); return true }
+        logCmd("adb $svc${if (arg.isNotEmpty()) " $arg" else ""}")
+        val out = try {
+            shell(arg, timeoutMs = 6_000, quiet = true, service = svc) {
+                it.contains("restarting", ignoreCase = true) || it.contains("cannot", ignoreCase = true) ||
+                    it.contains("already", ignoreCase = true) || it.contains("error", ignoreCase = true)
+            }
+        } catch (e: Throwable) { "" }
+        if (out.isNotBlank()) showOutput(out)
+        val refused = out.contains("cannot", ignoreCase = true) || out.contains("error", ignoreCase = true) || out.contains("failed", ignoreCase = true)
+        if (refused) { logErr("$svc gagal: ditolak HP target"); return false }
+        if (alwaysDrop || out.contains("restarting", ignoreCase = true) || out.isBlank()) {
+            if (out.isBlank() && !alwaysDrop) logDetail("(tidak ada output, adbd kemungkinan restart)")
+            dropSession()
+            logOk("Perintah terkirim · koneksi terputus karena HP target restart / adbd restart")
+            logStep("Berikutnya: sambungkan ulang (Connect) setelah HP target siap")
+        } else logOk("Selesai")
+        return true
+    }
+
+
+    // ---------- Transfer file (adb push / pull lewat protokol sync:) ----------
+
+    /** Satu kanal `sync:`: paket = 4 huruf ID + 4 byte panjang (little-endian) + data. */
+    private class SyncChannel(private val stream: io.github.muntashirakon.adb.AdbStream) {
+        private val inp = stream.openInputStream()
+        private val out = stream.openOutputStream()
+        private fun le(v: Int) = java.nio.ByteBuffer.allocate(4).order(java.nio.ByteOrder.LITTLE_ENDIAN).putInt(v).array()
+        private fun leInt(b: ByteArray, off: Int) =
+            java.nio.ByteBuffer.wrap(b, off, 4).order(java.nio.ByteOrder.LITTLE_ENDIAN).int
+
+        fun request(id: String, payload: ByteArray) = raw(id, payload.size, payload)
+        fun raw(id: String, arg: Int, payload: ByteArray) {
+            out.write(id.toByteArray(Charsets.US_ASCII) + le(arg) + payload)
+            out.flush()
+        }
+        fun write(buf: ByteArray, len: Int) { out.write(buf, 0, len); out.flush() }
+        fun readFully(n: Int): ByteArray {
+            val b = ByteArray(n)
+            var o = 0
+            while (o < n) {
+                val r = inp.read(b, o, n - o)
+                if (r < 0) throw java.io.IOException("koneksi ditutup HP target")
+                o += r
+            }
+            return b
+        }
+        /** Baca ID + panjang. Untuk STAT, "panjang" adalah field pertama (mode). */
+        fun header(): Pair<String, Int> {
+            val h = readFully(8)
+            return String(h, 0, 4, Charsets.US_ASCII) to leInt(h, 4)
+        }
+        fun failMessage(len: Int): String = String(readFully(len), Charsets.UTF_8)
+        /** STAT: (mode, ukuran). mode 0 = tidak ada. */
+        fun stat(path: String): Pair<Int, Long> {
+            request("STAT", path.toByteArray())
+            val r = readFully(16)
+            if (String(r, 0, 4, Charsets.US_ASCII) != "STAT") throw java.io.IOException("balasan STAT tidak valid")
+            return leInt(r, 4) to (leInt(r, 8).toLong() and 0xFFFFFFFFL)
+        }
+        fun close() { try { stream.close() } catch (e: Throwable) { } }
+    }
+
+    private fun transferChunk(): Int = if (viaUsb) usbChunkKb * 1024 else 32 * 1024
+
+    private fun reportTransfer(name: String, sent: Long, total: Long) =
+        onProgress?.invoke(0, 0, name, sent, total)
+
+    /**
+     * Setara `adb push`: kirim isi [input] ke [remote] di HP target. Bila [remote] berakhiran "/" atau
+     * sebuah folder, nama file ditambahkan otomatis. [size] <= 0 berarti ukuran tidak diketahui.
+     */
+    fun push(name: String, input: InputStream, size: Long, remote: String): Boolean {
+        if (!ensureConnected()) return false
+        if (remote.isBlank()) { logErr("Push gagal: path tujuan di HP target kosong. Contoh: adb push /sdcard/Download/"); return false }
+        if (viaUsb) { usbBridge.sendZlp = true; usbBridge.resetStats() }
+        val ch = try { SyncChannel(manager.openStream("sync:")) } catch (e: Throwable) {
+            logErr("Push gagal: jalur transfer file tidak bisa dibuka. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        }
+        try {
+            val (mode, _) = ch.stat(remote)
+            val isDir = (mode and 0xF000) == 0x4000
+            val dest = if (remote.endsWith("/") || isDir) remote.trimEnd('/') + "/" + name else remote
+            logCmd("adb push $name $dest")
+            ch.request("SEND", "$dest,33188".toByteArray())
+            val chunk = transferChunk()
+            val buf = ByteArray(8 + chunk)
+            System.arraycopy("DATA".toByteArray(Charsets.US_ASCII), 0, buf, 0, 4)
+            var sent = 0L
+            var lastReport = 0L
+            var writeError: java.io.IOException? = null
+            reportTransfer(name, 0, size)
+            try {
+                while (true) {
+                    val n = input.read(buf, 8, chunk)
+                    if (n < 0) break
+                    if (n == 0) continue
+                    buf[4] = n.toByte(); buf[5] = (n shr 8).toByte(); buf[6] = (n shr 16).toByte(); buf[7] = (n shr 24).toByte()
+                    ch.write(buf, 8 + n)
+                    sent += n
+                    val now = System.currentTimeMillis()
+                    if (now - lastReport >= 100) { lastReport = now; reportTransfer(name, sent, size) }
+                }
+                reportTransfer(name, sent, if (size > 0) size else sent)
+                ch.raw("DONE", (System.currentTimeMillis() / 1000).toInt(), ByteArray(0))
+            } catch (e: java.io.IOException) {
+                // HP target menolak lebih awal (mis. izin ditolak): tetap baca pesan FAIL dari device.
+                writeError = e
+            }
+            val (id, len) = try { ch.header() } catch (e: Throwable) { throw writeError ?: e }
+            return when (id) {
+                "OKAY" -> { logOk("Terkirim: ${Fmt.size(sent)} ke $dest"); true }
+                "FAIL" -> { logErr("Push gagal: ${ch.failMessage(len)}"); false }
+                else -> { logErr("Push gagal: balasan HP target tidak dikenal ($id)"); false }
+            }
+        } catch (e: Throwable) {
+            logErr("Push gagal: transfer terputus di tengah jalan. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        } finally {
+            ch.close()
+        }
+    }
+
+    /** Setara `adb pull`: tulis isi file [remote] di HP target ke [out]. Folder belum didukung. */
+    fun pull(remote: String, out: java.io.OutputStream): Boolean {
+        if (!ensureConnected()) return false
+        if (remote.isBlank()) { logErr("Pull gagal: path file di HP target kosong. Contoh: adb pull /sdcard/Download/file.txt"); return false }
+        if (viaUsb) { usbBridge.sendZlp = true; usbBridge.resetStats() }
+        val ch = try { SyncChannel(manager.openStream("sync:")) } catch (e: Throwable) {
+            logErr("Pull gagal: jalur transfer file tidak bisa dibuka. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        }
+        try {
+            val (mode, size) = ch.stat(remote)
+            if (mode == 0) { logErr("Pull gagal: '$remote' tidak ada di HP target atau tidak bisa diakses"); return false }
+            if ((mode and 0xF000) == 0x4000) { logErr("Pull gagal: '$remote' adalah folder. Pull folder belum didukung, tulis path file"); return false }
+            val name = remote.substringAfterLast('/')
+            logCmd("adb pull $remote")
+            ch.request("RECV", remote.toByteArray())
+            var got = 0L
+            var lastReport = 0L
+            reportTransfer(name, 0, size)
+            while (true) {
+                val (id, len) = ch.header()
+                when (id) {
+                    "DATA" -> {
+                        if (len < 0 || len > 256 * 1024) { logErr("Pull gagal: paket data dari HP target tidak valid"); return false }
+                        out.write(ch.readFully(len))
+                        got += len
+                        val now = System.currentTimeMillis()
+                        if (now - lastReport >= 100) { lastReport = now; reportTransfer(name, got, size) }
+                    }
+                    "DONE" -> break
+                    "FAIL" -> { logErr("Pull gagal: ${ch.failMessage(len)}"); return false }
+                    else -> { logErr("Pull gagal: balasan HP target tidak dikenal ($id)"); return false }
+                }
+            }
+            out.flush()
+            reportTransfer(name, got, if (size > 0) size else got)
+            logOk("Diterima: ${Fmt.size(got)} dari $remote")
+            return true
+        } catch (e: Throwable) {
+            logErr("Pull gagal: transfer terputus di tengah jalan. Cek koneksi, lalu coba lagi")
+            logCause(e)
+            return false
+        } finally {
+            ch.close()
+        }
     }
 
     // ---------- internal ----------

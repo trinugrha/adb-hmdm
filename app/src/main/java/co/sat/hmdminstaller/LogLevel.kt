@@ -55,6 +55,8 @@ enum class LogLevel(val marker: String, val bold: Boolean = false) {
     ERR("✗ "),
     /** Output mentah dari device, hanya untuk diagnosis. */
     DETAIL("    "),
+    /** Output perintah yang diketik manual di kartu Terminal: tidak dipotong dan tidak diubah sama sekali. */
+    OUT("    "),
     /** Ringkasan hasil. */
     SUMMARY("", bold = true),
     /** Penutup proses: berhasil. */
