@@ -178,6 +178,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="USB debugging" />
+
+                <com.google.android.material.tabs.TabItem
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Terminal" />
             </com.google.android.material.tabs.TabLayout>
 
             <LinearLayout
@@ -502,6 +507,163 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            </LinearLayout>
+
+            <!-- Tab Terminal: tampilan command prompt. Perintah dan hasilnya tampil di sini (bukan di Log). -->
+            <LinearLayout
+                android:id="@+id/tabTerminal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ScrollView
+                    android:id="@+id/consoleScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="360dp"
+                    android:background="@drawable/bg_console"
+                    android:nestedScrollingEnabled="true"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/txtConsole"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:textColor="@color/console_text"
+                            android:textIsSelectable="true"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="top"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/txtPrompt"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="monospace"
+                                android:paddingTop="1dp"
+                                android:text="adb shell&gt;"
+                                android:textColor="@color/console_prompt"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                            <EditText
+                                android:id="@+id/edtTerminal"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:background="@null"
+                                android:fontFamily="monospace"
+                                android:imeOptions="actionSend"
+                                android:importantForAutofill="no"
+                                android:inputType="textNoSuggestions"
+                                android:minHeight="0dp"
+                                android:paddingStart="6dp"
+                                android:paddingTop="0dp"
+                                android:paddingEnd="0dp"
+                                android:paddingBottom="0dp"
+                                android:singleLine="true"
+                                android:textColor="@color/console_prompt"
+                                android:textCursorDrawable="@null"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </ScrollView>
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/toggleTermMode"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    app:checkedButton="@+id/btnTermShell"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTermShell"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:minHeight="0dp"
+                        android:text="adb shell"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTermAdb"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:minHeight="0dp"
+                        android:text="adb (non-shell)"
+                        android:textSize="13sp" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTermPrev"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="48dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="Perintah sebelumnya"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:text="▲"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTermNext"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="48dp"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="6dp"
+                        android:contentDescription="Perintah berikutnya"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:text="▼"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTermClear"
+                        style="@style/Widget.Hmdm.Button.Outlined"
+                        android:layout_width="wrap_content"
+                        android:layout_height="44dp"
+                        android:layout_marginEnd="6dp"
+                        android:minHeight="0dp"
+                        android:text="cls"
+                        android:textSize="14sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnTerminalRun"
+                        style="@style/Widget.Hmdm.Button.Blue"
+                        android:layout_width="0dp"
+                        android:layout_height="44dp"
+                        android:layout_weight="1"
+                        android:minHeight="0dp"
+                        android:text="Jalankan"
+                        android:textSize="14sp" />
+                </LinearLayout>
             </LinearLayout>
 
             <!-- 1. Instalasi aplikasi -->
@@ -1425,134 +1587,6 @@
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </LinearLayout>
-
-            <!-- Terminal: perintah ADB manual (adb shell / adb non-shell). Hasil tampil di Log di bawahnya. -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Terminal ADB"
-                        android:textSize="15sp" />
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Tulis perintah ADB sendiri. Hasilnya tampil di Log di bawah. Ketik help untuk daftar perintah." />
-
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggleTermMode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        app:checkedButton="@+id/btnTermShell"
-                        app:selectionRequired="true"
-                        app:singleSelection="true">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTermShell"
-                            style="@style/Widget.Hmdm.Button.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:minHeight="0dp"
-                            android:text="adb shell"
-                            android:textAllCaps="false"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTermAdb"
-                            style="@style/Widget.Hmdm.Button.Outlined"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:minHeight="0dp"
-                            android:text="adb (non-shell)"
-                            android:textAllCaps="false"
-                            android:textSize="13sp" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilTerminal"
-                        style="@style/Widget.Hmdm.TextInput.Large"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:hint="adb shell ...">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/edtTerminal"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:fontFamily="monospace"
-                            android:imeOptions="actionSend"
-                            android:inputType="textNoSuggestions"
-                            android:minHeight="44dp"
-                            android:paddingTop="10dp"
-                            android:paddingBottom="10dp"
-                            android:singleLine="true"
-                            android:textSize="14sp" />
-                    </com.google.android.material.textfield.TextInputLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTermPrev"
-                            style="@style/Widget.Hmdm.Button.Outlined"
-                            android:layout_width="56dp"
-                            android:layout_height="44dp"
-                            android:layout_marginEnd="8dp"
-                            android:contentDescription="Perintah sebelumnya"
-                            android:minWidth="0dp"
-                            android:minHeight="0dp"
-                            android:paddingStart="0dp"
-                            android:paddingEnd="0dp"
-                            android:text="▲"
-                            android:textSize="14sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTermNext"
-                            style="@style/Widget.Hmdm.Button.Outlined"
-                            android:layout_width="56dp"
-                            android:layout_height="44dp"
-                            android:layout_marginEnd="8dp"
-                            android:contentDescription="Perintah berikutnya"
-                            android:minWidth="0dp"
-                            android:minHeight="0dp"
-                            android:paddingStart="0dp"
-                            android:paddingEnd="0dp"
-                            android:text="▼"
-                            android:textSize="14sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnTerminalRun"
-                            style="@style/Widget.Hmdm.Button.Blue"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:minHeight="0dp"
-                            android:text="Jalankan"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
             <!-- Log -->
             <LinearLayout

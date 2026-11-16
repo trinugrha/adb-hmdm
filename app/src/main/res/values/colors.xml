@@ -25,6 +25,12 @@
     <color name="header_text">#FFFFFF</color>
     <color name="header_subtext">#B7E4DE</color>
 
+    <!-- Console (tab Terminal, selalu gelap seperti command prompt) -->
+    <color name="console_bg">#0C0C0C</color>
+    <color name="console_stroke">#3A3A3A</color>
+    <color name="console_text">#CCCCCC</color>
+    <color name="console_prompt">#F2F2F2</color>
+
     <!-- Log terminal -->
     <color name="log_bg">#0B1220</color>
     <color name="log_stroke">#1E293B</color>

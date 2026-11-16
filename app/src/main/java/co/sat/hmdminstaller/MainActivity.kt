@@ -370,12 +370,16 @@ class MainActivity : AppCompatActivity() {
         val tabWireless: View = findViewById(R.id.tabWireless)
         val tabUsb: View = findViewById(R.id.tabUsb)
         val cardTcpip: View = findViewById(R.id.cardTcpip)
+        val tabTerminal: View = findViewById(R.id.tabTerminal)
         tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 val usb = tab.position == 1
-                tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
+                val term = tab.position == 2
+                tabWireless.visibility = if (tab.position == 0) View.VISIBLE else View.GONE
                 tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
                 cardTcpip.visibility = if (usb) View.VISIBLE else View.GONE
+                tabTerminal.visibility = if (term) View.VISIBLE else View.GONE
+                if (term) focusTerminal() else hideKeyboard()
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
@@ -779,31 +783,112 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
-    // ---------- Terminal ----------
+    // ---------- Terminal (tab, tampilan command prompt) ----------
 
-    private val edtTerminal by lazy { findViewById<TextInputEditText>(R.id.edtTerminal) }
+    private val edtTerminal by lazy { findViewById<android.widget.EditText>(R.id.edtTerminal) }
+    private val txtConsole by lazy { findViewById<TextView>(R.id.txtConsole) }
+    private val consoleScroll by lazy { findViewById<ScrollView>(R.id.consoleScroll) }
+    private val txtPrompt by lazy { findViewById<TextView>(R.id.txtPrompt) }
     /** true = mode "adb shell" (semua teks jadi perintah shell); false = mode "adb" (perintah non-shell). */
     private var termShell = true
     private val termHistory = mutableListOf<String>()
     private var termIdx = 0
+    /** true selama proses yang dijalankan dari Terminal: seluruh log diarahkan ke console, bukan ke Log halaman. */
+    @Volatile private var termActive = false
+    /** Posisi awal baris progres di console (-1 = tidak ada); baris ini ditimpa terus sampai ada baris lain. */
+    private var conProgStart = -1
+
+    private fun promptText() = if (termShell) "adb shell>" else "adb>"
 
     private fun setupTerminal(btnRun: MaterialButton) {
-        val til = findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.tilTerminal)
         val toggle = findViewById<com.google.android.material.button.MaterialButtonToggleGroup>(R.id.toggleTermMode)
         toggle.addOnButtonCheckedListener { _, id, checked ->
             if (!checked) return@addOnButtonCheckedListener
             termShell = id == R.id.btnTermShell
-            til.hint = if (termShell) "adb shell ..." else "adb ... (mis. devices, install, reboot)"
+            txtPrompt.text = promptText()
         }
         btnRun.setOnClickListener { submitTerminal() }
-        edtTerminal.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) { submitTerminal(); true } else false
+        edtTerminal.setOnEditorActionListener { _, actionId, event ->
+            val enter = event != null && event.keyCode == android.view.KeyEvent.KEYCODE_ENTER && event.action == android.view.KeyEvent.ACTION_DOWN
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND || enter) { submitTerminal(); true } else false
         }
         findViewById<View>(R.id.btnTermPrev).setOnClickListener { termRecall(-1) }
         findViewById<View>(R.id.btnTermNext).setOnClickListener { termRecall(+1) }
+        findViewById<View>(R.id.btnTermClear).setOnClickListener { clearConsole() }
+        // Console punya scroll sendiri di dalam ScrollView halaman.
+        consoleScroll.setOnTouchListener { v, _ -> v.parent.requestDisallowInterceptTouchEvent(true); false }
+        txtPrompt.text = promptText()
+        clearConsole()
     }
 
-    /** Panggil kembali perintah lama: delta -1 = lebih lama, +1 = lebih baru (melewati yang terbaru = kolom kosong). */
+    private fun clearConsole() {
+        txtConsole.text = ""
+        conProgStart = -1
+        tlog(LogLevel.STEP, "HMDM Installer [Terminal ADB]")
+        tlog(LogLevel.DETAIL, "Ketik help untuk daftar perintah. Mode adb shell: semua teks dijalankan di HP target.")
+        tlog(LogLevel.DETAIL, "Untuk menyambung: ganti ke mode adb (non-shell), lalu adb pair <ip:port> <kode> dan adb connect <ip:port>.")
+        txtConsole.append("\n")
+    }
+
+    /** Fokuskan baris perintah dan tampilkan keyboard (dipanggil saat tab Terminal dibuka). */
+    private fun focusTerminal() {
+        edtTerminal.requestFocus()
+        edtTerminal.post {
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(edtTerminal, InputMethodManager.SHOW_IMPLICIT)
+        }
+        consoleScroll.post { consoleScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /** Tambah satu baris ke console. Aman dipanggil dari UI thread saja. */
+    private fun tlog(level: LogLevel, s: String) {
+        // Judul/penutup proses dan echo perintah adb tidak ditampilkan: baris prompt sudah memuat perintahnya.
+        if (s.isBlank() || level == LogLevel.HEAD || level == LogLevel.END_OK || level == LogLevel.END_ERR || level == LogLevel.CMD) return
+        val marker = when (level) { LogLevel.OK -> "✓ "; LogLevel.WARN -> "! "; LogLevel.ERR -> "✗ "; else -> "" }
+        val body = s.trimEnd().let {
+            if (level != LogLevel.DETAIL && level != LogLevel.OUT && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
+        }
+        conAppend(marker + body.lines().joinToString("\n") { it.trimEnd() } + "\n", conColor(level), level.bold)
+    }
+
+    private fun conAppend(text: String, color: Int, bold: Boolean = false) {
+        conProgStart = -1
+        val sp = SpannableString(text)
+        sp.setSpan(ForegroundColorSpan(color), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        if (bold) sp.setSpan(StyleSpan(Typeface.BOLD), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        txtConsole.append(sp)
+        // Batasi panjang console agar tidak membengkak.
+        val ed = txtConsole.editableText
+        if (ed != null && ed.length > LOG_MAX_CHARS) {
+            val cut = ed.toString().indexOf("\n", ed.length - LOG_KEEP_CHARS)
+            ed.delete(0, if (cut < 0) ed.length - LOG_KEEP_CHARS else cut + 1)
+        }
+        consoleScroll.post { consoleScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    private fun conColor(level: LogLevel): Int = when (level) {
+        LogLevel.OK -> Color.rgb(74, 222, 128)
+        LogLevel.WARN -> Color.rgb(251, 191, 36)
+        LogLevel.ERR -> Color.rgb(248, 113, 113)
+        LogLevel.STEP, LogLevel.SUMMARY -> Color.WHITE
+        else -> Color.rgb(204, 204, 204)
+    }
+
+    /** Baris progres transfer / install di console; ditimpa terus sampai ada baris lain. */
+    private fun consoleProgress(idx: Int, total: Int, name: String, sent: Long, size: Long) {
+        val pct = if (size > 0) (sent * 100 / size).toInt().coerceAtMost(100) else 0
+        val label = if (total == 0) name else "[$idx/$total] $name"
+        val line = label + ": " + (if (size > 0) "$pct% · ${Fmt.size(sent)} / ${Fmt.size(size)}" else Fmt.size(sent)) + "\n"
+        txtConsole.append("")
+        val ed = txtConsole.editableText ?: return
+        if (conProgStart in 0..ed.length) ed.delete(conProgStart, ed.length)
+        conProgStart = ed.length
+        val sp = SpannableString(line)
+        sp.setSpan(ForegroundColorSpan(Color.rgb(56, 189, 248)), 0, line.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        ed.append(sp)
+        consoleScroll.post { consoleScroll.fullScroll(View.FOCUS_DOWN) }
+    }
+
+    /** Panggil kembali perintah lama: delta -1 = lebih lama, +1 = lebih baru (melewati yang terbaru = baris kosong). */
     private fun termRecall(delta: Int) {
         if (termHistory.isEmpty()) return
         termIdx = (termIdx + delta).coerceIn(0, termHistory.size)
@@ -818,7 +903,7 @@ class MainActivity : AppCompatActivity() {
     private val pickPushFile = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val remote = pendingPushRemote
         pendingPushRemote = null
-        if (uri == null || remote == null) { log(LogLevel.WARN, "Push dibatalkan: tidak ada file yang dipilih"); return@registerForActivityResult }
+        if (uri == null || remote == null) { tlog(LogLevel.WARN, "Push dibatalkan: tidak ada file yang dipilih"); return@registerForActivityResult }
         val name = displayName(uri)
         var size = -1L
         try {
@@ -826,10 +911,10 @@ class MainActivity : AppCompatActivity() {
                 if (c.moveToFirst() && !c.isNull(0)) size = c.getLong(0)
             }
         } catch (e: Exception) { }
-        run("Push", refresh = false) {
+        run("Push", refresh = false, console = true) {
             val input = try { contentResolver.openInputStream(uri) } catch (e: Exception) { null }
             if (input == null) {
-                runOnUiThread { log(LogLevel.ERR, "Push gagal: file '$name' tidak bisa dibuka. Pilih ulang file-nya") }
+                runOnUiThread { tlog(LogLevel.ERR, "Push gagal: file '$name' tidak bisa dibuka. Pilih ulang file-nya") }
                 false
             } else input.use { adb.push(name, it, size, remote) }
         }
@@ -838,11 +923,11 @@ class MainActivity : AppCompatActivity() {
     private val pickPullDest = registerForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
         val remote = pendingPullRemote
         pendingPullRemote = null
-        if (uri == null || remote == null) { log(LogLevel.WARN, "Pull dibatalkan: tempat simpan tidak dipilih"); return@registerForActivityResult }
-        run("Pull", refresh = false) {
+        if (uri == null || remote == null) { tlog(LogLevel.WARN, "Pull dibatalkan: tempat simpan tidak dipilih"); return@registerForActivityResult }
+        run("Pull", refresh = false, console = true) {
             val out = try { contentResolver.openOutputStream(uri) } catch (e: Exception) { null }
             val ok = if (out == null) {
-                runOnUiThread { log(LogLevel.ERR, "Pull gagal: tempat simpan tidak bisa ditulis. Pilih lokasi lain") }
+                runOnUiThread { tlog(LogLevel.ERR, "Pull gagal: tempat simpan tidak bisa ditulis. Pilih lokasi lain") }
                 false
             } else out.use { adb.pull(remote, it) }
             // Jangan tinggalkan file kosong bila pull gagal.
@@ -857,23 +942,20 @@ class MainActivity : AppCompatActivity() {
      */
     private fun terminalTransfer(cmd: String, argText: String) {
         val args = argText.split(Regex("\\s+")).filter { it.isNotEmpty() }
-        val t0 = System.currentTimeMillis()
-        fun fail(msg: String) { logHead("Terminal", t0); log(LogLevel.ERR, msg); logEnd("Terminal", false, t0) }
-        if (!adb.isConnected) {
-            logHead("Terminal", t0); log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); logEnd("Terminal", false, t0); return
-        }
+        fun fail(msg: String) = tlog(LogLevel.ERR, msg)
+        if (!adb.isConnected) { tlog(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return }
         if (cmd == "push") {
             when (args.size) {
                 1 -> {
                     pendingPushRemote = args[0]
-                    log(LogLevel.STEP, "Pilih file di HP ini untuk dikirim ke ${args[0]}")
+                    tlog(LogLevel.STEP, "Pilih file di HP ini untuk dikirim ke ${args[0]}")
                     pickPushFile.launch(arrayOf("*/*"))
                 }
                 2 -> {
                     val f = java.io.File(args[0])
                     if (!f.isFile || !f.canRead()) {
                         fail("Push gagal: file '${args[0]}' tidak bisa dibaca aplikasi. Tulis hanya tujuannya (adb push ${args[1]}) agar muncul pemilih file")
-                    } else run("Push", refresh = false) { f.inputStream().use { adb.push(f.name, it, f.length(), args[1]) } }
+                    } else run("Push", refresh = false, console = true) { f.inputStream().use { adb.push(f.name, it, f.length(), args[1]) } }
                 }
                 else -> fail("Push gagal: format salah. Tulis: adb push <tujuan di HP target>  atau  adb push <file> <tujuan>")
             }
@@ -881,7 +963,7 @@ class MainActivity : AppCompatActivity() {
             when (args.size) {
                 1 -> {
                     pendingPullRemote = args[0]
-                    log(LogLevel.STEP, "Pilih tempat menyimpan hasil pull dari ${args[0]}")
+                    tlog(LogLevel.STEP, "Pilih tempat menyimpan hasil pull dari ${args[0]}")
                     pickPullDest.launch(args[0].trimEnd('/').substringAfterLast('/').ifEmpty { "pull.bin" })
                 }
                 2 -> {
@@ -891,7 +973,7 @@ class MainActivity : AppCompatActivity() {
                         fail("Pull gagal: folder '${args[1]}' tidak bisa ditulis aplikasi. Tulis hanya sumbernya (adb pull ${args[0]}) agar muncul pemilih lokasi simpan")
                     } else {
                         val dest = if (f.isDirectory) java.io.File(f, args[0].trimEnd('/').substringAfterLast('/').ifEmpty { "pull.bin" }) else f
-                        run("Pull", refresh = false) {
+                        run("Pull", refresh = false, console = true) {
                             val ok = dest.outputStream().use { adb.pull(args[0], it) }
                             if (!ok) dest.delete()
                             ok
@@ -907,37 +989,35 @@ class MainActivity : AppCompatActivity() {
     private fun terminalPairConnect(cmd: String, argText: String) {
         val args = argText.split(Regex("\\s+")).filter { it.isNotEmpty() }
         val title = if (cmd == "pair") "Pairing" else "Connect"
-        fun fail(msg: String) {
-            val t0 = System.currentTimeMillis()
-            logHead(title, t0); log(LogLevel.ERR, msg); logEnd(title, false, t0)
-        }
         if (connectedAddr != null && adb.isConnected) {
-            fail("$title gagal: HP target masih terhubung. Jalankan adb disconnect dulu"); return
+            tlog(LogLevel.ERR, "$title gagal: HP target masih terhubung. Jalankan adb disconnect dulu"); return
         }
         if (cmd == "pair") {
-            if (args.size != 2) { fail("Pairing gagal: format salah. Tulis: adb pair <IP:Port pairing> <kode pairing>"); return }
+            if (args.size != 2) { tlog(LogLevel.ERR, "Pairing gagal: format salah. Tulis: adb pair <IP:Port pairing> <kode pairing>"); return }
             val addr = clean(args[0]); val code = clean(args[1])
-            run(title) { doPair(addr, code) }
+            run(title, console = true) { doPair(addr, code) }
         } else {
-            if (args.size != 1) { fail("Connect gagal: format salah. Tulis: adb connect <IP:Port> (port kosong = 5555)"); return }
+            if (args.size != 1) { tlog(LogLevel.ERR, "Connect gagal: format salah. Tulis: adb connect <IP:Port> (port kosong = 5555)"); return }
             val a = clean(args[0])
             val addr = if (a.contains(':')) a else "$a:${AdbController.TCPIP_PORT}"
-            run(title) { doConnect(addr) }
+            run(title, console = true) { doConnect(addr) }
         }
     }
 
     private fun submitTerminal() {
-        if (busy) return
         val text = edtTerminal.text?.toString()?.trim().orEmpty()
-        if (text.isEmpty()) return
+        if (text.isEmpty()) { conAppend("\n", Color.WHITE); return }
+        if (busy) { tlog(LogLevel.WARN, "Masih ada proses berjalan. Tunggu sampai selesai, lalu jalankan lagi"); return }
         val body = text.removePrefix("adb ").trim()
         val head = body.substringBefore(' ')
-        // Kode pairing bersifat sementara tapi rahasia: perintah pair tidak disimpan di riwayat.
+        // Kode pairing bersifat sementara tapi rahasia: perintah pair tidak disimpan di riwayat dan disensor di layar.
         if (head != "pair" && termHistory.lastOrNull() != text) termHistory.add(text)
         if (termHistory.size > 50) termHistory.removeAt(0)
         termIdx = termHistory.size
         edtTerminal.setText("")
-        hideKeyboard()
+        val shownText = if (!termShell && head == "pair") body.split(" ").let { if (it.size >= 3) it.dropLast(1).joinToString(" ") + " ******" else body } else text
+        conAppend(promptText() + " " + shownText + "\n", Color.WHITE, bold = true)
+        if (text == "cls" || text == "clear") { clearConsole(); return }
         val shellMode = termShell
         if (!shellMode && (head == "pair" || head == "connect")) { terminalPairConnect(head, body.removePrefix(head).trim()); return }
         if (!shellMode && (head == "push" || head == "pull")) { terminalTransfer(head, body.removePrefix(head).trim()); return }
@@ -945,7 +1025,7 @@ class MainActivity : AppCompatActivity() {
         val refresh = if (shellMode || head == "shell") Regex("\\b(dpm|pm|cmd|am|install|uninstall|settings|appops)\\b").containsMatchIn(body)
                       else head == "install" || head == "install-multiple" || head == "uninstall"
         val picked = apks.toList()
-        run("Terminal", refresh) {
+        run("Terminal", refresh, console = true) {
             val ok = adb.terminal(text, shellMode, picked)
             // Perintah seperti reboot / tcpip / usb / disconnect memutus sesi: samakan tampilan dengan kenyataan.
             if (!adb.isConnected && connectedAddr != null) {
@@ -965,9 +1045,11 @@ class MainActivity : AppCompatActivity() {
         return ok
     }
 
-    private fun run(title: String, refresh: Boolean = true, work: () -> Boolean) {
+    private fun run(title: String, refresh: Boolean = true, console: Boolean = false, work: () -> Boolean) {
         if (busy) return
         busy = true
+        // Proses dari Terminal: log masuk ke console, tanpa judul/penutup di Log halaman.
+        termActive = console
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
         logHead(title, startedAt)
@@ -1000,6 +1082,7 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Throwable) { }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
+                termActive = false
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
@@ -1013,6 +1096,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun showInstallProgress(idx: Int, total: Int, name: String, sent: Long, size: Long) {
         if (isFinishing || !busy) return
+        // Proses dari Terminal (push / pull / install): progres tampil sebagai satu baris di console.
+        if (termActive || total == 0) { consoleProgress(idx, total, name, sent, size); return }
         val box = findViewById<View>(R.id.progBox)
         val bar = findViewById<ProgressBar>(R.id.barInstall)
         val n = findViewById<TextView>(R.id.txtProgName)
@@ -1023,14 +1108,8 @@ class MainActivity : AppCompatActivity() {
             // Gulir halaman sekali agar progress terlihat.
             box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
         }
-        val transfer = total == 0
-        n.text = if (transfer) "Transfer file: $name" else "Memasang APK $idx dari $total: $name"
-        if (transfer) {
-            bar.isIndeterminate = false
-            val pct = if (size > 0) (sent * 100 / size).toInt().coerceAtMost(100) else 0
-            bar.progress = if (size > 0) (sent * 1000 / size).toInt().coerceAtMost(1000) else 0
-            info.text = if (size > 0) "$pct% · ${Fmt.size(sent)} / ${Fmt.size(size)}" else Fmt.size(sent)
-        } else if (size > 0 && sent >= size) {
+        n.text = "Memasang APK $idx dari $total: $name"
+        if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
             info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
         } else {
@@ -1114,14 +1193,6 @@ class MainActivity : AppCompatActivity() {
             b.isEnabled = enabled
             // Beberapa gaya tombol (mis. DangerFilled) tidak punya tampilan "disabled" sendiri.
             b.alpha = if (enabled) 1f else 0.4f
-        }
-        // Kolom Terminal: hanya bisa diketik saat terhubung dan tidak sedang ada proses.
-        // Terminal aktif walau belum terhubung: pair / connect bisa diketik di sini.
-        val termOn = !isBusy
-        edtTerminal.isEnabled = termOn
-        findViewById<View>(R.id.tilTerminal).alpha = if (termOn) 1f else 0.4f
-        listOf(R.id.btnTermPrev, R.id.btnTermNext).forEach { id ->
-            findViewById<View>(id).apply { isEnabled = termOn; alpha = if (termOn) 1f else 0.4f }
         }
         // Area pilih file APK: hanya bisa ditekan saat sudah terhubung dan tidak sedang ada proses.
         if (::dropZone.isInitialized) {
@@ -1376,6 +1447,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Pembuka satu proses: "── Judul · 14:02:11". */
     private fun logHead(title: String, at: Long = System.currentTimeMillis()) {
+        if (termActive) return
         // Pesan lepas (mis. APK dilewati, koneksi terputus) tidak diakhiri baris kosong; pisahkan di sini.
         val cur = txtLog.text
         if (cur.isNotEmpty() && !cur.endsWith("\n\n")) logBlank()
@@ -1384,6 +1456,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Penutup satu proses: "✓ Selesai: Judul · 4.2 dtk" atau "✗ Gagal: Judul · 4.2 dtk", lalu baris kosong pemisah. */
     private fun logEnd(title: String, ok: Boolean, startedAt: Long) {
+        if (termActive) return
         val took = Fmt.duration(System.currentTimeMillis() - startedAt)
         if (ok) log(LogLevel.END_OK, "Selesai: $title · $took")
         else log(LogLevel.END_ERR, "Gagal: $title · $took")
@@ -1392,6 +1465,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Satu baris kosong sebagai pemisah antar proses. */
     private fun logBlank() {
+        if (termActive) return
         txtLog.append("\n")
         logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
     }
@@ -1403,6 +1477,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun log(level: LogLevel, s: String) {
         if (s.isBlank()) return
+        if (termActive) { tlog(level, s); return }
         val indent = " ".repeat(level.marker.length)
         val body = s.trimEnd().let {
             // Output mentah device (DETAIL) tidak diubah sama sekali.
