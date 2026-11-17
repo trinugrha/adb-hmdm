@@ -367,7 +367,7 @@ class MainActivity : AppCompatActivity() {
         btnMoreToggle.setOnClickListener {
             val show = moreContainer.visibility != View.VISIBLE
             moreContainer.visibility = if (show) View.VISIBLE else View.GONE
-            txtMoreToggle.text = if (show) "Sembunyikan" else "Klik lainnya"
+            txtMoreToggle.text = if (show) "Sembunyikan" else "Lihat Lainnya"
             icMoreToggle.rotation = if (show) 180f else 0f
         }
         tabMode = findViewById(R.id.tabMode)

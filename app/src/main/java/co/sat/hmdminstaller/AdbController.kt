@@ -358,7 +358,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
         if (!finished) why.set("tidak ada jawaban dari HP target dalam 6 dtk")
         val result = finished && ok.get()
-        if (!result) lastDropReason = why.get().ifEmpty { "probe gagal" }
+        if (!result) lastDropReason = why.get().ifEmpty { "pemeriksaan koneksi gagal" }
         return result
     }
 
@@ -620,10 +620,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logCmd("adb shell dpm list-owners")
         val st = queryDeviceOwner()
         when (st) {
-            is OwnerState.Hmdm -> logOk("Device owner: HMDM (${st.pkg})")
-            is OwnerState.Other -> logWarn("Device owner: aplikasi lain (${st.pkg})")
-            is OwnerState.None -> logWarn("Belum ada device owner di HP target")
-            is OwnerState.Unknown -> logErr("Baca device owner gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            is OwnerState.Hmdm -> logOk("MDM Mode: HMDM (${st.pkg})")
+            is OwnerState.Other -> logWarn("MDM Mode: aplikasi lain (${st.pkg})")
+            is OwnerState.None -> logWarn("Belum ada MDM Mode di HP target")
+            is OwnerState.Unknown -> logErr("Baca MDM Mode gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
         }
         return st
     }
@@ -819,11 +819,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "Error: ${e.message ?: e.javaClass.simpleName}"
         }
         if (isSuccess(out)) {
-            logOk("Device owner aktif: ${OWNER_COMPONENT.substringBefore('/')}")
+            logOk("MDM Mode aktif: ${OWNER_COMPONENT.substringBefore('/')}")
             return true
         }
         val reason = ownerFailureReason(out)
-        logErr("Set device owner gagal: $reason")
+        logErr("Set MDM Mode gagal: $reason")
         logRaw(out, reason)
         return false
     }
@@ -940,7 +940,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         // Walau sebagian APK gagal, tetap coba set device owner (HMDM mungkin sudah terpasang).
         val installOk = install(apks)
-        logStep("Set device owner")
+        logStep("Jadikan MDM Mode")
         val ownerOk = setDeviceOwner()
         return installOk && ownerOk
     }

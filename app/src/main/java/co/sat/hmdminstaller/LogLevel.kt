@@ -20,7 +20,8 @@ package co.sat.hmdminstaller
  *
  * Aturan penulisan pesan:
  * - Tanpa titik di akhir (dibuang otomatis oleh `MainActivity.log`, kecuali baris DETAIL).
- * - HP yang sedang dipasang disebut "HP target"; "device owner" hanya untuk istilah Android.
+ * - HP yang sedang dipasang disebut "HP target". Fitur yang dijadikan HMDM disebut "MDM Mode", sama dengan tombol
+ *   dan kartu di layar; "device owner" hanya untuk istilah teknis Android (alasan penolakan sistem, perintah dpm).
  * - Ukuran dan durasi lewat [Fmt] (titik desimal tetap, mis. 12.3 MB, 4.2 dtk).
  * - Percobaan ulang: "Percobaan 1/2 gagal (alasan), mencoba lagi..."; satuan waktu selalu "dtk".
  *   Alasan di sini singkat (tanpa saran perbaikan); saran lengkap hanya di baris ✗ akhir.
