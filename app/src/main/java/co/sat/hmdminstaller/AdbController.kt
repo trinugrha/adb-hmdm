@@ -233,10 +233,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
         if (!ok) {
             val pumpErr = usbBridge.lastPumpError
-            if (pumpErr.isNotEmpty()) logDetail("Jembatan USB: $pumpErr")
             usbBridge.stop()
             viaUsb = false
             logErr("Connect USB gagal: ${lastConnectReason.ifBlank { "tidak terhubung" }}. Pastikan USB debugging aktif dan dialog otorisasi di HP target disetujui")
+            // Penyebab teknis selalu di bawah baris ✗.
+            if (lastConnectDetail.isNotEmpty()) logDetail(lastConnectDetail)
+            if (pumpErr.isNotEmpty()) logDetail("Jembatan USB: $pumpErr")
             return null
         }
         viaUsb = true
@@ -285,6 +287,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                    else "Pastikan Wireless debugging di HP target masih aktif dan satu jaringan Wi-Fi"
         // Bentuk sama dengan "Connect gagal: alasan. saran".
         logErr("Sambung ulang gagal: $lastConnectReason. $hint")
+        if (lastConnectDetail.isNotEmpty()) logDetail(lastConnectDetail)
         return false
     }
 
@@ -659,6 +662,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     @Volatile private var lastConnectReason = ""
+    /** Rantai exception teknis dari percobaan connect terakhir; dicetak sebagai DETAIL oleh pemanggil yang menahan log (USB, sambung ulang). */
+    @Volatile private var lastConnectDetail = ""
 
     /**
      * [verbose] false = jangan cetak perintah dan kegagalan akhir (dipakai pemanggil yang mengulang sendiri, mis. USB).
@@ -715,6 +720,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             }
         }
         lastConnectReason = reason
+        lastConnectDetail = detail
         syncConnected()
         if (ok) {
             logOk("Terhubung: ${label ?: addr}")
@@ -924,7 +930,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return false
         }
         // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
-        logOk("Mode TCP/IP aktif di port $TCPIP_PORT · koneksi USB terputus otomatis")
+        logOk("Mode TCP/IP aktif di port $TCPIP_PORT, koneksi USB terputus otomatis")
         logStep("Berikutnya: cabut kabel, buka tab Wireless debugging, lalu Connect ke <IP HP target>:$TCPIP_PORT")
         lastAddr = null
         sessionLabel = null

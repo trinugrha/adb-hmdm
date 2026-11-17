@@ -39,6 +39,8 @@ package co.sat.hmdminstaller
  * - Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) selalu di baris DETAIL di bawah baris ✗ / !, tidak digabung ke dalamnya.
  * - Saran per kode install (mis. INSTALL_FAILED_UPDATE_INCOMPATIBLE) ditulis sebagai kalimat sendiri setelah alasan, tidak di dalam kurung.
  * - Petunjuk langkah berikutnya setelah proses berhasil (bukan output mentah) memakai STEP diawali "Berikutnya:", bukan DETAIL.
+ * - Pemisah "·" hanya untuk durasi, jam, dan label perangkat (mis. "Terpasang · 4.2 dtk", "USB · Pixel 6"); antar klausa biasa pakai koma.
+ * - Gagal connect yang dicetak pemanggil (USB, sambung ulang) tetap diikuti baris DETAIL penyebab teknis, sama seperti connect biasa.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

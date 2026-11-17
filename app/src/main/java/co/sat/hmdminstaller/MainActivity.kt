@@ -325,7 +325,7 @@ class MainActivity : AppCompatActivity() {
             val txt = try { if (f.exists()) f.readText().take(1500) else null } catch (e: Throwable) { null }
             if (txt != null) {
                 f.delete()
-                runOnUiThread { log(LogLevel.ERR, "Aplikasi sempat berhenti tiba-tiba. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
+                runOnUiThread { log(LogLevel.ERR, "Aplikasi berhenti tiba-tiba pada sesi sebelumnya. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
             }
         }
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.

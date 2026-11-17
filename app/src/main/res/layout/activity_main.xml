@@ -898,6 +898,240 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:visibility="gone">
+            <!-- Informasi Status (dibaca lewat tombol refresh) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/appsPill"
+                style="@style/Widget.Hmdm.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="top"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/Hmdm.CardTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Informasi Status" />
+
+                    <TextView
+                        style="@style/Hmdm.CardHint"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Tekan Cek Status untuk cek informasi" />
+
+                    <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status_box"
+                        android:clipToPadding="false"
+                        android:orientation="vertical"
+                        android:padding="14dp">
+
+                    <!-- Pilih jenis perangkat untuk ceklist instalasi (dinaikkan; clipToPadding=false agar checkbox tidak terpotong) -->
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="-8dp"
+                        android:clipChildren="false"
+                        android:orientation="horizontal">
+
+                        <CheckBox
+                            android:id="@+id/typePos"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="0dp"
+                            android:button="@drawable/btn_check_round"
+                            android:minHeight="40dp"
+                            android:paddingStart="6dp"
+                            android:text="POS"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/typeTablet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:button="@drawable/btn_check_round"
+                            android:minHeight="40dp"
+                            android:paddingStart="6dp"
+                            android:text="TABLET"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <CheckBox
+                            android:id="@+id/typePda"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:button="@drawable/btn_check_round"
+                            android:minHeight="40dp"
+                            android:paddingStart="6dp"
+                            android:text="PDA"
+                            android:textColor="@color/text"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="INSTALASI STATUS"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp">
+
+                        <View
+                            android:id="@+id/appsDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:id="@+id/txtApps"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/txtAppsDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginTop="6dp"
+                        android:text=""
+                        android:textColor="@color/muted"
+                        android:textSize="12sp"
+                        android:visibility="gone" />
+
+                    <!-- Status default launcher com.hmdm.launcher -->
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="HMDM LAUNCHER STATUS"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp">
+
+                        <View
+                            android:id="@+id/homeDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:id="@+id/txtHome"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+
+                    <!-- Status permission com.hmdm.launcher -->
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="PERMISSION STATUS"
+                        android:textColor="@color/muted" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp">
+
+                        <View
+                            android:id="@+id/permAdminDot"
+                            android:layout_width="10dp"
+                            android:layout_height="10dp"
+                            android:background="@drawable/bg_dot" />
+
+                        <TextView
+                            android:id="@+id/txtPermAdmin"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            android:text="Belum terhubung"
+                            android:textColor="@color/text"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRefreshInfo"
+                    style="@style/Widget.Hmdm.Button.Blue"
+                    android:layout_width="match_parent"
+                    android:layout_height="44dp"
+                    android:layout_marginTop="16dp"
+                    android:minHeight="0dp"
+                    android:textSize="14sp"
+                    android:contentDescription="Cek ulang status"
+                    android:text="Cek Status" />
+            </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
 
                 <com.google.android.material.card.MaterialCardView
                     style="@style/Widget.Hmdm.Card"
@@ -1191,239 +1425,6 @@
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
 
-            <!-- Informasi Status (dibaca lewat tombol refresh) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/appsPill"
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="top"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Informasi Status" />
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Tekan Cek Status untuk cek informasi" />
-
-                    <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status_box"
-                        android:clipToPadding="false"
-                        android:orientation="vertical"
-                        android:padding="14dp">
-
-                    <!-- Pilih jenis perangkat untuk ceklist instalasi (dinaikkan; clipToPadding=false agar checkbox tidak terpotong) -->
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="-8dp"
-                        android:clipChildren="false"
-                        android:orientation="horizontal">
-
-                        <CheckBox
-                            android:id="@+id/typePos"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="0dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
-                            android:text="POS"
-                            android:textColor="@color/text"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <CheckBox
-                            android:id="@+id/typeTablet"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
-                            android:text="TABLET"
-                            android:textColor="@color/text"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <CheckBox
-                            android:id="@+id/typePda"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
-                            android:text="PDA"
-                            android:textColor="@color/text"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="INSTALASI STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/appsDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtApps"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtAppsDetail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginTop="6dp"
-                        android:text=""
-                        android:textColor="@color/muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-
-                    <!-- Status default launcher com.hmdm.launcher -->
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="HMDM LAUNCHER STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/homeDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtHome"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-
-                    <!-- Status permission com.hmdm.launcher -->
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="PERMISSION STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/permAdminDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtPermAdmin"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRefreshInfo"
-                    style="@style/Widget.Hmdm.Button.Blue"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="16dp"
-                    android:minHeight="0dp"
-                    android:textSize="14sp"
-                    android:contentDescription="Cek ulang status"
-                    android:text="Cek Status" />
-            </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
             <!-- Log -->
