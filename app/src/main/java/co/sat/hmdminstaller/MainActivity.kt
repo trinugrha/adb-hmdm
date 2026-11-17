@@ -155,7 +155,7 @@ class MainActivity : AppCompatActivity() {
     /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah ke Mode Nirkabel" dimatikan. */
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
-    @Volatile private var appsInstalled: Map<String, Boolean>? = null
+    @Volatile private var appsInstalled: Map<String, String?>? = null
     /** True sesaat setelah Connect berhasil: Informasi Status (instalasi, launcher, permission) jangan dibaca otomatis; baru dibaca saat kartunya diketuk. */
     @Volatile private var skipInfoRefresh = false
     /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
@@ -353,11 +353,10 @@ class MainActivity : AppCompatActivity() {
         btnRefreshInfo.setOnClickListener {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
-            val pkgs = AdbController.DEVICE_PACKAGES[deviceType]
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
             skipInfoRefresh = true
             run("Cek Informasi Status") {
-                val r = adb.checkRequiredPackages(pkgs)
+                val r = adb.checkRequiredPackages(deviceType)
                 if (r != null) appsInstalled = r
                 val st = adb.checkDefaultLauncher()
                 if (st != HomeState.Unknown) homeState = st
@@ -1065,17 +1064,30 @@ class MainActivity : AppCompatActivity() {
             box.isEnabled = connected
             box.alpha = if (connected) 1f else 0.4f
         }
-        val missing = if (st == null) emptyList() else pkgs.filter { st[it] != true }
+        val expected = AdbController.EXPECTED_VERSIONS[deviceType] ?: emptyMap()
+        val missing = if (st == null) emptyList() else pkgs.filter { st[it] == null }
+        val wrong = if (st == null) emptyList() else pkgs.filter {
+            st[it] != null && expected[it] != null && !AdbController.versionMatches(expected.getValue(it), st[it])
+        }
+        val okCount = total - missing.size - wrong.size
         val (text, color) = when {
             st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
-            missing.isEmpty() -> "Semua terpasang ✓ ($total/$total)" to green
-            else -> "Belum lengkap (${total - missing.size}/$total)" to red
+            missing.isEmpty() && wrong.isEmpty() ->
+                (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
+            else -> "Belum sesuai ($okCount/$total)" to red
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
-        // Daftar paket tidak ditampilkan; hanya ringkasan jumlah terpasang.
-        txtAppsDetail.text = ""
-        txtAppsDetail.visibility = View.GONE
+        // Rincian hanya untuk aplikasi yang bermasalah: belum terpasang atau versi berbeda.
+        val detail = buildList {
+            missing.forEach { add("$it: belum terpasang") }
+            wrong.forEach {
+                val v = st?.get(it)?.takeIf { x -> x.isNotBlank() } ?: "tidak terbaca"
+                add("$it: terpasang $v, seharusnya ${expected[it]}")
+            }
+        }.joinToString("\n")
+        txtAppsDetail.text = detail
+        txtAppsDetail.visibility = if (detail.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun refreshTcpip() {

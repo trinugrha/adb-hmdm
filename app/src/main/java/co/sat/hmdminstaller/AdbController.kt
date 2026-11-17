@@ -120,6 +120,59 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 "com.hmdm.wifimanager"
             )
         )
+        /**
+         * Versi aplikasi yang diharapkan (versionName) per jenis perangkat. Jenis tanpa daftar versi
+         * hanya dicek terpasang atau tidak.
+         */
+        val EXPECTED_VERSIONS: Map<String, Map<String, String>> = mapOf(
+            "POS" to linkedMapOf(
+                "com.alfamart.customerscreen" to "V.2026.07.0",
+                "com.alfamart.etransv4_pos" to "2026.09.1",
+                "com.finnetpos.mpnappv2" to "2.001.Andr",
+                "com.hmdm.launcher" to "6.40",
+                "com.hmdm.control" to "2.09",
+                "com.kaspersky.kes" to "10.56.1.11",
+                "com.alfamart.pos" to "V.2026.9.2",
+                "net.christianbeier.droidvnc_ng" to "1.2.2"
+            ),
+            "PDA" to linkedMapOf(
+                "com.alfastore.ckexpired.v2" to "2025.09.17.1",
+                "com.hmdm.launcher" to "6.24",
+                "com.hmdm.emuilauncherrestarter" to "1.04",
+                "com.alfastore.lpbpda.v2" to "V.2025.11.25.04",
+                "com.alfastore.pricetag.v2" to "2026.8.12.01",
+                "com.alfastore.productinfocloud" to "2025.08.25",
+                "com.alfamart.sopdaaoa" to "2026.9.1",
+                "com.alfastore.sopda.v2" to "V.2026.8.2.0",
+                "com.termoneplus" to "5.5.0",
+                "com.hmdm.wifimanager" to "1.23"
+            ),
+            "TABLET" to linkedMapOf(
+                "com.alfamart.apo" to "4.11.0",
+                "sat.co.id.asa" to "2025.10.17",
+                "com.alfastore.ckexpired.v2" to "2025.11.19.1",
+                "com.gojek.resto" to "4.33.0",
+                "com.hmdm.launcher" to "6.26",
+                "com.hmdm.emuilauncherrestarter" to "1.04",
+                "com.hmdm.control" to "2.09",
+                "infilect.infiviz" to "2.19.9",
+                "com.alfastore.maxdipcloud.v4" to "2026.9.0",
+                "com.alfastore.productinfocloud" to "2025.08.25",
+                "com.alfastore.sopda.v2" to "V.2026.8.2.0",
+                "com.alfastore.storereportnew" to "V.2026.7.2-alfa",
+                "com.termoneplus" to "5.5.0",
+                "com.transferlink" to "1.0",
+                "sat.co.id.validasiautobtl" to "2022.1.0.0",
+                "com.hmdm.wifimanager" to "1.25"
+            )
+        )
+        /** Semua paket yang punya versi harapan: hanya ini yang dibaca versinya dari HP target. */
+        private val VERSIONED_PACKAGES: List<String> = EXPECTED_VERSIONS.values.flatMap { it.keys }.distinct()
+
+        /** Versi terbaca sama dengan harapan (abaikan spasi dan huruf besar/kecil). */
+        fun versionMatches(expected: String, actual: String?): Boolean =
+            actual != null && actual.trim().equals(expected.trim(), ignoreCase = true)
+
         /** Gabungan semua jenis: satu kali `pm list packages` sudah cukup untuk ketiga ceklist. */
         val REQUIRED_PACKAGES: List<String> = DEVICE_PACKAGES.values.flatten().distinct()
         /** Activity launcher HMDM yang dijadikan home default. */
@@ -475,11 +528,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     /**
-     * Cek diam-diam (tanpa log) apakah setiap paket di [REQUIRED_PACKAGES] terpasang di HP target.
-     * Satu kali `pm list packages`. Hasil: paket -> terpasang?; null = daftar tidak terbaca utuh
+     * Cek diam-diam (tanpa log) versi setiap paket di [REQUIRED_PACKAGES] di HP target.
+     * Hasil: paket -> versionName; null = tidak terpasang; "" = terpasang tapi versi tidak terbaca.
+     * Versi hanya dibaca untuk paket di [EXPECTED_VERSIONS]. Seluruh hasil null = daftar tidak terbaca utuh
      * (kosong / timeout), supaya tidak salah menyimpulkan "belum terpasang".
      */
-    fun queryRequiredPackages(): Map<String, Boolean>? {
+    fun queryRequiredPackages(): Map<String, String?>? {
         if (!libConnected) return null
         return try {
             val out = shell("pm list packages --user 0", 8_000, quiet = true)
@@ -490,32 +544,61 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 .toSet()
             // Di mode WiFi daftar paket bisa terpotong. Paket yang tidak muncul dikonfirmasi satu per satu;
             // bila ada yang tidak terbaca, hasil dianggap tidak utuh (null) supaya status lama tidak tertimpa.
-            val result = LinkedHashMap<String, Boolean>()
+            val present = LinkedHashMap<String, Boolean>()
             for (pkg in REQUIRED_PACKAGES) {
-                if (pkg in installed) { result[pkg] = true; continue }
-                result[pkg] = queryPackageInstalled(pkg) ?: return null
+                if (pkg in installed) { present[pkg] = true; continue }
+                present[pkg] = queryPackageInstalled(pkg) ?: return null
             }
+            val versions = queryVersions(VERSIONED_PACKAGES.filter { present[it] == true })
+            val result = LinkedHashMap<String, String?>()
+            for ((pkg, ok) in present) result[pkg] = if (ok) (versions[pkg] ?: "") else null
             result
         } catch (e: Throwable) {
             null
         }
     }
 
-    /** Cek manual (ketuk status aplikasi): hasilnya ditulis ke log. [only] = ceklist jenis perangkat yang dipilih. */
-    fun checkRequiredPackages(only: List<String>? = null): Map<String, Boolean>? {
+    /** Baca versionName tiap paket di [pkgs] dengan satu perintah shell. Paket yang tidak terbaca tidak masuk hasil. */
+    private fun queryVersions(pkgs: List<String>): Map<String, String> {
+        if (pkgs.isEmpty()) return emptyMap()
+        val cmd = pkgs.joinToString("; ") { p ->
+            "echo \"PKG|$p|\$(dumpsys package $p | grep -m1 versionName=)\""
+        }
+        val out = shell(cmd, 30_000, quiet = true)
+        val res = LinkedHashMap<String, String>()
+        for (line in out.lineSequence()) {
+            val t = line.trim()
+            if (!t.startsWith("PKG|")) continue
+            val parts = t.split("|", limit = 3)
+            if (parts.size < 3) continue
+            val v = parts[2].substringAfter("versionName=", "").trim().substringBefore(' ')
+            if (v.isNotEmpty()) res[parts[1]] = v
+        }
+        return res
+    }
+
+    /** Cek manual (ketuk Cek Status): versi aplikasi di HP target ditulis ke log. [type] = jenis perangkat yang dipilih. */
+    fun checkRequiredPackages(type: String): Map<String, String?>? {
         if (!ensureConnected()) return null
-        logCmd("adb shell pm list packages --user 0")
+        logCmd("adb shell dumpsys package <paket> | grep versionName")
         val all = queryRequiredPackages()
         if (all == null) {
-            logErr("Baca daftar aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            logErr("Baca versi aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null
         }
-        val r = if (only == null) all else all.filterKeys { it in only }
-        val missing = r.filterValues { !it }.keys
-        if (missing.isEmpty()) logOk("Semua aplikasi terpasang (${r.size}/${r.size})")
-        else {
-            // Nama aplikasi yang belum ada bukan output mentah device, jadi bukan DETAIL.
-            logWarn("Belum terpasang ${missing.size} dari ${r.size} aplikasi: ${missing.joinToString(", ")}")
+        val pkgs = DEVICE_PACKAGES[type] ?: emptyList()
+        val expected = EXPECTED_VERSIONS[type] ?: emptyMap()
+        val missing = pkgs.filter { all[it] == null }
+        val wrong = pkgs.filter { all[it] != null && expected[it] != null && !versionMatches(expected.getValue(it), all[it]) }
+        if (missing.isEmpty() && wrong.isEmpty()) {
+            logOk("Semua aplikasi terpasang dan versinya sesuai (${pkgs.size}/${pkgs.size})")
+        } else {
+            if (missing.isNotEmpty())
+                logWarn("Belum terpasang ${missing.size} dari ${pkgs.size} aplikasi: ${missing.joinToString(", ")}")
+            for (pkg in wrong) {
+                val v = all[pkg]?.takeIf { it.isNotBlank() } ?: "tidak terbaca"
+                logWarn("Versi $pkg belum sesuai: terpasang $v, seharusnya ${expected[pkg]}")
+            }
         }
         return all
     }
