@@ -829,7 +829,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return true
         }
         val reason = ownerFailureReason(out)
-        logErr("Set MDM Mode gagal: $reason")
+        logErr("Jadikan MDM Mode gagal: $reason")
         logRaw(out, reason)
         return false
     }
@@ -906,7 +906,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun enableTcpip(): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
-            logErr("Ubah Mode Nirkabel (TCP/IP) gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
+            logErr("Ubah ke Mode Nirkabel gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
             return false
         }
         if (queryTcpipActive() == true) {
@@ -925,7 +925,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val restarted = out.contains("restarting", ignoreCase = true)
         if (failed || (!restarted && out.isNotBlank())) {
             val reason = "HP target menolak perintah tcpip. Cek koneksi USB, lalu coba lagi"
-            logErr("Ubah Mode Nirkabel (TCP/IP) gagal: $reason")
+            logErr("Ubah ke Mode Nirkabel gagal: $reason")
             logRaw(out, reason)
             return false
         }

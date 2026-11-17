@@ -25,6 +25,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.view.ViewConfiguration
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -151,7 +152,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var kasperskyInstalled: Boolean? = null
     /** Apakah com.hmdm.launcher terpasang di HP target: null = belum diketahui (tombol Owner/Launcher mati). */
     @Volatile private var hmdmInstalled: Boolean? = null
-    /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah Mode Nirkabel (TCP/IP)" dimatikan. */
+    /** Apakah adbd HP target sudah berjalan dalam mode TCP/IP (port aktif): true = tombol "Ubah ke Mode Nirkabel" dimatikan. */
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, Boolean>? = null
@@ -390,6 +391,22 @@ class MainActivity : AppCompatActivity() {
             val code = clean(edtPairCode.text.toString())
             run("Pairing") { doPair(addr, code) }
         }
+        // Tombol "Done" di keyboard pada kolom kode pairing = tekan tombol Pair.
+        edtPairCode.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
+                btnPair.performClick()
+                true
+            } else false
+        }
+        // Tombol "Done" di keyboard pada kolom port Connect = tekan tombol Connect.
+        edtConnPort.setOnEditorActionListener { v, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(v.windowToken, 0)
+                btnConnect.performClick()
+                true
+            } else false
+        }
         btnPairQr.setOnClickListener {
             if (connectedAddr != null && adb.isConnected) return@setOnClickListener
             showQrPairing()
@@ -433,7 +450,7 @@ class MainActivity : AppCompatActivity() {
             run("Pasang Aplikasi") { skipInfoRefresh = true; adb.install(list) }
         }
         btnOwner.setOnClickListener {
-            run("Set MDM Mode") { skipInfoRefresh = true; doSetOwner() }
+            run("Jadikan MDM Mode") { skipInfoRefresh = true; doSetOwner() }
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
@@ -459,7 +476,7 @@ class MainActivity : AppCompatActivity() {
         }
         btnTcpip.setOnClickListener {
             // Selesai ubah mode: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
-            run("Ubah Mode Nirkabel (TCP/IP)") { skipInfoRefresh = true; doEnableTcpip() }
+            run("Ubah ke Mode Nirkabel") { skipInfoRefresh = true; doEnableTcpip() }
         }
         btnAll.setOnClickListener {
             // Otomatis hanya: install APK + set device owner. Pair & Connect dilakukan manual sebelumnya.
@@ -927,7 +944,7 @@ class MainActivity : AppCompatActivity() {
             val needsApk = (b.id == R.id.btnInstallOnly || b.id == R.id.btnAll) && apks.isEmpty()
             // "Pasang Aplikasi + Jadikan MDM Mode" hanya aktif bila com.hmdm.launcher ada di daftar APK yang akan dipasang.
             val noHmdmApk = b.id == R.id.btnAll && !hasHmdmApk()
-            // "Ubah Mode Nirkabel (TCP/IP)" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
+            // "Ubah ke Mode Nirkabel" (adb tcpip) hanya untuk sesi yang berjalan lewat kabel USB.
             val notUsb = b.id == R.id.btnTcpip && connected && !adb.isViaUsb
             // Mode TCP/IP sudah aktif di HP target: tombol tidak perlu ditekan lagi.
             val tcpipAlready = b.id == R.id.btnTcpip && connected && tcpipActive == true
