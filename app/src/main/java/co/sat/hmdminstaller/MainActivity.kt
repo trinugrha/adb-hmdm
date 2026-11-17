@@ -1065,10 +1065,6 @@ class MainActivity : AppCompatActivity() {
         txtAppsDetail.text = ""
         txtAppsDetail.visibility = View.GONE
     }
-        }.joinToString("\n")
-        txtAppsDetail.text = detail
-        txtAppsDetail.visibility = if (detail.isEmpty()) View.GONE else View.VISIBLE
-    }
 
     private fun refreshTcpip() {
         if (!::txtTcpip.isInitialized) return
