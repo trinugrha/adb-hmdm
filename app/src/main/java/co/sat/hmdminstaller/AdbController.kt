@@ -166,8 +166,6 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 "com.hmdm.wifimanager" to "1.25"
             )
         )
-        /** Semua paket yang punya versi harapan: hanya ini yang dibaca versinya dari HP target. */
-        private val VERSIONED_PACKAGES: List<String> = EXPECTED_VERSIONS.values.flatMap { it.keys }.distinct()
 
         /** Versi terbaca sama dengan harapan (abaikan spasi dan huruf besar/kecil). */
         fun versionMatches(expected: String, actual: String?): Boolean =
@@ -528,12 +526,13 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     /**
-     * Cek diam-diam (tanpa log) versi setiap paket di [REQUIRED_PACKAGES] di HP target.
+     * Cek diam-diam (tanpa log) versi paket milik jenis perangkat [type] saja (bukan semua jenis).
      * Hasil: paket -> versionName; null = tidak terpasang; "" = terpasang tapi versi tidak terbaca.
-     * Versi hanya dibaca untuk paket di [EXPECTED_VERSIONS]. Seluruh hasil null = daftar tidak terbaca utuh
+     * Versi hanya dibaca untuk paket di [EXPECTED_VERSIONS] jenis itu. Seluruh hasil null = daftar tidak terbaca utuh
      * (kosong / timeout), supaya tidak salah menyimpulkan "belum terpasang".
      */
-    fun queryRequiredPackages(): Map<String, String?>? {
+    fun queryRequiredPackages(type: String): Map<String, String?>? {
+        val wanted = DEVICE_PACKAGES[type] ?: return null
         if (!libConnected) return null
         return try {
             val out = shell("pm list packages --user 0", 8_000, quiet = true)
@@ -545,11 +544,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             // Di mode WiFi daftar paket bisa terpotong. Paket yang tidak muncul dikonfirmasi satu per satu;
             // bila ada yang tidak terbaca, hasil dianggap tidak utuh (null) supaya status lama tidak tertimpa.
             val present = LinkedHashMap<String, Boolean>()
-            for (pkg in REQUIRED_PACKAGES) {
+            for (pkg in wanted) {
                 if (pkg in installed) { present[pkg] = true; continue }
                 present[pkg] = queryPackageInstalled(pkg) ?: return null
             }
-            val versions = queryVersions(VERSIONED_PACKAGES.filter { present[it] == true })
+            val versions = queryVersions(wanted.filter { EXPECTED_VERSIONS[type]?.containsKey(it) == true && present[it] == true })
             val result = LinkedHashMap<String, String?>()
             for ((pkg, ok) in present) result[pkg] = if (ok) (versions[pkg] ?: "") else null
             result
@@ -581,7 +580,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun checkRequiredPackages(type: String): Map<String, String?>? {
         if (!ensureConnected()) return null
         logCmd("adb shell dumpsys package <paket> | grep versionName")
-        val all = queryRequiredPackages()
+        val all = queryRequiredPackages(type)
         if (all == null) {
             logErr("Baca versi aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null

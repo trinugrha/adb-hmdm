@@ -126,8 +126,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appsDot: View
     private lateinit var txtApps: TextView
     private lateinit var txtAppsDetail: TextView
-    private lateinit var homeDot: View
-    private lateinit var txtHome: TextView
     private lateinit var permAdminDot: View
     private lateinit var txtPermAdmin: TextView
     private lateinit var progress: ProgressBar
@@ -156,6 +154,8 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var tcpipActive: Boolean? = null
     /** Status tiap aplikasi wajib (AdbController.REQUIRED_PACKAGES) di HP target: null = belum diketahui. */
     @Volatile private var appsInstalled: Map<String, String?>? = null
+    /** Jenis perangkat yang dicek untuk [appsInstalled]; hasil dipakai hanya bila sama dengan jenis yang sedang terpilih. */
+    @Volatile private var appsType: String? = null
     /** True sesaat setelah Connect berhasil: Informasi Status (instalasi, launcher, permission) jangan dibaca otomatis; baru dibaca saat kartunya diketuk. */
     @Volatile private var skipInfoRefresh = false
     /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
@@ -272,8 +272,6 @@ class MainActivity : AppCompatActivity() {
         appsDot = findViewById(R.id.appsDot)
         txtApps = findViewById(R.id.txtApps)
         txtAppsDetail = findViewById(R.id.txtAppsDetail)
-        homeDot = findViewById(R.id.homeDot)
-        txtHome = findViewById(R.id.txtHome)
         permAdminDot = findViewById(R.id.permAdminDot)
         txtPermAdmin = findViewById(R.id.txtPermAdmin)
         progress = findViewById(R.id.progress)
@@ -354,15 +352,14 @@ class MainActivity : AppCompatActivity() {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
+            val type = deviceType
             skipInfoRefresh = true
             run("Cek Informasi Status") {
-                val r = adb.checkRequiredPackages(deviceType)
-                if (r != null) appsInstalled = r
-                val st = adb.checkDefaultLauncher()
-                if (st != HomeState.Unknown) homeState = st
+                val r = adb.checkRequiredPackages(type)
+                if (r != null) { appsInstalled = r; appsType = type }
                 val pr = adb.checkHmdmPermissions()
                 if (pr != null) hmdmPerms = pr
-                r != null || st != HomeState.Unknown || pr != null
+                r != null || pr != null
             }
         }
         val btnMoreToggle: View = findViewById(R.id.btnMoreToggle)
@@ -840,8 +837,8 @@ class MainActivity : AppCompatActivity() {
                     adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
                     adb.queryTcpipActive()?.let { tcpipActive = it }
                     if (!skipInfo) {
-                        val hs = adb.queryDefaultLauncher(); if (hs != HomeState.Unknown) homeState = hs
-                        adb.queryRequiredPackages()?.let { appsInstalled = it }
+                        val t = deviceType
+                        adb.queryRequiredPackages(t)?.let { appsInstalled = it; appsType = t }
                         adb.queryHmdmPermissions()?.let { hmdmPerms = it }
                     }
                 }
@@ -925,7 +922,6 @@ class MainActivity : AppCompatActivity() {
         }
         refreshOwner()
         refreshApps()
-        refreshHome()
         refreshPerms()
         refreshTcpip()
         applyButtonState(busy)
@@ -1032,30 +1028,15 @@ class MainActivity : AppCompatActivity() {
         permAdminDot.backgroundTintList = ColorStateList.valueOf(color)
     }
 
-    /** Status default launcher: aktif bila launcher home default HP target adalah com.hmdm.launcher. */
-    private fun refreshHome() {
-        if (!::txtHome.isInitialized) return
-        val connected = connectedAddr != null && adb.isConnected
-        val st = if (connected) homeState else HomeState.Unknown
-        val (text, color) = when (st) {
-            is HomeState.Hmdm -> "Aktif ✓" to Color.rgb(74, 222, 128)
-            is HomeState.Other -> "Belum aktif · launcher lain" to Color.rgb(248, 113, 113)
-            HomeState.None -> "Belum ada default" to Color.rgb(251, 191, 36)
-            HomeState.Unknown ->
-                (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
-        }
-        txtHome.text = text
-        homeDot.backgroundTintList = ColorStateList.valueOf(color)
-    }
-
     private fun refreshApps() {
         if (!::txtApps.isInitialized) return
         val connected = connectedAddr != null && adb.isConnected
-        val st = if (connected) appsInstalled else null
+        val st = if (connected && appsType == deviceType) appsInstalled else null
         val pkgs = AdbController.DEVICE_PACKAGES[deviceType] ?: emptyList()
         val total = pkgs.size
         val grey = Color.rgb(148, 163, 184)
         val green = Color.rgb(74, 222, 128)
+        val amber = Color.rgb(251, 191, 36)
         val red = Color.rgb(248, 113, 113)
         // Checkbox jenis perangkat: hanya satu yang tercentang (yang dipilih), selalu ada satu terpilih.
         // Selama belum terhubung, checkbox dinonaktifkan (tidak bisa diubah) dan tampil redup.
@@ -1074,17 +1055,16 @@ class MainActivity : AppCompatActivity() {
             st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
             missing.isEmpty() && wrong.isEmpty() ->
                 (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
+            // Kuning: semua terpasang tapi ada versi yang berbeda. Merah: ada aplikasi yang belum terpasang.
+            missing.isEmpty() -> "Versi belum sesuai ($okCount/$total)" to amber
             else -> "Belum sesuai ($okCount/$total)" to red
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
-        // Rincian hanya untuk aplikasi yang bermasalah: belum terpasang atau versi berbeda.
-        val detail = buildList {
-            missing.forEach { add("$it: belum terpasang") }
-            wrong.forEach {
-                val v = st?.get(it)?.takeIf { x -> x.isNotBlank() } ?: "tidak terbaca"
-                add("$it: terpasang $v, seharusnya ${expected[it]}")
-            }
+        // Rincian aplikasi bermasalah tidak ditampilkan di kartu; hanya ada di log.
+        txtAppsDetail.text = ""
+        txtAppsDetail.visibility = View.GONE
+    }
         }.joinToString("\n")
         txtAppsDetail.text = detail
         txtAppsDetail.visibility = if (detail.isEmpty()) View.GONE else View.VISIBLE

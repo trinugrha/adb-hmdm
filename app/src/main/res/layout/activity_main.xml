@@ -1002,7 +1002,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:text="VERSI APLIKASI"
+                        android:text="INSTALASI STATUS"
                         android:textColor="@color/muted" />
 
                     <LinearLayout
@@ -1045,46 +1045,6 @@
                         android:textColor="@color/muted"
                         android:textSize="12sp"
                         android:visibility="gone" />
-
-                    <!-- Status default launcher com.hmdm.launcher -->
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="HMDM LAUNCHER STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/homeDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtHome"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
 
                     <!-- Status permission com.hmdm.launcher -->
                     <TextView
