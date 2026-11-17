@@ -1190,7 +1190,6 @@
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
-            </LinearLayout>
 
             <!-- Informasi Status (dibaca lewat tombol refresh) -->
             <com.google.android.material.card.MaterialCardView
@@ -1425,6 +1424,7 @@
                     android:text="Cek Status" />
             </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <!-- Log -->
             <LinearLayout
