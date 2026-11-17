@@ -478,7 +478,7 @@
                         style="@style/Hmdm.CardHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel OTG, lalu ketuk Pilih Perangkat. Tidak perlu Pair." />
+                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk Pilih Perangkat." />
 
                     <TextView
                         android:id="@+id/txtUsbDevice"
@@ -819,7 +819,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Pasang APK lalu atur MDM Mode sekaligus dalam satu klik. Pair &amp; Connect harus sudah dilakukan lebih dulu." />
+                        android:text="Pasang APK lalu atur MDM Mode sekaligus dalam satu klik. Perangkat harus Terhubung lebih dulu." />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAll"
