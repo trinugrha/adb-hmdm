@@ -40,4 +40,7 @@ object Fmt {
 
     /** 14:02:11 */
     fun clock(epochMs: Long): String = SimpleDateFormat("HH:mm:ss", Locale.US).format(Date(epochMs))
+
+    /** 2026-11-17 14:02:11. Untuk catatan yang dibaca di lain hari (mis. jejak crash). */
+    fun stamp(epochMs: Long): String = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date(epochMs))
 }

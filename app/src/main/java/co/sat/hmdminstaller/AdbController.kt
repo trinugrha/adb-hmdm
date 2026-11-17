@@ -1165,8 +1165,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 writeError = e
             }
             if (stalled.get()) {
-                val fase = if (sendingDone.get()) "menunggu hasil dari HP target (180 dtk tanpa jawaban)" else "mengirim APK (20 dtk tanpa kemajuan)"
-                logWarn("Macet saat $fase, terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)}")
+                // Setelah APK terkirim penuh, "terkirim X dari X" tidak berguna; cukup sebut ukurannya.
+                if (sendingDone.get()) logWarn("Macet: 180 dtk tanpa jawaban dari HP target setelah APK terkirim penuh (${Fmt.size(total)})")
+                else logWarn("Macet saat mengirim APK: 20 dtk tanpa kemajuan (terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)})")
                 if (viaUsb) logDetail("USB: ${usbBridge.stats()}")
                 return stallError
             }
