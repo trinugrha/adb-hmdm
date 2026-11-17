@@ -207,12 +207,13 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Setara `adb connect` lewat kabel USB ke perangkat yang dipilih. Panggil dari thread latar. Mengembalikan label, atau null bila gagal. */
     fun connectUsb(t: UsbAdbBridge.Target): String? {
+        val label = "USB · ${t.label}"
         logCmd("adb -d usb (USB debugging)")
         if (!listUsbTargets().any { it.device.deviceName == t.device.deviceName }) {
-            logErr("Connect USB gagal: perangkat ${t.label} sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
+            logErr("Connect USB gagal: $label sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
             return null
         }
-        logStep("Perangkat USB: ${t.label}")
+        logStep("HP target: $label")
         if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
         if (!usbBridge.requestPermission(t.device)) {
             logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk Pilih Perangkat lagi lalu pilih Izinkan")
@@ -224,7 +225,6 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return null
         }
         logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
-        val label = "USB · ${t.label}"
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..USB_CONNECT_ATTEMPTS) {
@@ -740,7 +740,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             chain.any { it is java.net.ConnectException } || "refused" in text -> "koneksi ditolak oleh HP target"
             chain.any { it is java.net.UnknownHostException || it is java.net.NoRouteToHostException } || "unreachable" in text -> "HP target tidak terjangkau"
             chain.any { it is javax.net.ssl.SSLException } || "handshake" in text || "certificate" in text -> "jabat tangan TLS gagal"
-            else -> "koneksi gagal (${e.javaClass.simpleName})"
+            else -> "kesalahan koneksi tak terduga"
         }
     }
 

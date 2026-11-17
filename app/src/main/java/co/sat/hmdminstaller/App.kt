@@ -44,7 +44,7 @@ class App : Application() {
         val mainThread = Looper.getMainLooper().thread
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
             try {
-                File(filesDir, CRASH_FILE).writeText("${Fmt.stamp(System.currentTimeMillis())} · thread ${t.name}\n${Log.getStackTraceString(e)}")
+                File(filesDir, CRASH_FILE).writeText("${Fmt.stamp(System.currentTimeMillis())}, thread ${t.name}\n${Log.getStackTraceString(e)}")
             } catch (ignored: Throwable) { }
             if (t === mainThread) {
                 previous?.uncaughtException(t, e)

@@ -323,10 +323,15 @@ class MainActivity : AppCompatActivity() {
         // Bila aplikasi sempat crash sebelumnya, tampilkan jejaknya di log (lalu hapus) agar penyebabnya bisa dibaca / disalin.
         io.execute {
             val f = java.io.File(filesDir, App.CRASH_FILE)
-            val txt = try { if (f.exists()) f.readText().take(1500) else null } catch (e: Throwable) { null }
+            val txt = try { if (f.exists()) f.readText() else null } catch (e: Throwable) { null }
             if (txt != null) {
                 f.delete()
-                runOnUiThread { log(LogLevel.ERR, "Aplikasi berhenti tiba-tiba pada sesi sebelumnya. Jejak terakhir:"); txt.lines().take(14).forEach { log(LogLevel.DETAIL, it) } }
+                val trace = txt.lines().filter { it.isNotBlank() }.map { it.replace("\t", "  ") }
+                runOnUiThread {
+                    log(LogLevel.ERR, "Aplikasi berhenti tiba-tiba pada sesi sebelumnya, jejaknya ada di bawah")
+                    trace.take(14).forEach { log(LogLevel.DETAIL, it) }
+                    if (trace.size > 14) log(LogLevel.DETAIL, "… ${trace.size - 14} baris lain tidak ditampilkan")
+                }
             }
         }
         // Log punya scroll sendiri di dalam ScrollView halaman: cegah halaman merebut gesture.
@@ -638,7 +643,7 @@ class MainActivity : AppCompatActivity() {
         val addr = connectedAddr
         // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
         if (addr != null && !alive && !polledWhileBusy && !busy) {
-            log(LogLevel.ERR, (if (cableGone) "Kabel USB dicabut: koneksi ke $addr terputus" else "Koneksi ke $addr terputus") + " · ${Fmt.clock(System.currentTimeMillis())}")
+            log(LogLevel.ERR, "Koneksi ke $addr terputus" + (if (cableGone) ", kabel USB dicabut" else "") + " · ${Fmt.clock(System.currentTimeMillis())}")
             adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
             showUsbDevice(null)
             lostAddr = addr

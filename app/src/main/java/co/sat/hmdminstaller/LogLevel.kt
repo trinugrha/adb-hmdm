@@ -33,7 +33,8 @@ package co.sat.hmdminstaller
  * - Koneksi USB selalu disebut dengan label "USB · <nama perangkat>", tidak pernah dengan alamat loopback internal (127.0.0.1:<port>).
  * - Judul proses (HEAD/END) memakai nama yang sama dengan tombol atau kartu di layar.
  * - Istilah Android ditulis huruf kecil di tengah kalimat: "device owner", "profile owner".
- * - Rantai exception teknis (mis. "IOException: ... <- ...") hanya di baris DETAIL; baris ✗ memuat alasan singkat + saran.
+ * - Rantai exception teknis (mis. "IOException: ... <- ...") dan nama kelas exception hanya di baris DETAIL; baris ✗ memuat alasan singkat + saran.
+ *   Jejak crash dari sesi sebelumnya juga baris DETAIL (maks. 14 baris, sisanya diringkas "… N baris lain tidak ditampilkan").
  * - DETAIL hanya untuk output mentah yang menambah informasi (bukan pengulangan alasan di baris ✗).
  *   Baris DETAIL yang terlalu panjang dipotong otomatis dan diakhiri "…" supaya jelas bahwa teksnya tidak utuh.
  * - Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) selalu di baris DETAIL di bawah baris ✗ / !, tidak digabung ke dalamnya.
