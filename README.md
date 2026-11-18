@@ -26,6 +26,14 @@ Syarat device owner: HP target baru / habis factory reset dan belum ada akun (Go
 Satu HP tidak bisa memasang dirinya sendiri sebagai device owner dengan cara ini kecuali IP diisi 127.0.0.1 dan
 syarat di atas terpenuhi.
 
+## Setting aplikasi & versi
+Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Instalasi Status, tanpa build ulang.
+- Pilih jenis perangkat (POS / TABLET / PDA), ubah kolom versionName per aplikasi. Kolom kosong = aplikasi hanya dicek terpasang.
+- **+ Tambah aplikasi**: isi nama paket (mis. `com.contoh.app`) dan versi (boleh kosong).
+- Ikon **sampah** di samping tiap aplikasi: hapus dari daftar jenis itu.
+- **Reset ke bawaan** mengembalikan daftar dan versi jenis yang dipilih ke nilai di `AdbController.kt` (`DEVICE_PACKAGES`, `EXPECTED_VERSIONS`).
+- Semua perubahan baru disimpan saat menekan **Simpan** (Batal = dibuang). Penyimpanan: `VersionStore.kt`.
+
 ## Opsi USB debugging (kabel)
 Alternatif tanpa Wi-Fi / Pair:
 1. HP target: Opsi Developer › aktifkan **USB debugging** (mode USB: Transfer file).

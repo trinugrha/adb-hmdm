@@ -926,11 +926,31 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Informasi Status" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            style="@style/Hmdm.CardTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Informasi Status" />
+
+                        <ImageView
+                            android:id="@+id/btnSettings"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/bg_chip"
+                            android:clickable="true"
+                            android:contentDescription="Setting versi aplikasi"
+                            android:focusable="true"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_settings"
+                            app:tint="@color/accent" />
+                    </LinearLayout>
 
                     <TextView
                         style="@style/Hmdm.CardHint"

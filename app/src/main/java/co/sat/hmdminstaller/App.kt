@@ -27,6 +27,7 @@ class App : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        VersionStore.init(this)
         installCrashGuard()
         watchWifi()
         // Wireless debugging memakai TLS 1.3; Conscrypt dibutuhkan oleh libadb-android.

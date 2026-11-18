@@ -507,6 +507,7 @@ class MainActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, backWhileLocked)
         txtSession = findViewById(R.id.txtSession)
         findViewById<View>(R.id.btnLogout).setOnClickListener { confirmExit() }
+        findViewById<View>(R.id.btnSettings).setOnClickListener { showVersionSettings() }
         showLock()
 
         restorePickedApks()
@@ -538,6 +539,188 @@ class MainActivity : AppCompatActivity() {
         // Hanya lepas pendengar log milik Activity ini.
         (application as App).logListener = null
         adb.onProgress = null
+    }
+
+    /**
+     * Dialog Setting: ubah daftar aplikasi (tambah/hapus) dan versi yang diharapkan per jenis perangkat
+     * (POS / TABLET / PDA). Kolom versi dikosongkan = aplikasi hanya dicek terpasang, versinya tidak dibandingkan.
+     * Perubahan ditahan sebagai draf (juga saat pindah jenis) dan baru disimpan saat menekan Simpan.
+     */
+    private fun showVersionSettings() {
+        if (isFinishing) return
+        val types = AdbController.DEVICE_PACKAGES.keys.toList()
+        // Draf per jenis: daftar paket (berurutan) dan versinya, awalnya dari nilai yang berlaku sekarang.
+        val draftPkgs = LinkedHashMap<String, MutableList<String>>()
+        val draftVers = LinkedHashMap<String, MutableMap<String, String>>()
+        for (t in types) {
+            draftPkgs[t] = VersionStore.packages(t).toMutableList()
+            draftVers[t] = VersionStore.expected(t).toMutableMap()
+        }
+        var current = if (deviceType in types) deviceType else types.first()
+        val fields = LinkedHashMap<String, TextInputEditText>()
+
+        val scroll = ScrollView(this)
+        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val info = TextView(this).apply {
+            text = "Isi versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang). Ketuk ikon sampah untuk menghapus aplikasi dari daftar."
+            textSize = 12f
+            setPadding(0, 0, 0, dp(8))
+        }
+        val spinner = android.widget.Spinner(this).apply {
+            adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
+            setSelection(types.indexOf(current))
+        }
+        val btnAdd = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "+ Tambah aplikasi"
+        }
+        val btnReset = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = "Reset ke bawaan"
+        }
+
+        /** Salin isi kolom versi ke draf jenis yang sedang tampil. */
+        fun commitFields() {
+            val d = draftVers.getValue(current)
+            for ((pkg, et) in fields) {
+                val v = et.text?.toString()?.trim().orEmpty()
+                if (v.isNotEmpty()) d[pkg] = v else d.remove(pkg)
+            }
+        }
+
+        fun buildFields() {
+            list.removeAllViews()
+            fields.clear()
+            val pkgs = draftPkgs.getValue(current)
+            val vers = draftVers.getValue(current)
+            list.addView(TextView(this).apply {
+                text = "${pkgs.size} aplikasi"
+                textSize = 12f
+                setTypeface(typeface, Typeface.BOLD)
+                setPadding(0, dp(8), 0, 0)
+            })
+            for (pkg in pkgs.toList()) {
+                val et = TextInputEditText(this).apply {
+                    setText(vers[pkg].orEmpty())
+                    hint = "tanpa cek versi"
+                    isSingleLine = true
+                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+                }
+                val del = android.widget.ImageView(this).apply {
+                    setImageResource(R.drawable.ic_delete)
+                    imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
+                    contentDescription = "Hapus $pkg"
+                    setPadding(dp(8), dp(8), dp(8), dp(8))
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener {
+                        commitFields()
+                        draftPkgs.getValue(current).remove(pkg)
+                        draftVers.getValue(current).remove(pkg)
+                        buildFields()
+                    }
+                }
+                val row = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    addView(et, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)))
+                }
+                list.addView(TextView(this).apply {
+                    text = pkg
+                    textSize = 12f
+                    setPadding(0, dp(10), 0, 0)
+                })
+                list.addView(row)
+                fields[pkg] = et
+            }
+        }
+
+        fun showAddDialog() {
+            val inPkg = TextInputEditText(this).apply {
+                hint = "Nama paket, mis. com.contoh.app"
+                isSingleLine = true
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            }
+            val inVer = TextInputEditText(this).apply {
+                hint = "Versi (boleh kosong)"
+                isSingleLine = true
+                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            }
+            val form = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(dp(20), dp(12), dp(20), 0)
+                addView(inPkg)
+                addView(inVer)
+            }
+            val dlg = AlertDialog.Builder(this)
+                .setTitle("Tambah aplikasi ke $current")
+                .setView(form)
+                .setNegativeButton("Batal", null)
+                .setPositiveButton("Tambah", null)
+                .create()
+            dlg.show()
+            // Pasang listener sendiri supaya dialog tidak tertutup saat isian belum valid.
+            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val pkg = inPkg.text?.toString()?.trim().orEmpty()
+                val ver = inVer.text?.toString()?.trim().orEmpty()
+                when {
+                    !Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$").matches(pkg) ->
+                        Toast.makeText(this, "Nama paket tidak valid (contoh: com.contoh.app)", Toast.LENGTH_LONG).show()
+                    pkg in draftPkgs.getValue(current) ->
+                        Toast.makeText(this, "Aplikasi sudah ada di daftar $current", Toast.LENGTH_LONG).show()
+                    else -> {
+                        commitFields()
+                        draftPkgs.getValue(current).add(pkg)
+                        if (ver.isNotEmpty()) draftVers.getValue(current)[pkg] = ver
+                        buildFields()
+                        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                        dlg.dismiss()
+                    }
+                }
+            }
+        }
+
+        spinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p: android.widget.AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                val next = types[pos]
+                if (next == current && fields.isNotEmpty()) return
+                if (fields.isNotEmpty()) commitFields()
+                current = next
+                buildFields()
+            }
+            override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
+        }
+        btnAdd.setOnClickListener { showAddDialog() }
+        btnReset.setOnClickListener {
+            draftPkgs[current] = VersionStore.defaultPackages(current).toMutableList()
+            draftVers[current] = VersionStore.defaultVersions(current).toMutableMap()
+            buildFields()
+        }
+
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(8))
+            addView(info)
+            addView(spinner)
+            addView(btnAdd)
+            addView(btnReset)
+            addView(list)
+        }
+        scroll.addView(box)
+
+        AlertDialog.Builder(this)
+            .setTitle("Setting Aplikasi & Versi")
+            .setView(scroll)
+            .setNegativeButton("Batal", null)
+            .setPositiveButton("Simpan") { _, _ ->
+                commitFields()
+                for (t in types) VersionStore.save(t, draftPkgs.getValue(t), draftVers.getValue(t))
+                // Hasil cek lama dibuat tidak berlaku karena daftar/versi berubah; status kembali "Belum diperiksa".
+                appsInstalled = null
+                appsType = null
+                refreshApps()
+                Toast.makeText(this, "Disimpan. Ketuk Cek Status untuk mengecek ulang", Toast.LENGTH_LONG).show()
+            }
+            .show()
     }
 
     /** Minta konfirmasi sebelum keluar; peringatkan bila masih ada proses berjalan. */
@@ -1024,7 +1207,7 @@ class MainActivity : AppCompatActivity() {
 
     /** True bila com.hmdm.launcher termasuk dalam daftar aplikasi jenis perangkat [type]. */
     private fun hmdmInType(type: String): Boolean =
-        AdbController.DEVICE_PACKAGES[type]?.contains(AdbController.HMDM_PACKAGE) == true
+        VersionStore.packages(type).contains(AdbController.HMDM_PACKAGE)
 
     /** Status gabungan tiga permission com.hmdm.launcher (admin perangkat, overlay, riwayat penggunaan). */
     private fun refreshPerms() {
@@ -1056,7 +1239,7 @@ class MainActivity : AppCompatActivity() {
         if (!::txtApps.isInitialized) return
         val connected = connectedAddr != null && adb.isConnected
         val st = if (connected && appsType == deviceType) appsInstalled else null
-        val pkgs = AdbController.DEVICE_PACKAGES[deviceType] ?: emptyList()
+        val pkgs = VersionStore.packages(deviceType)
         val total = pkgs.size
         val grey = Color.rgb(148, 163, 184)
         val green = Color.rgb(74, 222, 128)
@@ -1068,7 +1251,7 @@ class MainActivity : AppCompatActivity() {
             box.isChecked = type == deviceType
             // Aktif/tidaknya diatur terpusat di applyTypeChipState (belum terhubung / proses berjalan).
         }
-        val expected = AdbController.EXPECTED_VERSIONS[deviceType] ?: emptyMap()
+        val expected = VersionStore.expected(deviceType)
         val missing = if (st == null) emptyList() else pkgs.filter { st[it] == null }
         val wrong = if (st == null) emptyList() else pkgs.filter {
             st[it] != null && expected[it] != null && !AdbController.versionMatches(expected.getValue(it), st[it])

@@ -532,7 +532,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      * (kosong / timeout), supaya tidak salah menyimpulkan "belum terpasang".
      */
     fun queryRequiredPackages(type: String): Map<String, String?>? {
-        val wanted = DEVICE_PACKAGES[type] ?: return null
+        if (type !in DEVICE_PACKAGES) return null
+        val wanted = VersionStore.packages(type)
         if (!libConnected) return null
         return try {
             val out = shell("pm list packages --user 0", 8_000, quiet = true)
@@ -548,7 +549,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (pkg in installed) { present[pkg] = true; continue }
                 present[pkg] = queryPackageInstalled(pkg) ?: return null
             }
-            val versions = queryVersions(wanted.filter { EXPECTED_VERSIONS[type]?.containsKey(it) == true && present[it] == true })
+            val withVersion = VersionStore.expected(type)
+            val versions = queryVersions(wanted.filter { withVersion.containsKey(it) && present[it] == true })
             val result = LinkedHashMap<String, String?>()
             for ((pkg, ok) in present) result[pkg] = if (ok) (versions[pkg] ?: "") else null
             result
@@ -585,8 +587,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logErr("Baca versi aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null
         }
-        val pkgs = DEVICE_PACKAGES[type] ?: emptyList()
-        val expected = EXPECTED_VERSIONS[type] ?: emptyMap()
+        val pkgs = VersionStore.packages(type)
+        val expected = VersionStore.expected(type)
         val missing = pkgs.filter { all[it] == null }
         val wrong = pkgs.filter { all[it] != null && expected[it] != null && !versionMatches(expected.getValue(it), all[it]) }
         if (missing.isEmpty() && wrong.isEmpty()) {
