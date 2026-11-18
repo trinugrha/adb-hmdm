@@ -826,7 +826,10 @@ class MainActivity : AppCompatActivity() {
 
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(dp(20), dp(8), dp(20), dp(8))
+            setPadding(dp(20), dp(16), dp(20), dp(8))
+            // Judul ikut bergulir bersama isi dialog (bukan judul tetap bawaan AlertDialog).
+            addView(label("Setting Aplikasi & Versi", bold = true, size = 20f, color = cText))
+            addView(info, lpTop(8))
             addView(label("Jenis perangkat", bold = true, color = cText), lpTop(16))
             addView(spinnerBox, lpTop(4, dp(44)))
             addView(buttons, lpTop(12, dp(44)))
@@ -834,20 +837,12 @@ class MainActivity : AppCompatActivity() {
             addView(list)
         }
         scroll.addView(box)
-        // Teks petunjuk dipasang di luar ScrollView supaya tetap diam di atas; hanya isi di bawahnya yang bergulir.
-        info.setPadding(dp(20), dp(12), dp(20), dp(4))
-        val root = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            addView(info, android.widget.LinearLayout.LayoutParams(matchP, wrapP))
-            addView(scroll, android.widget.LinearLayout.LayoutParams(matchP, 0, 1f))
-        }
         // Isi kolom SEBELUM dialog tampil. Android memeriksa ada-tidaknya kolom ketik saat dialog dibuka;
         // bila kosong, keyboard diblokir (FLAG_ALT_FOCUSABLE_IM) dan versi tidak bisa diketik.
         buildFields()
 
         val settingsDialog = AlertDialog.Builder(this)
-            .setTitle("Setting Aplikasi & Versi")
-            .setView(root)
+            .setView(scroll)
             .setNegativeButton("Batal", null)
             .setPositiveButton("Simpan") { _, _ ->
                 commitFields()
