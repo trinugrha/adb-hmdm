@@ -600,7 +600,7 @@ class MainActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = label("Ketuk kotak versi untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang).")
+        val info = label("Ketuk ikon pensil di samping tombol hapus untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang).")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
             setSelection(types.indexOf(current))
@@ -612,13 +612,9 @@ class MainActivity : AppCompatActivity() {
             addView(spinner, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
         }
         val btnAdd = MaterialButton(this).apply { text = "+ Tambah aplikasi" }
-        val btnReset = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "Reset ke bawaan"
-        }
         val buttons = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
-            addView(btnAdd, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
-            addView(btnReset, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
+            addView(btnAdd, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
         }
 
         /** Salin isi kolom versi ke draf jenis yang sedang tampil. */
@@ -630,6 +626,9 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        // Diisi setelah showEditVersionDialog dideklarasikan (fungsi lokal tidak bisa saling memanggil maju).
+        var onEditVersion: (String) -> Unit = {}
+
         fun buildFields() {
             list.removeAllViews()
             fields.clear()
@@ -637,7 +636,21 @@ class MainActivity : AppCompatActivity() {
             val vers = draftVers.getValue(current)
             list.addView(label("${pkgs.size} aplikasi", bold = true, size = 13f, color = cText), lpTop(16))
             for (pkg in pkgs.toList()) {
-                val et = field("tanpa cek versi", vers[pkg].orEmpty())
+                val et = field("tanpa cek versi", vers[pkg].orEmpty()).apply {
+                    // Hanya tampilan; ubah lewat ikon pensil.
+                    isFocusable = false
+                    isCursorVisible = false
+                }
+                val edit = android.widget.ImageView(this).apply {
+                    setImageResource(R.drawable.ic_edit)
+                    imageTintList = ColorStateList.valueOf(cMuted)
+                    contentDescription = "Edit versi $pkg"
+                    setPadding(dp(10), dp(10), dp(10), dp(10))
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { onEditVersion(pkg) }
+                }
+                et.setOnClickListener { edit.performClick() }
                 val del = android.widget.ImageView(this).apply {
                     setImageResource(R.drawable.ic_delete)
                     imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
@@ -656,6 +669,7 @@ class MainActivity : AppCompatActivity() {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
                     addView(et, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+                    addView(edit, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
                     addView(del, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
                 }
                 val name = label(pkg, bold = true, size = 13f, color = cText).apply {
@@ -673,6 +687,32 @@ class MainActivity : AppCompatActivity() {
                 fields[pkg] = et
             }
         }
+
+        fun showEditVersionDialog(pkg: String) {
+            commitFields()
+            val inVer = field("kosong = tanpa cek versi", draftVers.getValue(current)[pkg].orEmpty())
+            val form = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                setPadding(dp(20), dp(12), dp(20), 0)
+                addView(label(pkg, bold = true, size = 13f, color = cText))
+                addView(label("Versi (versionName)", bold = true, color = cText), lpTop(12))
+                addView(inVer, lpTop(4, dp(44)))
+            }
+            val dlg = AlertDialog.Builder(this)
+                .setTitle("Edit Versi")
+                .setView(form)
+                .setNegativeButton("Batal", null)
+                .setPositiveButton("OK") { _, _ ->
+                    val v = inVer.text?.toString()?.trim().orEmpty()
+                    if (v.isNotEmpty()) draftVers.getValue(current)[pkg] = v else draftVers.getValue(current).remove(pkg)
+                    buildFields()
+                }
+                .create()
+            dlg.show()
+            dlg.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
+        }
+
+        onEditVersion = { pkg -> showEditVersionDialog(pkg) }
 
         fun showAddDialog() {
             val inPkg = field("com.contoh.app", "")
@@ -725,11 +765,6 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
         }
         btnAdd.setOnClickListener { showAddDialog() }
-        btnReset.setOnClickListener {
-            draftPkgs[current] = VersionStore.defaultPackages(current).toMutableList()
-            draftVers[current] = VersionStore.defaultVersions(current).toMutableMap()
-            buildFields()
-        }
 
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
