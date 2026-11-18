@@ -665,6 +665,7 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("Tambah", null)
                 .create()
             dlg.show()
+            dlg.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
             // Pasang listener sendiri supaya dialog tidak tertutup saat isian belum valid.
             dlg.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
                 val pkg = inPkg.text?.toString()?.trim().orEmpty()
@@ -713,8 +714,11 @@ class MainActivity : AppCompatActivity() {
             addView(list)
         }
         scroll.addView(box)
+        // Isi kolom SEBELUM dialog tampil. Android memeriksa ada-tidaknya kolom ketik saat dialog dibuka;
+        // bila kosong, keyboard diblokir (FLAG_ALT_FOCUSABLE_IM) dan versi tidak bisa diketik.
+        buildFields()
 
-        AlertDialog.Builder(this)
+        val settingsDialog = AlertDialog.Builder(this)
             .setTitle("Setting Aplikasi & Versi")
             .setView(scroll)
             .setNegativeButton("Batal", null)
@@ -727,7 +731,10 @@ class MainActivity : AppCompatActivity() {
                 refreshApps()
                 Toast.makeText(this, "Disimpan. Ketuk Cek Status untuk mengecek ulang", Toast.LENGTH_LONG).show()
             }
-            .show()
+            .create()
+        settingsDialog.show()
+        // Pengaman: kolom bisa kosong saat dibuka (mis. daftar jenis terpilih kosong) lalu terisi lewat Tambah.
+        settingsDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
     }
 
     /** Minta konfirmasi sebelum keluar; peringatkan bila masih ada proses berjalan. */
