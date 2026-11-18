@@ -600,7 +600,7 @@ class MainActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = label("Ketuk ikon pensil di samping tombol hapus untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang).")
+        val info = label("Ketuk ikon pensil untuk mengubah versi yang diharapkan, atau ikon tempat sampah untuk menghapus aplikasi. Versi aplikasi baru wajib diisi.")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
             setSelection(types.indexOf(current))
@@ -716,13 +716,13 @@ class MainActivity : AppCompatActivity() {
 
         fun showAddDialog() {
             val inPkg = field("com.contoh.app", "")
-            val inVer = field("boleh kosong", "")
+            val inVer = field("contoh: 1.0.0", "")
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
                 setPadding(dp(20), dp(12), dp(20), 0)
                 addView(label("Nama paket", bold = true, color = cText))
                 addView(inPkg, lpTop(4, dp(44)))
-                addView(label("Versi (boleh kosong)", bold = true, color = cText), lpTop(12))
+                addView(label("Versi (wajib diisi)", bold = true, color = cText), lpTop(12))
                 addView(inVer, lpTop(4, dp(44)))
             }
             val dlg = AlertDialog.Builder(this)
@@ -740,12 +740,14 @@ class MainActivity : AppCompatActivity() {
                 when {
                     !Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$").matches(pkg) ->
                         Toast.makeText(this, "Nama paket tidak valid (contoh: com.contoh.app)", Toast.LENGTH_LONG).show()
+                    ver.isEmpty() ->
+                        Toast.makeText(this, "Versi tidak boleh kosong", Toast.LENGTH_LONG).show()
                     pkg in draftPkgs.getValue(current) ->
                         Toast.makeText(this, "Aplikasi sudah ada di daftar $current", Toast.LENGTH_LONG).show()
                     else -> {
                         commitFields()
                         draftPkgs.getValue(current).add(pkg)
-                        if (ver.isNotEmpty()) draftVers.getValue(current)[pkg] = ver
+                        draftVers.getValue(current)[pkg] = ver
                         buildFields()
                         scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
                         dlg.dismiss()
