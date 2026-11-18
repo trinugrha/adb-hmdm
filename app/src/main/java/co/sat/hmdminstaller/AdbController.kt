@@ -77,7 +77,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
         const val HMDM_PACKAGE = "com.hmdm.launcher"
-        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Instalasi Status"). */
+        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
             "POS" to emptyList(),
             "TABLET" to emptyList(),
@@ -1045,10 +1045,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     private fun ownerFailureReason(out: String): String {
         val l = out.lowercase()
         return when {
-            "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner"
+            "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner. Reset HP target ke pengaturan pabrik bila ingin menggantinya"
             "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
             "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target"
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. Pasang Aplikasi terlebih dahulu"
             else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
         }
     }

@@ -758,11 +758,11 @@ class MainActivity : AppCompatActivity() {
                 val ver = inVer.text?.toString()?.trim().orEmpty()
                 when {
                     !Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$").matches(pkg) ->
-                        Toast.makeText(this, "Nama paket tidak valid. Contoh: com.contoh.app", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Tambah aplikasi gagal: nama paket tidak valid. Contoh: com.contoh.app", Toast.LENGTH_LONG).show()
                     ver.isEmpty() ->
-                        Toast.makeText(this, "Versi tidak boleh kosong", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Tambah aplikasi gagal: versi tidak boleh kosong. Isi versionName yang diharapkan", Toast.LENGTH_LONG).show()
                     pkg in draftPkgs.getValue(current) ->
-                        Toast.makeText(this, "Aplikasi sudah ada di daftar $current", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Tambah aplikasi gagal: aplikasi sudah ada di daftar $current. Ubah versinya lewat daftar yang ada", Toast.LENGTH_LONG).show()
                     else -> {
                         commitFields()
                         draftPkgs.getValue(current).add(pkg)
@@ -820,7 +820,7 @@ class MainActivity : AppCompatActivity() {
                         draftVers[t] = pv.second.toMutableMap()
                     }
                     buildFields()
-                    Toast.makeText(this, "Diimpor (${parsed.keys.joinToString()}). Tekan Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Diimpor (${parsed.keys.joinToString()}). Ketuk Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
                     // Pesan dari kode ini sendiri (IllegalArgumentException / "tidak bisa ...") sudah berbahasa Indonesia
                     // dan dipakai sebagai alasan; exception sistem diganti alasan umum. Teks mentah hanya di log DETAIL.

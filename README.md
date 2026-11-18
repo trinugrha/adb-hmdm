@@ -27,7 +27,7 @@ Satu HP tidak bisa memasang dirinya sendiri sebagai device owner dengan cara ini
 syarat di atas terpenuhi.
 
 ## Setting aplikasi & versi
-Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Instalasi Status, tanpa build ulang.
+Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Installation Status, tanpa build ulang.
 - Pilih jenis perangkat (POS / TABLET / PDA), ubah kolom versionName per aplikasi. Kolom kosong = aplikasi hanya dicek terpasang.
 - **+ Tambah aplikasi**: isi nama paket (mis. `com.contoh.app`) dan versi (boleh kosong).
 - Ikon **sampah** di samping tiap aplikasi: hapus dari daftar jenis itu.
