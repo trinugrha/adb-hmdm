@@ -1250,8 +1250,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             }
             if (stalled.get()) {
                 // Setelah APK terkirim penuh, "terkirim X dari X" tidak berguna; cukup sebut ukurannya.
-                if (sendingDone.get()) logWarn("Macet: 180 dtk tanpa jawaban dari HP target setelah APK terkirim penuh (${Fmt.size(total)})")
-                else logWarn("Macet saat mengirim APK: 20 dtk tanpa kemajuan (terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)})")
+                if (sendingDone.get()) logWarn("Pengiriman macet: tidak ada jawaban dari HP target selama 180 dtk setelah APK terkirim penuh (${Fmt.size(total)})")
+                else logWarn("Pengiriman macet: tidak ada kemajuan selama 20 dtk (terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)})")
                 if (viaUsb) logDetail("USB: ${usbBridge.stats()}")
                 return stallError
             }
