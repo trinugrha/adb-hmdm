@@ -651,7 +651,7 @@ class MainActivity : AppCompatActivity() {
             fields.clear()
             val pkgs = draftPkgs.getValue(current)
             val vers = draftVers.getValue(current)
-            list.addView(label("${pkgs.size} aplikasi", bold = true, size = 12f, color = cText), lpTop(8))
+            list.addView(label("${pkgs.size} aplikasi", bold = true, size = 13f, color = cText), lpTop(12))
             for (pkg in pkgs.toList()) {
                 val et = field("tanpa cek versi", vers[pkg].orEmpty()).apply {
                     // Hanya tampilan; ubah lewat ikon pensil (kotak ini sendiri tidak bisa diketuk).
@@ -664,7 +664,7 @@ class MainActivity : AppCompatActivity() {
                     imageTintList = ColorStateList.valueOf(tint)
                     contentDescription = desc
                     scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
-                    setPadding(dp(8), dp(8), dp(8), dp(8))
+                    setPadding(dp(10), dp(10), dp(10), dp(10))
                     background = android.graphics.drawable.RippleDrawable(
                         ColorStateList.valueOf(Color.argb(60, Color.red(tint), Color.green(tint), Color.blue(tint))),
                         rounded(Color.argb(32, Color.red(tint), Color.green(tint), Color.blue(tint)), null),
@@ -681,28 +681,28 @@ class MainActivity : AppCompatActivity() {
                     draftVers.getValue(current).remove(pkg)
                     buildFields()
                 }
-                val name = label(pkg, bold = true, size = 12f, color = cText).apply {
+                val name = label(pkg, bold = true, size = 13f, color = cText).apply {
                     isSingleLine = true
                     ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
                 }
-                et.textSize = 12f
-                et.setPadding(dp(8), 0, dp(8), 0)
+                et.textSize = 13f
+                et.setPadding(dp(10), 0, dp(10), 0)
                 // Kiri: nama paket + versi (ringkas). Kanan: tombol edit & hapus berukuran kecil.
                 val textCol = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.VERTICAL
                     addView(name)
-                    addView(et, lpTop(4, dp(30)))
+                    addView(et, lpTop(6, dp(38)))
                 }
                 val card = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
                     background = rounded(cCard, null)
-                    setPadding(dp(10), dp(6), dp(6), dp(6))
+                    setPadding(dp(12), dp(8), dp(8), dp(8))
                     addView(textCol, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
-                    addView(edit, android.widget.LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginStart = dp(6) })
-                    addView(del, android.widget.LinearLayout.LayoutParams(dp(34), dp(34)).apply { marginStart = dp(4) })
+                    addView(edit, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(6) })
                 }
-                list.addView(card, lpTop(4))
+                list.addView(card, lpTop(6))
                 fields[pkg] = et
             }
         }
