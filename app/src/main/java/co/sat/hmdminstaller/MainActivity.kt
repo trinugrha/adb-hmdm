@@ -610,7 +610,7 @@ class MainActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = label("Ketuk Tambah aplikasi untuk menambah aplikasi baru, ikon pensil untuk mengubah versi yang diharapkan, atau ikon tempat sampah untuk menghapus aplikasi.")
+        val info = label("Ketuk Tambah aplikasi untuk menambah aplikasi baru, ikon pensil untuk mengubah versi, atau ikon tempat sampah untuk menghapus aplikasi.")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
             setSelection(types.indexOf(current))
