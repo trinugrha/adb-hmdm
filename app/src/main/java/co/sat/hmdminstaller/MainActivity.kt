@@ -1395,6 +1395,7 @@ class MainActivity : AppCompatActivity() {
         val okCount = total - missing.size - wrong.size
         val (text, color) = when {
             st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
+            total == 0 -> "Daftar aplikasi kosong" to grey
             missing.isEmpty() && wrong.isEmpty() ->
                 (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
             // Kuning: semua terpasang tapi ada versi yang berbeda. Merah: ada aplikasi yang belum terpasang.

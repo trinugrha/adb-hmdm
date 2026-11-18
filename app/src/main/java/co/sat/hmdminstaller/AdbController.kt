@@ -511,6 +511,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
         val pkgs = VersionStore.packages(type)
         val expected = VersionStore.expected(type)
+        if (pkgs.isEmpty()) {
+            logWarn("Daftar aplikasi untuk $type kosong, tidak ada yang dicek. Tambahkan aplikasi lewat tombol Setting")
+            return all
+        }
         val missing = pkgs.filter { all[it] == null }
         val wrong = pkgs.filter { all[it] != null && expected[it] != null && !versionMatches(expected.getValue(it), all[it]) }
         if (missing.isEmpty() && wrong.isEmpty()) {
