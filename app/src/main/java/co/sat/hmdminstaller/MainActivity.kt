@@ -266,6 +266,7 @@ class MainActivity : AppCompatActivity() {
         deviceType = typePrefs.getString("device_type", "POS")?.takeIf { it in AdbController.DEVICE_PACKAGES } ?: "POS"
         typeChips.forEach { (type, chip) ->
             chip.setOnClickListener {
+                if (busy) { chip.isChecked = type == deviceType; return@setOnClickListener }
                 deviceType = type
                 typePrefs.edit().putString("device_type", type).apply()
                 refreshApps()
@@ -896,6 +897,7 @@ class MainActivity : AppCompatActivity() {
         if (on) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         applyButtonState(on)
+        applyTypeChipState(on)
         apkListBox.alpha = if (on) 0.5f else 1f
         progress.visibility = if (on) View.VISIBLE else View.GONE
         txtStatus.text = status
@@ -935,7 +937,18 @@ class MainActivity : AppCompatActivity() {
      * Atur status tombol: semua tombol mati saat ada proses berjalan; tombol yang butuh device
      * (Pasang APK, set-device-owner, Otomatis, Hapus data & Uninstall Kaspersky) juga mati selama belum terhubung.
      */
+    /**
+     * Satu-satunya aturan aktif/tidaknya checkbox jenis perangkat: hanya bisa ditekan bila sudah terhubung
+     * DAN tidak ada proses berjalan (Connect, Connect USB, Pairing QR, Cek Status, Pasang, dll).
+     */
+    private fun applyTypeChipState(isBusy: Boolean) {
+        if (!::typeChips.isInitialized) return
+        val on = !isBusy && connectedAddr != null && adb.isConnected
+        typeChips.forEach { (_, box) -> box.isEnabled = on; box.isClickable = on; box.alpha = if (on) 1f else 0.4f }
+    }
+
     private fun applyButtonState(isBusy: Boolean) {
+        applyTypeChipState(isBusy)
         val connected = connectedAddr != null && adb.isConnected
         buttons.forEach { b ->
             // "Pasang Aplikasi" dan "Otomatis (pasang + owner)" tidak bisa ditekan selama daftar APK masih kosong.
@@ -1053,8 +1066,7 @@ class MainActivity : AppCompatActivity() {
         // Selama belum terhubung, checkbox dinonaktifkan (tidak bisa diubah) dan tampil redup.
         typeChips.forEach { (type, box) ->
             box.isChecked = type == deviceType
-            box.isEnabled = connected
-            box.alpha = if (connected) 1f else 0.4f
+            // Aktif/tidaknya diatur terpusat di applyTypeChipState (belum terhubung / proses berjalan).
         }
         val expected = AdbController.EXPECTED_VERSIONS[deviceType] ?: emptyMap()
         val missing = if (st == null) emptyList() else pkgs.filter { st[it] == null }
