@@ -42,6 +42,8 @@ package co.sat.hmdminstaller
  * - Petunjuk langkah berikutnya setelah proses berhasil (bukan output mentah) memakai STEP diawali "Berikutnya:", bukan DETAIL.
  * - Pemisah "·" hanya untuk durasi, jam, dan label perangkat (mis. "Terpasang · 4.2 dtk", "USB · Pixel 6"); antar klausa biasa pakai koma.
  * - Gagal connect yang dicetak pemanggil (USB, sambung ulang) tetap diikuti baris DETAIL penyebab teknis, sama seperti connect biasa.
+ * - Pesan Toast memakai bentuk yang sama ("<Aksi> gagal: <alasan singkat>. <Saran>"). Teks exception mentah (`e.message`) tidak pernah
+ *   masuk ke baris ✗ atau Toast; ia hanya ditulis sebagai baris DETAIL lewat [Fmt.cause].
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

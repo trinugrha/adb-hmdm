@@ -1027,6 +1027,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
             friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
             code != null -> code
+            // Kegagalan kirim tanpa kode install (stream putus, exception): teks mentahnya (sering berbahasa Inggris,
+            // mis. "stream closed") hanya tampil di baris DETAIL, bukan di baris ✗.
+            out.startsWith("Error:") ->
+                if (advice) "pengiriman APK gagal. Cek koneksi ke HP target, lalu coba lagi" else "pengiriman APK gagal"
             out.isBlank() -> "tidak ada balasan dari HP target"
             // Baris pertama yang bukan noise ("Performing Streamed Install", stack trace) dan tidak kosong.
             else -> out.lines().map { it.trim() }

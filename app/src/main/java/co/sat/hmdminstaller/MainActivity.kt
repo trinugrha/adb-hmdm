@@ -758,7 +758,7 @@ class MainActivity : AppCompatActivity() {
                 val ver = inVer.text?.toString()?.trim().orEmpty()
                 when {
                     !Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$").matches(pkg) ->
-                        Toast.makeText(this, "Nama paket tidak valid (contoh: com.contoh.app)", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Nama paket tidak valid. Contoh: com.contoh.app", Toast.LENGTH_LONG).show()
                     ver.isEmpty() ->
                         Toast.makeText(this, "Versi tidak boleh kosong", Toast.LENGTH_LONG).show()
                     pkg in draftPkgs.getValue(current) ->
@@ -799,7 +799,11 @@ class MainActivity : AppCompatActivity() {
                         ?: throw java.io.IOException("tidak bisa menulis file")
                     Toast.makeText(this, "Versi aplikasi diekspor", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
-                    Toast.makeText(this, "Gagal ekspor: ${e.message}", Toast.LENGTH_LONG).show()
+                    // Alasan singkat berbahasa Indonesia untuk teknisi; teks exception mentah hanya di log DETAIL.
+                    val msg = "Ekspor versi aplikasi gagal: file tidak bisa ditulis. Pilih lokasi lain, lalu coba lagi"
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    log(LogLevel.ERR, msg)
+                    log(LogLevel.DETAIL, Fmt.cause(e))
                 }
             }
             exportVersionsLauncher.launch("versi-aplikasi.json")
@@ -818,7 +822,15 @@ class MainActivity : AppCompatActivity() {
                     buildFields()
                     Toast.makeText(this, "Diimpor (${parsed.keys.joinToString()}). Tekan Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
-                    Toast.makeText(this, "Gagal impor: ${e.message}", Toast.LENGTH_LONG).show()
+                    // Pesan dari kode ini sendiri (IllegalArgumentException / "tidak bisa ...") sudah berbahasa Indonesia
+                    // dan dipakai sebagai alasan; exception sistem diganti alasan umum. Teks mentah hanya di log DETAIL.
+                    val reason = e.message?.takeIf {
+                        e is IllegalArgumentException || (e is java.io.IOException && it.startsWith("tidak bisa"))
+                    } ?: "file tidak bisa dibaca"
+                    val msg = "Impor versi aplikasi gagal: $reason. Pilih file hasil ekspor aplikasi ini"
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    log(LogLevel.ERR, msg)
+                    log(LogLevel.DETAIL, Fmt.cause(e))
                 }
             }
             importVersionsLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
@@ -1012,7 +1024,7 @@ class MainActivity : AppCompatActivity() {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
                     logHead("Pairing QR", shownAt)
-                    log(LogLevel.ERR, "Pairing QR gagal: HP target tidak memindai QR dalam 2 menit atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    log(LogLevel.ERR, "Pairing QR gagal: HP target tidak memindai QR dalam 120 dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                     logEnd("Pairing QR", false, shownAt)
                 }
                 return@execute
@@ -1429,8 +1441,11 @@ class MainActivity : AppCompatActivity() {
             is OwnerState.Hmdm -> "HMDM aktif ✓" to Color.rgb(74, 222, 128)
             is OwnerState.Other -> "Aplikasi lain" to Color.rgb(248, 113, 113)
             OwnerState.None ->
-                if (hmdmInstalled == false) "Belum diset (HMDM belum terpasang)" to Color.rgb(248, 113, 113)
-                else "Belum diset" to Color.rgb(251, 191, 36)
+                when (hmdmInstalled) {
+                    false -> "Belum diset (HMDM belum terpasang)" to Color.rgb(248, 113, 113)
+                    true -> "Belum diset (HMDM sudah terpasang)" to Color.rgb(251, 191, 36)
+                    null -> "Belum diset" to Color.rgb(251, 191, 36)
+                }
             OwnerState.Unknown ->
                 (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
         }
