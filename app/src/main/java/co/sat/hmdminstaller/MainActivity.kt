@@ -637,20 +637,19 @@ class MainActivity : AppCompatActivity() {
             list.addView(label("${pkgs.size} aplikasi", bold = true, size = 13f, color = cText), lpTop(16))
             for (pkg in pkgs.toList()) {
                 val et = field("tanpa cek versi", vers[pkg].orEmpty()).apply {
-                    // Hanya tampilan; ubah lewat ikon pensil.
+                    // Hanya tampilan; ubah lewat ikon pensil (kotak ini sendiri tidak bisa diketuk).
                     isFocusable = false
                     isCursorVisible = false
                 }
                 val edit = android.widget.ImageView(this).apply {
                     setImageResource(R.drawable.ic_edit)
-                    imageTintList = ColorStateList.valueOf(cMuted)
+                    imageTintList = ColorStateList.valueOf(Color.rgb(245, 158, 11))
                     contentDescription = "Edit versi $pkg"
                     setPadding(dp(10), dp(10), dp(10), dp(10))
                     isClickable = true
                     isFocusable = true
                     setOnClickListener { onEditVersion(pkg) }
                 }
-                et.setOnClickListener { edit.performClick() }
                 val del = android.widget.ImageView(this).apply {
                     setImageResource(R.drawable.ic_delete)
                     imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
