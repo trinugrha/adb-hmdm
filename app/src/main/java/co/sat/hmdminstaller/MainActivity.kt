@@ -591,7 +591,8 @@ class MainActivity : AppCompatActivity() {
             val til = com.google.android.material.textfield.TextInputLayout(this)
             til.hint = label
             if (placeholder != null) til.placeholderText = placeholder
-            til.addView(et, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            // TextInputLayout adalah LinearLayout: anaknya wajib memakai LinearLayout.LayoutParams (bukan ViewGroup.LayoutParams).
+            til.addView(et, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             return til
         }
 
