@@ -181,6 +181,16 @@ class MainActivity : AppCompatActivity() {
         override fun handleOnBackPressed() { moveTaskToBack(true) }
     }
 
+    /** Penerima hasil pilih file untuk Export/Import versi aplikasi; diisi oleh dialog Setting saat tombolnya diketuk. */
+    private var onExportPicked: ((Uri) -> Unit)? = null
+    private var onImportPicked: ((Uri) -> Unit)? = null
+    private val exportVersionsLauncher = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) onExportPicked?.invoke(uri)
+    }
+    private val importVersionsLauncher = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) onImportPicked?.invoke(uri)
+    }
+
     private val pickApks = registerForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         if (uris.isNullOrEmpty()) return@registerForActivityResult
         // Di UI thread: hanya baca nama (cepat) dan saring duplikat / non-APK.
@@ -612,6 +622,13 @@ class MainActivity : AppCompatActivity() {
             addView(spinner, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
         }
         val btnAdd = MaterialButton(this).apply { text = "+ Tambah aplikasi" }
+        val btnExport = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply { text = "Export" }
+        val btnImport = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply { text = "Import" }
+        val ioButtons = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            addView(btnExport, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+            addView(btnImport, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
+        }
         val buttons = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
             addView(btnAdd, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
@@ -766,6 +783,43 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(p: android.widget.AdapterView<*>?) {}
         }
         btnAdd.setOnClickListener { showAddDialog() }
+        btnExport.setOnClickListener {
+            // Ekspor data yang sudah tersimpan (perubahan di dialog yang belum disimpan tidak ikut).
+            onExportPicked = { uri ->
+                try {
+                    val json = VersionStore.toJson(
+                        types,
+                        types.associateWith { VersionStore.packages(it) },
+                        types.associateWith { VersionStore.expected(it) }
+                    )
+                    contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                        ?: throw java.io.IOException("tidak bisa menulis file")
+                    Toast.makeText(this, "Versi aplikasi diekspor", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Gagal ekspor: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+            exportVersionsLauncher.launch("versi-aplikasi.json")
+        }
+        btnImport.setOnClickListener {
+            onImportPicked = { uri ->
+                try {
+                    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: throw java.io.IOException("tidak bisa membaca file")
+                    if (bytes.size > 1_000_000) throw IllegalArgumentException("file terlalu besar")
+                    val parsed = VersionStore.parseJson(String(bytes, Charsets.UTF_8), types)
+                    for ((t, pv) in parsed) {
+                        draftPkgs[t] = pv.first.toMutableList()
+                        draftVers[t] = pv.second.toMutableMap()
+                    }
+                    buildFields()
+                    Toast.makeText(this, "Diimpor (${parsed.keys.joinToString()}). Tekan Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Gagal impor: ${e.message}", Toast.LENGTH_LONG).show()
+                }
+            }
+            importVersionsLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+        }
 
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
@@ -774,6 +828,7 @@ class MainActivity : AppCompatActivity() {
             addView(label("Jenis perangkat", bold = true, color = cText), lpTop(16))
             addView(spinnerBox, lpTop(4, dp(44)))
             addView(buttons, lpTop(12, dp(44)))
+            addView(ioButtons, lpTop(8, dp(44)))
             addView(list)
         }
         scroll.addView(box)
