@@ -1342,8 +1342,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** True bila com.hmdm.launcher termasuk dalam daftar aplikasi jenis perangkat [type], atau daftarnya kosong (tidak dibatasi). */
-    private fun hmdmInType(type: String): Boolean =
-        VersionStore.packages(type).let { it.isEmpty() || it.contains(AdbController.HMDM_PACKAGE) }
+    @Suppress("UNUSED_PARAMETER")
+    private fun hmdmInType(type: String): Boolean = true
 
     /** Status gabungan tiga permission com.hmdm.launcher (admin perangkat, overlay, riwayat penggunaan). */
     private fun refreshPerms() {
@@ -1361,7 +1361,6 @@ class MainActivity : AppCompatActivity() {
         val values = listOf(admin, p?.overlay, p?.usage)
         val (text, color) = when {
             !connected -> "Belum terhubung" to grey
-            !applicable -> "Tidak berlaku untuk $deviceType" to grey
             p == null || values.any { it == null } -> "Belum diperiksa" to grey
             values.all { it == true } -> "Aktif ✓" to green
             values.none { it == true } -> "Belum aktif" to red
