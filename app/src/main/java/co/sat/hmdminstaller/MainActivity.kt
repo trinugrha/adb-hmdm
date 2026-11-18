@@ -562,7 +562,7 @@ class MainActivity : AppCompatActivity() {
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
         val info = TextView(this).apply {
-            text = "Isi versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang). Ketuk ikon sampah untuk menghapus aplikasi dari daftar."
+            text = "Ketuk kotak Versi untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang). Ketuk ikon sampah untuk menghapus aplikasi dari daftar."
             textSize = 12f
             setPadding(0, 0, 0, dp(8))
         }
@@ -586,6 +586,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        /** Bungkus kolom isian dalam kotak berlabel (outlined) supaya jelas bisa diedit. */
+        fun boxed(et: TextInputEditText, label: String, placeholder: String?): com.google.android.material.textfield.TextInputLayout {
+            val til = com.google.android.material.textfield.TextInputLayout(this)
+            til.hint = label
+            if (placeholder != null) til.placeholderText = placeholder
+            til.addView(et, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+            return til
+        }
+
         fun buildFields() {
             list.removeAllViews()
             fields.clear()
@@ -600,7 +609,6 @@ class MainActivity : AppCompatActivity() {
             for (pkg in pkgs.toList()) {
                 val et = TextInputEditText(this).apply {
                     setText(vers[pkg].orEmpty())
-                    hint = "tanpa cek versi"
                     isSingleLine = true
                     inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
                 }
@@ -621,7 +629,7 @@ class MainActivity : AppCompatActivity() {
                 val row = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
-                    addView(et, android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+                    addView(boxed(et, "Versi", "tanpa cek versi"), android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
                     addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)))
                 }
                 list.addView(TextView(this).apply {
@@ -636,20 +644,18 @@ class MainActivity : AppCompatActivity() {
 
         fun showAddDialog() {
             val inPkg = TextInputEditText(this).apply {
-                hint = "Nama paket, mis. com.contoh.app"
                 isSingleLine = true
                 inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             }
             val inVer = TextInputEditText(this).apply {
-                hint = "Versi (boleh kosong)"
                 isSingleLine = true
                 inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
             }
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
                 setPadding(dp(20), dp(12), dp(20), 0)
-                addView(inPkg)
-                addView(inVer)
+                addView(boxed(inPkg, "Nama paket", "com.contoh.app"))
+                addView(boxed(inVer, "Versi (boleh kosong)", null))
             }
             val dlg = AlertDialog.Builder(this)
                 .setTitle("Tambah aplikasi ke $current")
