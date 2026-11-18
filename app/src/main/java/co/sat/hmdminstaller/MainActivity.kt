@@ -1394,8 +1394,9 @@ class MainActivity : AppCompatActivity() {
         }
         val okCount = total - missing.size - wrong.size
         val (text, color) = when {
-            st == null -> (if (connected) "Belum diperiksa" else "Belum terhubung") to grey
+            !connected -> "Belum terhubung" to grey
             total == 0 -> "Daftar aplikasi kosong" to grey
+            st == null -> "Belum diperiksa" to grey
             missing.isEmpty() && wrong.isEmpty() ->
                 (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
             // Kuning: semua terpasang tapi ada versi yang berbeda. Merah: ada aplikasi yang belum terpasang.
@@ -1428,7 +1429,8 @@ class MainActivity : AppCompatActivity() {
         val (text, color) = when (st) {
             is OwnerState.Hmdm -> "HMDM aktif ✓" to Color.rgb(74, 222, 128)
             is OwnerState.Other -> "Aplikasi lain" to Color.rgb(248, 113, 113)
-            OwnerState.None -> "Belum diset" to Color.rgb(251, 191, 36)
+            OwnerState.None ->
+                (if (hmdmInstalled == false) "Belum diset (HMDM belum terpasang)" else "Belum diset") to Color.rgb(251, 191, 36)
             OwnerState.Unknown ->
                 (if (connected) "Belum diperiksa" else "Belum terhubung") to Color.rgb(148, 163, 184)
         }
