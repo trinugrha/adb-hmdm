@@ -557,24 +557,68 @@ class MainActivity : AppCompatActivity() {
             draftVers[t] = VersionStore.expected(t).toMutableMap()
         }
         var current = if (deviceType in types) deviceType else types.first()
-        val fields = LinkedHashMap<String, TextInputEditText>()
+        val fields = LinkedHashMap<String, android.widget.EditText>()
+
+        // ---- Gaya: warna dari tema aplikasi (ikut mode gelap), bingkai membulat, jarak seragam ----
+        val cText = ContextCompat.getColor(this, R.color.text)
+        val cMuted = ContextCompat.getColor(this, R.color.muted)
+        val cSurface = ContextCompat.getColor(this, R.color.surface)
+        val cOutline = ContextCompat.getColor(this, R.color.outline)
+        val cCard = ContextCompat.getColor(this, R.color.chip_bg)
+        val matchP = ViewGroup.LayoutParams.MATCH_PARENT
+        val wrapP = ViewGroup.LayoutParams.WRAP_CONTENT
+
+        fun rounded(fill: Int, stroke: Int?): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                cornerRadius = dp(10).toFloat()
+                setColor(fill)
+                if (stroke != null) setStroke(dp(1), stroke)
+            }
+
+        /** Parameter tata letak lebar penuh dengan jarak atas [top] dp; tinggi [h] (default menyesuaikan isi). */
+        fun lpTop(top: Int, h: Int = wrapP) = android.widget.LinearLayout.LayoutParams(matchP, h).apply { topMargin = dp(top) }
+
+        fun label(s: String, bold: Boolean = false, size: Float = 12f, color: Int = cMuted) = TextView(this).apply {
+            text = s
+            textSize = size
+            setTextColor(color)
+            if (bold) setTypeface(typeface, Typeface.BOLD)
+        }
+
+        fun field(placeholder: String, value: String) = android.widget.EditText(this).apply {
+            setText(value)
+            hint = placeholder
+            textSize = 14f
+            setTextColor(cText)
+            setHintTextColor(cMuted)
+            isSingleLine = true
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            background = rounded(cSurface, cOutline)
+            setPadding(dp(12), 0, dp(12), 0)
+        }
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = TextView(this).apply {
-            text = "Ketuk kotak Versi untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang). Ketuk ikon sampah untuk menghapus aplikasi dari daftar."
-            textSize = 12f
-            setPadding(0, 0, 0, dp(8))
-        }
+        val info = label("Ketuk kotak versi untuk mengubah versionName yang diharapkan. Kosongkan bila versi tidak perlu dicek (hanya cek terpasang).")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
             setSelection(types.indexOf(current))
         }
-        val btnAdd = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = "+ Tambah aplikasi"
+        val spinnerBox = android.widget.LinearLayout(this).apply {
+            background = rounded(cSurface, cOutline)
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(dp(6), 0, dp(6), 0)
+            addView(spinner, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
         }
+        val btnAdd = MaterialButton(this).apply { text = "+ Tambah aplikasi" }
         val btnReset = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Reset ke bawaan"
+        }
+        val buttons = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            addView(btnAdd, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+            addView(btnReset, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
         }
 
         /** Salin isi kolom versi ke draf jenis yang sedang tampil. */
@@ -586,38 +630,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        /** Bungkus kolom isian dalam kotak berlabel (outlined) supaya jelas bisa diedit. */
-        fun boxed(et: TextInputEditText, label: String, placeholder: String?): com.google.android.material.textfield.TextInputLayout {
-            val til = com.google.android.material.textfield.TextInputLayout(this)
-            til.hint = label
-            if (placeholder != null) til.placeholderText = placeholder
-            // TextInputLayout adalah LinearLayout: anaknya wajib memakai LinearLayout.LayoutParams (bukan ViewGroup.LayoutParams).
-            til.addView(et, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            return til
-        }
-
         fun buildFields() {
             list.removeAllViews()
             fields.clear()
             val pkgs = draftPkgs.getValue(current)
             val vers = draftVers.getValue(current)
-            list.addView(TextView(this).apply {
-                text = "${pkgs.size} aplikasi"
-                textSize = 12f
-                setTypeface(typeface, Typeface.BOLD)
-                setPadding(0, dp(8), 0, 0)
-            })
+            list.addView(label("${pkgs.size} aplikasi", bold = true, size = 13f, color = cText), lpTop(16))
             for (pkg in pkgs.toList()) {
-                val et = TextInputEditText(this).apply {
-                    setText(vers[pkg].orEmpty())
-                    isSingleLine = true
-                    inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-                }
+                val et = field("tanpa cek versi", vers[pkg].orEmpty())
                 val del = android.widget.ImageView(this).apply {
                     setImageResource(R.drawable.ic_delete)
                     imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
                     contentDescription = "Hapus $pkg"
-                    setPadding(dp(8), dp(8), dp(8), dp(8))
+                    setPadding(dp(10), dp(10), dp(10), dp(10))
                     isClickable = true
                     isFocusable = true
                     setOnClickListener {
@@ -630,33 +655,35 @@ class MainActivity : AppCompatActivity() {
                 val row = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
-                    addView(boxed(et, "Versi", "tanpa cek versi"), android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
-                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)))
+                    addView(et, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
                 }
-                list.addView(TextView(this).apply {
-                    text = pkg
-                    textSize = 12f
-                    setPadding(0, dp(10), 0, 0)
-                })
-                list.addView(row)
+                val name = label(pkg, bold = true, size = 13f, color = cText).apply {
+                    isSingleLine = true
+                    ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+                }
+                val card = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    background = rounded(cCard, null)
+                    setPadding(dp(12), dp(10), dp(6), dp(10))
+                    addView(name)
+                    addView(row, lpTop(8))
+                }
+                list.addView(card, lpTop(8))
                 fields[pkg] = et
             }
         }
 
         fun showAddDialog() {
-            val inPkg = TextInputEditText(this).apply {
-                isSingleLine = true
-                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            }
-            val inVer = TextInputEditText(this).apply {
-                isSingleLine = true
-                inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            }
+            val inPkg = field("com.contoh.app", "")
+            val inVer = field("boleh kosong", "")
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
                 setPadding(dp(20), dp(12), dp(20), 0)
-                addView(boxed(inPkg, "Nama paket", "com.contoh.app"))
-                addView(boxed(inVer, "Versi (boleh kosong)", null))
+                addView(label("Nama paket", bold = true, color = cText))
+                addView(inPkg, lpTop(4, dp(44)))
+                addView(label("Versi (boleh kosong)", bold = true, color = cText), lpTop(12))
+                addView(inVer, lpTop(4, dp(44)))
             }
             val dlg = AlertDialog.Builder(this)
                 .setTitle("Tambah aplikasi ke $current")
@@ -708,9 +735,9 @@ class MainActivity : AppCompatActivity() {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(dp(20), dp(8), dp(20), dp(8))
             addView(info)
-            addView(spinner)
-            addView(btnAdd)
-            addView(btnReset)
+            addView(label("Jenis perangkat", bold = true, color = cText), lpTop(16))
+            addView(spinnerBox, lpTop(4, dp(44)))
+            addView(buttons, lpTop(12, dp(44)))
             addView(list)
         }
         scroll.addView(box)
