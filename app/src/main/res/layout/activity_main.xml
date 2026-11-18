@@ -937,6 +937,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
+                            android:includeFontPadding="false"
                             android:text="Informasi Status" />
 
                         <ImageView
@@ -952,12 +953,14 @@
                             app:tint="@color/accent" />
                     </LinearLayout>
 
+                    <!-- Baris judul setinggi ikon 36dp; margin negatif merapatkan teks hint ke judul seperti kartu lain -->
                     <TextView
                         style="@style/Hmdm.CardHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Tekan Cek Status untuk cek informasi" />
+                        android:layout_marginTop="-4dp"
+                        android:lineSpacingExtra="2dp"
+                        android:text="Cek Status untuk melihat status aplikasi dan izin." />
 
                     <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
                     <LinearLayout

@@ -600,7 +600,7 @@ class MainActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = label("Ketuk ikon pensil untuk mengubah versi yang diharapkan, atau ikon tempat sampah untuk menghapus aplikasi. Versi aplikasi baru wajib diisi.")
+        val info = label("Ketuk Tambah aplikasi untuk menambah aplikasi baru, ikon pensil untuk mengubah versi yang diharapkan, atau ikon tempat sampah untuk menghapus aplikasi.")
         val spinner = android.widget.Spinner(this).apply {
             adapter = android.widget.ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, types)
             setSelection(types.indexOf(current))
@@ -641,35 +641,35 @@ class MainActivity : AppCompatActivity() {
                     isFocusable = false
                     isCursorVisible = false
                 }
-                val edit = android.widget.ImageView(this).apply {
-                    setImageResource(R.drawable.ic_edit)
-                    imageTintList = ColorStateList.valueOf(Color.rgb(245, 158, 11))
-                    contentDescription = "Edit versi $pkg"
-                    setPadding(dp(10), dp(10), dp(10), dp(10))
+                // Tombol ikon seragam: 44dp, bingkai membulat berwarna lembut, efek ketuk (ripple).
+                fun iconButton(res: Int, tint: Int, desc: String, onClick: () -> Unit) = android.widget.ImageView(this).apply {
+                    setImageResource(res)
+                    imageTintList = ColorStateList.valueOf(tint)
+                    contentDescription = desc
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                    setPadding(dp(11), dp(11), dp(11), dp(11))
+                    background = android.graphics.drawable.RippleDrawable(
+                        ColorStateList.valueOf(Color.argb(60, Color.red(tint), Color.green(tint), Color.blue(tint))),
+                        rounded(Color.argb(32, Color.red(tint), Color.green(tint), Color.blue(tint)), null),
+                        null
+                    )
                     isClickable = true
                     isFocusable = true
-                    setOnClickListener { onEditVersion(pkg) }
+                    setOnClickListener { onClick() }
                 }
-                val del = android.widget.ImageView(this).apply {
-                    setImageResource(R.drawable.ic_delete)
-                    imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
-                    contentDescription = "Hapus $pkg"
-                    setPadding(dp(10), dp(10), dp(10), dp(10))
-                    isClickable = true
-                    isFocusable = true
-                    setOnClickListener {
-                        commitFields()
-                        draftPkgs.getValue(current).remove(pkg)
-                        draftVers.getValue(current).remove(pkg)
-                        buildFields()
-                    }
+                val edit = iconButton(R.drawable.ic_edit, Color.rgb(245, 158, 11), "Edit versi $pkg") { onEditVersion(pkg) }
+                val del = iconButton(R.drawable.ic_delete, Color.rgb(220, 38, 38), "Hapus $pkg") {
+                    commitFields()
+                    draftPkgs.getValue(current).remove(pkg)
+                    draftVers.getValue(current).remove(pkg)
+                    buildFields()
                 }
                 val row = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
                     addView(et, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
-                    addView(edit, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
-                    addView(del, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(4) })
+                    addView(edit, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(8) })
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(44), dp(44)).apply { marginStart = dp(8) })
                 }
                 val name = label(pkg, bold = true, size = 13f, color = cText).apply {
                     isSingleLine = true
@@ -678,7 +678,7 @@ class MainActivity : AppCompatActivity() {
                 val card = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.VERTICAL
                     background = rounded(cCard, null)
-                    setPadding(dp(12), dp(10), dp(6), dp(10))
+                    setPadding(dp(12), dp(10), dp(12), dp(12))
                     addView(name)
                     addView(row, lpTop(8))
                 }
