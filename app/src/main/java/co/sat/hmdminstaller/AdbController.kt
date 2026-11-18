@@ -79,93 +79,15 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         const val HMDM_PACKAGE = "com.hmdm.launcher"
         /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Instalasi Status"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
-            "POS" to listOf(
-                "com.alfamart.customerscreen",
-                "com.alfamart.etransv4_pos",
-                "com.finnetpos.mpnappv2",
-                "com.hmdm.launcher",
-                "com.hmdm.control",
-                "com.kaspersky.kes",
-                "com.alfamart.pos",
-                "net.christianbeier.droidvnc_ng"
-            ),
-            "TABLET" to listOf(
-                "com.alfamart.apo",
-                "sat.co.id.asa",
-                "com.alfastore.ckexpired.v2",
-                "com.gojek.resto",
-                "com.hmdm.launcher",
-                "com.hmdm.emuilauncherrestarter",
-                "com.hmdm.control",
-                "infilect.infiviz",
-                "com.alfastore.maxdipcloud.v4",
-                "com.alfastore.productinfocloud",
-                "com.alfastore.sopda.v2",
-                "com.alfastore.storereportnew",
-                "com.termoneplus",
-                "com.transferlink",
-                "sat.co.id.validasiautobtl",
-                "com.hmdm.wifimanager"
-            ),
-            "PDA" to listOf(
-                "com.alfastore.ckexpired.v2",
-                "com.hmdm.launcher",
-                "com.hmdm.emuilauncherrestarter",
-                "com.alfastore.lpbpda.v2",
-                "com.alfastore.pricetag.v2",
-                "com.alfastore.productinfocloud",
-                "com.alfamart.sopdaaoa",
-                "com.alfastore.sopda.v2",
-                "com.termoneplus",
-                "com.hmdm.wifimanager"
-            )
+            "POS" to emptyList(),
+            "TABLET" to emptyList(),
+            "PDA" to emptyList()
         )
         /**
          * Versi aplikasi yang diharapkan (versionName) per jenis perangkat. Jenis tanpa daftar versi
          * hanya dicek terpasang atau tidak.
          */
-        val EXPECTED_VERSIONS: Map<String, Map<String, String>> = mapOf(
-            "POS" to linkedMapOf(
-                "com.alfamart.customerscreen" to "V.2026.07.0",
-                "com.alfamart.etransv4_pos" to "2026.09.1",
-                "com.finnetpos.mpnappv2" to "2.001.Andr",
-                "com.hmdm.launcher" to "6.40",
-                "com.hmdm.control" to "2.09",
-                "com.kaspersky.kes" to "10.56.1.11",
-                "com.alfamart.pos" to "V.2026.9.2",
-                "net.christianbeier.droidvnc_ng" to "1.2.2"
-            ),
-            "PDA" to linkedMapOf(
-                "com.alfastore.ckexpired.v2" to "2025.09.17.1",
-                "com.hmdm.launcher" to "6.24",
-                "com.hmdm.emuilauncherrestarter" to "1.04",
-                "com.alfastore.lpbpda.v2" to "V.2025.11.25.04",
-                "com.alfastore.pricetag.v2" to "2026.8.12.01",
-                "com.alfastore.productinfocloud" to "2025.08.25",
-                "com.alfamart.sopdaaoa" to "2026.9.1",
-                "com.alfastore.sopda.v2" to "V.2026.8.2.0",
-                "com.termoneplus" to "5.5.0",
-                "com.hmdm.wifimanager" to "1.23"
-            ),
-            "TABLET" to linkedMapOf(
-                "com.alfamart.apo" to "4.11.0",
-                "sat.co.id.asa" to "2025.10.17",
-                "com.alfastore.ckexpired.v2" to "2025.11.19.1",
-                "com.gojek.resto" to "4.33.0",
-                "com.hmdm.launcher" to "6.26",
-                "com.hmdm.emuilauncherrestarter" to "1.04",
-                "com.hmdm.control" to "2.09",
-                "infilect.infiviz" to "2.19.9",
-                "com.alfastore.maxdipcloud.v4" to "2026.9.0",
-                "com.alfastore.productinfocloud" to "2025.08.25",
-                "com.alfastore.sopda.v2" to "V.2026.8.2.0",
-                "com.alfastore.storereportnew" to "V.2026.7.2-alfa",
-                "com.termoneplus" to "5.5.0",
-                "com.transferlink" to "1.0",
-                "sat.co.id.validasiautobtl" to "2022.1.0.0",
-                "com.hmdm.wifimanager" to "1.25"
-            )
-        )
+        val EXPECTED_VERSIONS: Map<String, Map<String, String>> = emptyMap()
 
         /** Versi terbaca sama dengan harapan (abaikan spasi dan huruf besar/kecil). */
         fun versionMatches(expected: String, actual: String?): Boolean =
