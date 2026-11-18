@@ -202,7 +202,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         var ok = false
         for (attempt in 1..USB_CONNECT_ATTEMPTS) {
             if (connect("127.0.0.1:$port", verbose = false, label = label)) { ok = true; break }
-            if (attempt < USB_CONNECT_ATTEMPTS) logWarn("Percobaan $attempt/$USB_CONNECT_ATTEMPTS gagal ($lastConnectReason), mencoba lagi...")
+            if (attempt < USB_CONNECT_ATTEMPTS) logWarn("Percobaan $attempt/$USB_CONNECT_ATTEMPTS gagal (${lastConnectReason.ifBlank { "tidak terhubung" }}), mencoba lagi...")
         }
         if (!ok) {
             val pumpErr = usbBridge.lastPumpError
@@ -860,7 +860,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     "ditolak sistem (izin shell tidak cukup)"
                 else -> "perintah tidak berhasil. Pastikan HMDM sudah terpasang di HP target"
             }
-            logErr("Set launcher default gagal: $reason")
+            logErr("Atur launcher default gagal: $reason")
             logRaw(out, reason)
             return false
         }
