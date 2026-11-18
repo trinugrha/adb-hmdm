@@ -1341,9 +1341,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** True bila com.hmdm.launcher termasuk dalam daftar aplikasi jenis perangkat [type]. */
+    /** True bila com.hmdm.launcher termasuk dalam daftar aplikasi jenis perangkat [type], atau daftarnya kosong (tidak dibatasi). */
     private fun hmdmInType(type: String): Boolean =
-        VersionStore.packages(type).contains(AdbController.HMDM_PACKAGE)
+        VersionStore.packages(type).let { it.isEmpty() || it.contains(AdbController.HMDM_PACKAGE) }
 
     /** Status gabungan tiga permission com.hmdm.launcher (admin perangkat, overlay, riwayat penggunaan). */
     private fun refreshPerms() {
