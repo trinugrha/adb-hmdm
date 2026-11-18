@@ -665,7 +665,7 @@ class MainActivity : AppCompatActivity() {
                 .create()
             dlg.show()
             // Pasang listener sendiri supaya dialog tidak tertutup saat isian belum valid.
-            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            dlg.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
                 val pkg = inPkg.text?.toString()?.trim().orEmpty()
                 val ver = inVer.text?.toString()?.trim().orEmpty()
                 when {
