@@ -1059,7 +1059,7 @@ class MainActivity : AppCompatActivity() {
         val sec = (left + 999) / 1000
         txtSession.text = if (sec >= 3600) "Sesi %d:%02d:%02d".format(sec / 3600, sec % 3600 / 60, sec % 60)
                           else "Sesi %02d:%02d".format(sec / 60, sec % 60)
-        txtSession.setTextColor(if (sec <= 60) Color.rgb(217, 119, 6) else ContextCompat.getColor(this, R.color.header_subtext))
+        txtSession.setTextColor(if (sec <= 60) Color.rgb(253, 224, 71) else ContextCompat.getColor(this, R.color.header_subtext))
     }
 
     private fun removeLock() {
