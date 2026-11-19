@@ -44,6 +44,7 @@
     <color name="yellow_fill">#EAB308</color>
     <color name="on_yellow_fill">#422006</color>
     <!-- Tab melayang: bar warna aksen, tab aktif putih -->
+    <color name="tab_bar_bg">#5EEAD4</color>
     <color name="tab_selected_text">#000000</color>
     <color name="tab_unselected_text">#000000</color>
 </resources>

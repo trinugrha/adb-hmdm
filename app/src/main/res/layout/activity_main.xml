@@ -1533,9 +1533,10 @@
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="@color/accent"
+        app:cardBackgroundColor="@color/tab_bar_bg"
         app:cardCornerRadius="28dp"
         app:cardElevation="10dp"
+        app:contentPadding="4dp"
         app:strokeWidth="0dp">
 
         <com.google.android.material.tabs.TabLayout
@@ -1543,8 +1544,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:alpha="1"
-            android:background="@color/accent"
-            android:padding="4dp"
+            android:background="@color/tab_bar_bg"
             app:tabGravity="fill"
             app:tabIconTint="@color/tab_unselected_text"
             app:tabInlineLabel="true"
