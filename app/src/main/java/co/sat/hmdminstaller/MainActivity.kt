@@ -547,6 +547,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         hideInstallProgress()
         loading.release()
+        connDialog?.dismiss()
         worker.shutdown()
         io.shutdown()
         poller.shutdownNow()
@@ -876,6 +877,19 @@ class MainActivity : AppCompatActivity() {
         settingsDialog.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
     }
 
+    private var connDialog: AlertDialog? = null
+
+    /** Popup hasil proses (gagal, putus, atau berhasil). Popup lama diganti agar tidak bertumpuk. */
+    private fun showConnProblem(title: String, message: String) {
+        if (isFinishing || isDestroyed) return
+        connDialog?.dismiss()
+        connDialog = AlertDialog.Builder(this)
+            .setTitle(title)
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
+    }
+
     /** Minta konfirmasi sebelum keluar; peringatkan bila masih ada proses berjalan. */
     private fun confirmExit() {
         if (isFinishing) return
@@ -982,6 +996,12 @@ class MainActivity : AppCompatActivity() {
         if (addr != null && !alive && !polledWhileBusy && !busy) {
             log(LogLevel.ERR, "Koneksi ke $addr terputus" + (if (cableGone) ", kabel USB dicabut" else "") + " · ${Fmt.clock(System.currentTimeMillis())}")
             adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
+            showConnProblem(
+                "Koneksi terputus",
+                "Koneksi ke $addr terputus" + (if (cableGone) " karena kabel USB dicabut" else "") + "." +
+                    (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab: $it" } ?: "") +
+                    "\n\nSambungkan ulang untuk melanjutkan."
+            )
             showUsbDevice(null)
             lostAddr = addr
             adb.sessionLabel = null
@@ -1169,6 +1189,7 @@ class MainActivity : AppCompatActivity() {
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
+        runErrors.clear()
         logHead(title, startedAt)
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
@@ -1202,6 +1223,34 @@ class MainActivity : AppCompatActivity() {
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
+                if (!ok) {
+                    val isPair = title == "Pair" || title == "Pair dengan QR"
+                    val isConn = title == "Connect" || title == "Connect USB"
+                    val popupTitle = when { isPair -> "Gagal pairing"; isConn -> "Gagal terhubung"; else -> "$title gagal" }
+                    val hint = when {
+                        title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan perangkat ini satu jaringan Wi-Fi"
+                        isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
+                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang dan izin USB debugging disetujui di HP target"
+                        isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Sudah Pair bila diminta"
+                        else -> ""
+                    }
+                    val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• $it" }
+                    val msg = buildString {
+                        append(if (isPair || isConn) "Proses $title tidak berhasil." else "Proses \"$title\" tidak berhasil.")
+                        if (reasons.isNotEmpty()) append("\n\nPenyebab:\n").append(reasons)
+                        if (hint.isNotEmpty()) append("\n\n").append(hint)
+                        append("\n\nRincian lengkap ada di log.")
+                    }
+                    showConnProblem(popupTitle, msg)
+                } else {
+                    val okMsg = when (title) {
+                        "Pasang Aplikasi" -> "Semua APK berhasil dipasang ke HP target."
+                        "Jadikan MDM Mode" -> "HMDM berhasil dijadikan MDM Mode di HP target."
+                        "Pasang Aplikasi + Jadikan MDM Mode" -> "Semua APK berhasil dipasang dan HMDM berhasil dijadikan MDM Mode di HP target."
+                        else -> null
+                    }
+                    if (okMsg != null) showConnProblem("Berhasil", okMsg)
+                }
             }
         }
     }
@@ -1611,8 +1660,12 @@ class MainActivity : AppCompatActivity() {
      * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda), dan titik di
      * akhir pesan dibuang supaya semua baris seragam (elipsis "..." dibiarkan).
      */
+    /** Baris ERR selama satu proses, dipakai sebagai isi popup bila proses gagal. */
+    private val runErrors = mutableListOf<String>()
+
     private fun log(level: LogLevel, s: String) {
         if (s.isBlank()) return
+        if (level == LogLevel.ERR) runErrors.add(s.trim())
         val indent = " ".repeat(level.marker.length)
         val body = s.trimEnd().let {
             // Output mentah device (DETAIL) tidak diubah sama sekali.
