@@ -36,7 +36,7 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="4dp"
         android:fadeScrollbars="false"
         android:scrollbarStyle="outsideOverlay">
 
@@ -54,7 +54,7 @@
         style="@style/Widget.Hmdm.Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="10dp"
         android:minHeight="46dp"
         android:text="OK" />
 </LinearLayout>

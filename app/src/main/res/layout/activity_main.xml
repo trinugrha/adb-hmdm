@@ -54,7 +54,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="1dp"
+                        android:layout_marginTop="2dp"
                         android:text="Wireless / USB debugging · MDM Mode"
                         android:textColor="@color/header_subtext"
                         android:textSize="12sp" />
@@ -117,7 +117,7 @@
                     android:id="@+id/txtConn"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="8dp"
                     android:layout_weight="1"
                     android:maxLines="2"
                     android:text="Belum terhubung"
@@ -164,7 +164,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="2dp"
+                android:layout_marginBottom="4dp"
                 android:text="KONEKSI WIRELESS DEBUGGING" />
 
             <LinearLayout
@@ -207,6 +208,7 @@
 
                             <TextView
                                 style="@style/Hmdm.CardHint"
+                                android:layout_marginTop="4dp"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah" />
@@ -324,7 +326,7 @@
                 style="@style/Widget.Hmdm.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:layout_marginTop="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -353,6 +355,7 @@
 
                             <TextView
                                 style="@style/Hmdm.CardHint"
+                                android:layout_marginTop="4dp"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="IP dan port yang tampil di layar utama Wireless debugging" />
@@ -362,7 +365,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.textfield.TextInputLayout
@@ -414,7 +417,7 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="horizontal">
 
                         <com.google.android.material.button.MaterialButton
@@ -471,6 +474,7 @@
 
                     <TextView
                         style="@style/Hmdm.CardHint"
+                        android:layout_marginTop="4dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk Pilih Perangkat." />
@@ -490,7 +494,7 @@
                         style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:layout_marginTop="8dp"
+                        android:layout_marginTop="10dp"
                         android:minHeight="0dp"
                         android:textSize="14sp"
                         android:text="Pilih Perangkat" />
@@ -504,7 +508,7 @@
                 style="@style/Widget.Hmdm.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:layout_marginTop="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -585,7 +589,7 @@
                             android:id="@+id/txtDropSub"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
+                            android:layout_marginTop="4dp"
                             android:gravity="center"
                             android:text="Dapat memilih lebih dari satu file APK"
                             android:textColor="@color/muted"
@@ -606,7 +610,7 @@
                         style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="10dp"
                         android:minHeight="0dp"
                         android:text="Pasang Aplikasi"
                         android:textSize="14sp"
@@ -765,7 +769,7 @@
                         style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="10dp"
                         android:minHeight="0dp"
                         android:text="Jadikan MDM Mode"
                         android:textSize="14sp"
@@ -821,7 +825,7 @@
                         style="@style/Widget.Hmdm.Button.Blue"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="10dp"
                         android:minHeight="0dp"
                         android:text="Pasang Aplikasi + Jadikan MDM Mode"
                         android:textSize="14sp"
@@ -1110,7 +1114,7 @@
                     style="@style/Widget.Hmdm.Button.Blue"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
-                    android:layout_marginTop="16dp"
+                    android:layout_marginTop="10dp"
                     android:minHeight="0dp"
                     android:textSize="14sp"
                     android:contentDescription="Cek ulang status"
@@ -1194,7 +1198,7 @@
                                     style="@style/Hmdm.CardHint"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
+                                    android:layout_marginTop="4dp"
                                     android:text="Hubungkan perangkat, lalu klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data aplikasi Kaspersky dihapus&quot;."
                                     android:textSize="13sp" />
 
@@ -1247,7 +1251,7 @@
                                     style="@style/Hmdm.CardHint"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
+                                    android:layout_marginTop="4dp"
                                     android:lineSpacingMultiplier="1.1"
                                     android:text="@string/kaspersky_step2"
                                     android:textSize="13sp" />
@@ -1289,7 +1293,7 @@
                                     style="@style/Hmdm.CardHint"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
+                                    android:layout_marginTop="4dp"
                                     android:text="Klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Aplikasi Kaspersky di-uninstall&quot;."
                                     android:textSize="13sp" />
 
@@ -1403,7 +1407,7 @@
                                 style="@style/Widget.Hmdm.Button.YellowFilled"
                                 android:layout_width="match_parent"
                                 android:layout_height="44dp"
-                                android:layout_marginTop="8dp"
+                                android:layout_marginTop="10dp"
                                 android:minHeight="0dp"
                                 android:text="Ubah ke Mode Nirkabel"
                                 android:textSize="14sp" />

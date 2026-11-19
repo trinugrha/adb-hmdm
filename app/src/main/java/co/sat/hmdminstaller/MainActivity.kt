@@ -805,9 +805,9 @@ class MainActivity : AppCompatActivity() {
                     setPadding(dp(14), dp(10), dp(8), dp(10))
                     addView(textCol, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
                     addView(edit, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
-                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(6) })
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
                 }
-                list.addView(card, lpTop(6))
+                list.addView(card, lpTop(8))
                 fields[pkg] = et
             }
         }
@@ -817,7 +817,7 @@ class MainActivity : AppCompatActivity() {
             val inVer = field("kosong = tanpa cek versi", draftVers.getValue(current)[pkg].orEmpty())
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
-                setPadding(dp(20), dp(12), dp(20), 0)
+                setPadding(dp(22), dp(16), dp(22), dp(8))
                 addView(label(pkg, bold = true, size = 13f, color = cText))
                 addView(label("Versi (versionName)", bold = true, color = cText), lpTop(12))
                 addView(inVer, lpTop(4, dp(44)))
@@ -843,7 +843,7 @@ class MainActivity : AppCompatActivity() {
             val inVer = field("contoh: 1.0.0", "")
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
-                setPadding(dp(20), dp(12), dp(20), 0)
+                setPadding(dp(22), dp(16), dp(22), dp(8))
                 addView(label("Nama paket", bold = true, color = cText))
                 addView(inPkg, lpTop(4, dp(44)))
                 addView(label("Versi (wajib diisi)", bold = true, color = cText), lpTop(12))
@@ -978,7 +978,7 @@ class MainActivity : AppCompatActivity() {
         val headText = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             addView(label("Setting Aplikasi & Versi", bold = true, size = 18f, color = cText))
-            addView(label("Daftar aplikasi dan versi yang dicek per jenis perangkat"), lpTop(2))
+            addView(label("Daftar aplikasi dan versi yang dicek per jenis perangkat"), lpTop(4))
         }
         val head = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
@@ -994,8 +994,8 @@ class MainActivity : AppCompatActivity() {
             addView(info, lpTop(14))
             addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(20))
             addView(typeRow, lpTop(8))
-            addView(buttons, lpTop(16, dp(44)))
-            addView(ioButtons, lpTop(8, dp(44)))
+            addView(buttons, lpTop(10, dp(44)))
+            addView(ioButtons, lpTop(10, dp(44)))
             addView(list)
         }
         scroll.addView(box)
@@ -1188,7 +1188,7 @@ class MainActivity : AppCompatActivity() {
         }
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(dp(20), dp(16), dp(20), 0)
+            setPadding(dp(22), dp(16), dp(22), dp(8))
             addView(img); addView(hint)
         }
         val dialog = AlertDialog.Builder(this)
