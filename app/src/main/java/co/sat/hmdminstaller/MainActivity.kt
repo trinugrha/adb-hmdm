@@ -246,6 +246,22 @@ class MainActivity : AppCompatActivity() {
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         setContentView(R.layout.activity_main)
 
+        // Tab melayang tidak ikut naik saat keyboard muncul: isi halaman tetap menyusut (adjustResize),
+        // tetapi bar tab digeser turun sebesar penyusutan itu sehingga tetap di dasar layar, di balik keyboard.
+        run {
+            val root = findViewById<View>(android.R.id.content)
+            val bar = findViewById<View>(R.id.tabBar)
+            var fullH = 0
+            var lastW = 0
+            root.viewTreeObserver.addOnGlobalLayoutListener {
+                val w = root.width
+                val h = root.height
+                if (w != lastW) { lastW = w; fullH = 0 }
+                if (h > fullH) fullH = h
+                bar.translationY = (fullH - h).coerceAtLeast(0).toFloat()
+            }
+        }
+
         edtPairIp = findViewById(R.id.edtPairIp)
         edtPairPort = findViewById(R.id.edtPairPort)
         edtPairCode = findViewById(R.id.edtPairCode)
