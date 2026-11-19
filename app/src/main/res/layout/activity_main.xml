@@ -1566,7 +1566,6 @@
             app:tabMode="fixed"
             app:tabPaddingStart="4dp"
             app:tabPaddingEnd="4dp"
-            app:tabIconPadding="4dp"
             app:tabMaxWidth="0dp"
             app:tabRippleColor="@android:color/transparent"
             app:tabSelectedTextColor="@color/tab_selected_text"
