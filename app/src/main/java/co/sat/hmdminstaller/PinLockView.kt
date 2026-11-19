@@ -89,11 +89,11 @@ class PinLockView(
         // Ikon gembok dalam kotak hijau muda
         card.addView(ImageView(context).apply {
             setImageResource(R.drawable.ic_lock)
-            imageTintList = ColorStateList.valueOf(color(R.color.accent))
+            imageTintList = ColorStateList.valueOf(color(R.color.accent_text))
             setPadding(dp(16), dp(16), dp(16), dp(16))
             background = GradientDrawable().apply {
                 cornerRadius = dp(16).toFloat()
-                setColor(color(R.color.accent_soft))
+                setColor(color(R.color.accent_text_soft))
             }
         }, LinearLayout.LayoutParams(dp(56), dp(56)))
 
@@ -192,6 +192,9 @@ class PinLockView(
             iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
             iconPadding = dp(8)
             cornerRadius = dp(14)
+            backgroundTintList = ColorStateList.valueOf(color(R.color.btn_main))
+            setTextColor(color(R.color.on_tab_button))
+            iconTint = ColorStateList.valueOf(color(R.color.on_tab_button))
             setOnClickListener { submit() }
         }
         card.addView(btnLogin, LinearLayout.LayoutParams(-1, dp(52)).apply { topMargin = dp(12) })
@@ -218,7 +221,7 @@ class PinLockView(
             b.background = GradientDrawable().apply {
                 cornerRadius = dp(14).toFloat()
                 setColor(color(R.color.box_bg))
-                setStroke(dp(2), color(if (active) R.color.accent else R.color.stroke))
+                setStroke(dp(2), color(if (active) R.color.accent_text else R.color.stroke))
             }
         }
     }

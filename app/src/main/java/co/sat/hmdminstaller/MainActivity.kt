@@ -653,13 +653,14 @@ class MainActivity : AppCompatActivity() {
         val fields = LinkedHashMap<String, android.widget.EditText>()
 
         // ---- Gaya: warna dari tema aplikasi (ikut mode gelap), bingkai membulat, jarak seragam ----
-        val cText = ContextCompat.getColor(this, R.color.text)
+        val cText = ContextCompat.getColor(this, R.color.accent_text)
         val cMuted = ContextCompat.getColor(this, R.color.muted)
         val cSurface = ContextCompat.getColor(this, R.color.surface)
         val cOutline = ContextCompat.getColor(this, R.color.outline)
         val cCard = ContextCompat.getColor(this, R.color.chip_bg)
         val cStroke = ContextCompat.getColor(this, R.color.stroke)
         val cAccent = ContextCompat.getColor(this, R.color.accent)
+        val cAccentText = ContextCompat.getColor(this, R.color.accent_text)
         val cAccentSoft = ContextCompat.getColor(this, R.color.accent_soft)
         val cTab = ContextCompat.getColor(this, R.color.btn_main)
         val cOnTab = ContextCompat.getColor(this, R.color.on_tab_button)
@@ -699,7 +700,6 @@ class MainActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this)
         val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val info = label("Ketuk Tambah aplikasi untuk menambah aplikasi baru, ikon pensil untuk mengubah versi, atau ikon tempat sampah untuk menghapus aplikasi.")
         val btnAdd = MaterialButton(this).apply {
             text = "Tambah aplikasi"
             setIconResource(R.drawable.ic_add)
@@ -715,12 +715,20 @@ class MainActivity : AppCompatActivity() {
             setIconResource(R.drawable.ic_upload_file)
             iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
             iconPadding = dp(6)
+            setTextColor(cAccentText)
+            iconTint = ColorStateList.valueOf(cAccentText)
+            strokeColor = ColorStateList.valueOf(cAccentText)
+            rippleColor = ColorStateList.valueOf(cAccentText)
         }
         val btnImport = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Import"
             setIconResource(R.drawable.ic_download)
             iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
             iconPadding = dp(6)
+            setTextColor(cAccentText)
+            iconTint = ColorStateList.valueOf(cAccentText)
+            strokeColor = ColorStateList.valueOf(cAccentText)
+            rippleColor = ColorStateList.valueOf(cAccentText)
         }
         val ioButtons = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
@@ -749,7 +757,7 @@ class MainActivity : AppCompatActivity() {
             fields.clear()
             val pkgs = draftPkgs.getValue(current)
             val vers = draftVers.getValue(current)
-            list.addView(label("DAFTAR APLIKASI · ${pkgs.size}", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(24))
+            list.addView(label("DAFTAR APLIKASI · ${pkgs.size}", bold = true, size = 11f, color = cAccentText).apply { letterSpacing = 0.08f }, lpTop(24))
             for (pkg in pkgs.toList()) {
                 val et = field("tanpa cek versi", vers[pkg].orEmpty()).apply {
                     // Hanya tampilan; ubah lewat ikon pensil (kotak ini sendiri tidak bisa diketuk).
@@ -789,8 +797,8 @@ class MainActivity : AppCompatActivity() {
                     text = if (verText.isEmpty()) "tanpa cek versi" else "v$verText"
                     textSize = 11f
                     setTypeface(typeface, Typeface.BOLD)
-                    setTextColor(if (verText.isEmpty()) cMuted else cAccent)
-                    background = rounded(if (verText.isEmpty()) cCard else cAccentSoft, null).apply { cornerRadius = dp(8).toFloat() }
+                    setTextColor(if (verText.isEmpty()) cMuted else cAccentText)
+                    background = rounded(if (verText.isEmpty()) cCard else ContextCompat.getColor(this@MainActivity, R.color.accent_text_soft), null).apply { cornerRadius = dp(8).toFloat() }
                     setPadding(dp(10), dp(4), dp(10), dp(4))
                 }
                 // Kiri: nama paket + lencana versi. Kanan: tombol edit & hapus berukuran kecil.
@@ -968,7 +976,7 @@ class MainActivity : AppCompatActivity() {
 
         val headBadge = android.widget.ImageView(this).apply {
             setImageResource(R.drawable.ic_settings)
-            imageTintList = ColorStateList.valueOf(cAccent)
+            imageTintList = ColorStateList.valueOf(cAccentText)
             scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
             setPadding(dp(10), dp(10), dp(10), dp(10))
             background = android.graphics.drawable.GradientDrawable().apply {
@@ -992,8 +1000,7 @@ class MainActivity : AppCompatActivity() {
             setPadding(dp(22), dp(24), dp(22), dp(16))
             // Judul ikut bergulir bersama isi dialog (bukan judul tetap bawaan AlertDialog).
             addView(head)
-            addView(info, lpTop(16))
-            addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(24))
+            addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccentText).apply { letterSpacing = 0.08f }, lpTop(24))
             addView(typeRow, lpTop(10))
             addView(buttons, lpTop(12, dp(44)))
             addView(ioButtons, lpTop(8, dp(44)))
@@ -1759,7 +1766,7 @@ class MainActivity : AppCompatActivity() {
                 text = "${i + 1}"
                 textSize = 12f
                 setTypeface(typeface, Typeface.BOLD)
-                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent))
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.accent_text))
                 minWidth = dp(22)
             })
             val col = android.widget.LinearLayout(this).apply {

@@ -954,7 +954,7 @@
                             android:focusable="true"
                             android:padding="8dp"
                             android:src="@drawable/ic_settings"
-                            app:tint="@color/accent" />
+                            app:tint="@color/accent_text" />
                     </LinearLayout>
 
                     <!-- Baris judul setinggi ikon 36dp; margin negatif merapatkan teks hint ke judul seperti kartu lain -->
@@ -1117,6 +1117,7 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRefreshInfo"
                     style="@style/Widget.Hmdm.Button.Blue"
+                    app:backgroundTint="@color/btn_status"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:layout_marginTop="10dp"
