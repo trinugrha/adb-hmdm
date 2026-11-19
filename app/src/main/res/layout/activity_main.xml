@@ -1527,7 +1527,7 @@
         android:id="@+id/tabBar"
         android:alpha="1"
         style="@style/Widget.Hmdm.Card"
-        android:layout_width="200dp"
+        android:layout_width="240dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="16dp"

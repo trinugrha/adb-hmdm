@@ -644,8 +644,8 @@ class MainActivity : AppCompatActivity() {
             iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
             iconPadding = dp(8)
             backgroundTintList = ColorStateList.valueOf(cTab)
-            setTextColor(cOnTab)
-            iconTint = ColorStateList.valueOf(cOnTab)
+            setTextColor(Color.WHITE)
+            iconTint = ColorStateList.valueOf(Color.WHITE)
         }
         val btnExport = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Export"
