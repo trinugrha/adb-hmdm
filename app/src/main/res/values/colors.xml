@@ -66,4 +66,9 @@
     <!-- Popup hasil -->
     <color name="ok">#15803D</color>
     <color name="badge_ok_bg">#DCFCE7</color>
+    <!-- Tulisan & ikon tombol berwarna tab -->
+    <color name="on_tab_button">#FFFFFF</color>
+    <!-- Warna tombol utama & indikator tab (terpisah dari warna bar tab agar bar bisa gelap di tema gelap) -->
+    <color name="btn_main">#1D8A7F</color>
+    <color name="tab_indicator">#FFFFFF</color>
 </resources>

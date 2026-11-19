@@ -1556,7 +1556,7 @@
             android:alpha="1"
             android:background="@color/tab_bar_bg"
             app:tabGravity="fill"
-            app:tabIconTint="@color/tab_unselected_text"
+            app:tabIconTint="@color/tab_icon_tint"
             app:tabInlineLabel="true"
             app:tabIndicator="@drawable/bg_tab_indicator"
             app:tabIndicatorColor="@null"

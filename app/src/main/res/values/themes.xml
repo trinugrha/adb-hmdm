@@ -103,9 +103,9 @@
     </style>
 
     <style name="Widget.Hmdm.Button.Blue" parent="Widget.Hmdm.Button">
-        <item name="backgroundTint">@color/tab_bar_bg</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="iconTint">@android:color/white</item>
+        <item name="backgroundTint">@color/btn_main</item>
+        <item name="android:textColor">@color/on_tab_button</item>
+        <item name="iconTint">@color/on_tab_button</item>
     </style>
 
     <style name="Widget.Hmdm.Button.BlueOutlined" parent="Widget.Hmdm.Button.Outlined">

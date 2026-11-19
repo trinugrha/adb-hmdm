@@ -624,8 +624,8 @@ class MainActivity : AppCompatActivity() {
         val cStroke = ContextCompat.getColor(this, R.color.stroke)
         val cAccent = ContextCompat.getColor(this, R.color.accent)
         val cAccentSoft = ContextCompat.getColor(this, R.color.accent_soft)
-        val cTab = ContextCompat.getColor(this, R.color.tab_bar_bg)
-        val cOnTab = ContextCompat.getColor(this, R.color.tab_selected_text)
+        val cTab = ContextCompat.getColor(this, R.color.btn_main)
+        val cOnTab = ContextCompat.getColor(this, R.color.on_tab_button)
         val matchP = ViewGroup.LayoutParams.MATCH_PARENT
         val wrapP = ViewGroup.LayoutParams.WRAP_CONTENT
 
@@ -668,8 +668,9 @@ class MainActivity : AppCompatActivity() {
             iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
             iconPadding = dp(8)
             backgroundTintList = ColorStateList.valueOf(cTab)
-            setTextColor(Color.WHITE)
-            iconTint = ColorStateList.valueOf(Color.WHITE)
+            val onTab = ContextCompat.getColor(this@MainActivity, R.color.on_tab_button)
+            setTextColor(onTab)
+            iconTint = ColorStateList.valueOf(onTab)
         }
         val btnExport = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
             text = "Export"
