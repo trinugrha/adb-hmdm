@@ -1195,7 +1195,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
-                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title. Lihat log")
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
             }
         }
@@ -1225,7 +1225,7 @@ class MainActivity : AppCompatActivity() {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "$pct%, ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
+            info.text = "$pct% · ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
         }
     }
 
