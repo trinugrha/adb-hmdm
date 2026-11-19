@@ -773,7 +773,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     /** Pasang semua APK berurutan; yang gagal tidak menghentikan yang lain. */
+    /** Hasil install terakhir (untuk popup ringkasan di UI). */
+    class InstallSummary(val total: Int, val ok: Int, val failed: List<Pair<String, String>>)
+    @Volatile var lastInstall: InstallSummary? = null
+
     fun install(apks: List<ApkItem>): Boolean {
+        lastInstall = null
         if (!ensureConnected()) return false
         if (apks.isEmpty()) {
             logWarn("Belum ada APK. Pilih file APK terlebih dahulu")
@@ -820,6 +825,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (out != stallError) logRaw(out, reason)
             }
         }
+        lastInstall = InstallSummary(apks.size, ok, failed.toList())
         // Satu APK: hasilnya sudah jelas dari baris di atas dan baris penutup, tak perlu ringkasan.
         if (apks.size > 1) {
             logSummary("Ringkasan: $ok berhasil, ${failed.size} gagal dari ${apks.size} APK")

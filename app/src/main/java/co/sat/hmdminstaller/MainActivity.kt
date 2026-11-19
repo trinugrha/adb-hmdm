@@ -1190,6 +1190,7 @@ class MainActivity : AppCompatActivity() {
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
         runErrors.clear()
+        adb.lastInstall = null
         logHead(title, startedAt)
         worker.execute {
             // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
@@ -1223,7 +1224,19 @@ class MainActivity : AppCompatActivity() {
                 busy = false
                 setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
                 refreshHeader()
-                if (!ok) {
+                val inst = adb.lastInstall
+                val isInstall = title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode"
+                if (!ok && isInstall && inst != null && inst.total > 1 && inst.failed.isNotEmpty()) {
+                    val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "✗ $name\n    $why" }
+                    val more = if (inst.failed.size > 8) "\n… dan ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
+                    showConnProblem(
+                        if (inst.ok == 0) "Semua APK gagal dipasang" else "${inst.failed.size} APK gagal dipasang",
+                        "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal:\n\n$shown$more\n\n" +
+                            (if (inst.ok > 0) "APK yang berhasil tidak perlu dipasang ulang. " else "") +
+                            "Perbaiki penyebabnya, lalu pasang ulang APK yang gagal." +
+                            (if (title.contains("MDM")) "\n\nLangkah Jadikan MDM Mode tetap dijalankan; cek hasilnya di log." else "")
+                    )
+                } else if (!ok) {
                     val isPair = title == "Pair" || title == "Pair dengan QR"
                     val isConn = title == "Connect" || title == "Connect USB"
                     val popupTitle = when { isPair -> "Gagal pairing"; isConn -> "Gagal terhubung"; else -> "$title gagal" }
