@@ -2,7 +2,7 @@
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:state_checked="true">
         <shape android:shape="rectangle">
-            <solid android:color="@color/btn_main" />
+            <solid android:color="@color/btn_status" />
             <corners android:radius="10dp" />
         </shape>
     </item>

@@ -71,6 +71,8 @@
     <!-- Warna tombol utama & indikator tab (terpisah dari warna bar tab agar bar bisa gelap di tema gelap) -->
     <color name="btn_main">#0A1A2F</color>
     <color name="tab_indicator">#FFFFFF</color>
+    <!-- Tombol Cek Status & pilihan jenis perangkat (hijau) -->
+    <color name="btn_status">#17804C</color>
     <!-- Warna tulisan aksen (judul seksi, badge, versi) -->
     <color name="accent_text">#0A1A2F</color>
     <!-- Latar lembut navy (ikon kunci di layar PIN) -->
