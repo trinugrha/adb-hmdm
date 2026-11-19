@@ -65,6 +65,36 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    private var lastTabPos = 0
+
+    /** Pindah isi tab dengan animasi geser + pudar. [dir] 1 = ke tab kanan (isi lama keluar ke kiri), -1 = sebaliknya. */
+    private fun switchPane(outPane: View, inPane: View, dir: Int) {
+        outPane.animate().cancel()
+        inPane.animate().cancel()
+        for (v in listOf(outPane, inPane)) { v.translationX = 0f; v.alpha = 1f }
+        val shift = resources.displayMetrics.widthPixels * 0.25f * dir
+        fun enter() {
+            inPane.alpha = 0f
+            inPane.translationX = shift
+            inPane.visibility = View.VISIBLE
+            inPane.animate().translationX(0f).alpha(1f).setDuration(240)
+                .setInterpolator(android.view.animation.DecelerateInterpolator(1.6f)).start()
+        }
+        if (outPane.visibility == View.VISIBLE) {
+            outPane.animate().translationX(-shift).alpha(0f).setDuration(130)
+                .setInterpolator(android.view.animation.AccelerateInterpolator())
+                .withEndAction {
+                    outPane.visibility = View.GONE
+                    outPane.translationX = 0f
+                    outPane.alpha = 1f
+                    enter()
+                }.start()
+        } else {
+            outPane.visibility = View.GONE
+            enter()
+        }
+    }
+
     // Posisi tab bar = geser karena keyboard + geser karena disembunyikan saat gulir.
     private var tabKbOffset = 0f
     private var tabHideOffset = 0f
@@ -462,8 +492,12 @@ class MainActivity : AppCompatActivity() {
                 // Pindah tab (swipe atau ketuk): tutup keyboard dulu, sebelum kolom input di tab lama disembunyikan.
                 hideKeyboard()
                 val usb = tab.position == 1
-                tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
-                tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
+                // Animasi geser: isi lama keluar ke arah swipe, isi baru masuk dari sisi sebaliknya.
+                val dir = if (tab.position > lastTabPos) 1 else -1
+                lastTabPos = tab.position
+                val inPane = if (usb) tabUsb else tabWireless
+                val outPane = if (usb) tabWireless else tabUsb
+                switchPane(outPane, inPane, dir)
                 txtConnTitle.text = if (usb) "KONEKSI USB DEBUGGING" else "KONEKSI WIRELESS DEBUGGING"
                 cardTcpip.visibility = if (usb) View.VISIBLE else View.GONE
             }
