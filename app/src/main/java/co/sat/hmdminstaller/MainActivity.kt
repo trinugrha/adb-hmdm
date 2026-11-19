@@ -129,6 +129,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var permAdminDot: View
     private lateinit var txtPermAdmin: TextView
     private lateinit var progress: ProgressBar
+    private lateinit var loading: LoadingOverlay
     private lateinit var buttons: List<MaterialButton>
     // Tombol yang butuh koneksi ADB aktif: nonaktif (tidak bisa ditekan) selama belum terhubung.
     private lateinit var needsConnection: Set<MaterialButton>
@@ -289,7 +290,7 @@ class MainActivity : AppCompatActivity() {
         permAdminDot = findViewById(R.id.permAdminDot)
         txtPermAdmin = findViewById(R.id.txtPermAdmin)
         progress = findViewById(R.id.progress)
-        initBusyCard()
+        loading = LoadingOverlay(this)
 
         val btnPair: MaterialButton = findViewById(R.id.btnPair)
         val btnPairQr: MaterialButton = findViewById(R.id.btnPairQr)
@@ -542,8 +543,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        busyTick.let { busyRoot?.removeCallbacks(it) }
         hideInstallProgress()
+        loading.release()
         worker.shutdown()
         io.shutdown()
         poller.shutdownNow()
@@ -908,51 +909,333 @@ class MainActivity : AppCompatActivity() {
         if (isFinishing || lockView != null) return
         val v = PinLockView(this, pinStore) { removeLock() }
         lockView = v
-        addContentView(v, android.widget.FrameLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, android.view.Gravity.BOTTOM))
-        busyRoot = v
-        // Jaga kartu di atas bilah navigasi / gesture bar.
-        val pad = v.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(v) { view, insets ->
-            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-            view.setPadding(view.paddingLeft, view.paddingTop, view.paddingRight, pad + nav)
-            insets
-        }
+        addContentView(v, ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+        backWhileLocked.isEnabled = true
+        currentFocus?.clearFocus()
     }
 
-    private fun updateBusyCard(on: Boolean, status: String) {
-        val root = busyRoot ?: return
-        root.removeCallbacks(busyTick)
-        if (on) {
-            if (root.visibility != View.VISIBLE) {
-                busyStart = SystemClock.elapsedRealtime()
-                root.findViewById<TextView>(R.id.busyTime).text = "00:00"
-                root.alpha = 0f
-                root.translationY = dp(24).toFloat()
-                root.visibility = View.VISIBLE
-                root.animate().alpha(1f).translationY(0f).setDuration(220).start()
+    /** Sisa waktu sesi (ms) sebelum aplikasi terkunci otomatis. Hitung mundur dimulai saat login dan TIDAK direset oleh sentuhan layar. */
+    private fun sessionRemainingMs() = LOCK_TIMEOUT_MS - (SystemClock.elapsedRealtime() - lastActivityAt)
+
+    /** Dipanggil tiap detik dari pemantau. Saat operasi (install dll) berjalan, timer ditahan penuh. */
+    private fun updateSessionTimer() {
+        if (lockView != null) return
+        if (busy) lastActivityAt = SystemClock.elapsedRealtime()
+        val left = sessionRemainingMs()
+        if (left <= 0) { showLock(); return }
+        val sec = (left + 999) / 1000
+        txtSession.text = if (sec >= 3600) "Sesi %d:%02d:%02d".format(sec / 3600, sec % 3600 / 60, sec % 60)
+                          else "Sesi %02d:%02d".format(sec / 60, sec % 60)
+        txtSession.setTextColor(if (sec <= 60) Color.rgb(251, 191, 36) else ContextCompat.getColor(this, R.color.header_subtext))
+    }
+
+    private fun removeLock() {
+        lockView?.let { (it.parent as? ViewGroup)?.removeView(it) }
+        lockView = null
+        backWhileLocked.isEnabled = false
+        lastActivityAt = SystemClock.elapsedRealtime()
+        updateSessionTimer()
+    }
+
+    // ---------- Status koneksi live ----------
+
+    /** Jalan di thread pemantau tiap 1 detik. */
+    private fun pollConnection() {
+        try {
+            val wasBusy = busy
+            var alive = adb.syncConnected()
+            var cableGone = false
+            // Kabel USB dicabut: terdeteksi seketika (tanpa menunggu probe 3x gagal).
+            if (!wasBusy && adb.usbCableGone) {
+                adb.dropUsb()
+                alive = false
+                cableGone = true
+                probeFails = 0
             }
-            setBusyDetail(status.removeSuffix("..."), "Mohon tunggu, jangan cabut koneksi atau tutup aplikasi", null)
-            root.postDelayed(busyTick, 1000)
-        } else if (root.visibility == View.VISIBLE) {
-            root.animate().alpha(0f).translationY(dp(24).toFloat()).setDuration(180)
-                .withEndAction { if (!busy) root.visibility = View.GONE }.start()
+            val now = System.currentTimeMillis()
+            // Probe sungguhan tiap ±10 detik (hanya saat tidak ada operasi lain) untuk mendeteksi koneksi mati diam-diam.
+            if (alive && !wasBusy && now - lastProbe >= 10_000) {
+                lastProbe = now
+                // Cek busy lagi di dalam lock: worker menunggu lock yang sama sebelum mulai bekerja.
+                synchronized(adb.probeLock) {
+                    if (!busy) {
+                        alive = adb.probe()
+                        // Toleransi: HP target yang sibuk (dexopt/verifikasi APK) bisa telat membalas; putus baru dinyatakan setelah 3x gagal beruntun.
+                        if (alive) probeFails = 0 else {
+                            val n = ++probeFails
+                            if (n < 3) alive = true else { probeFails = 0; if (!adb.isViaUsb) adb.markDead() }
+                        }
+                    }
+                }
+            }
+            runOnUiThread { applyLiveState(alive, wasBusy, cableGone) }
+        } catch (e: Throwable) { }
+    }
+
+    private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean, cableGone: Boolean = false) {
+        if (isFinishing) return
+        updateSessionTimer()
+        val addr = connectedAddr
+        // Saat operasi berjalan (mis. connect/install) jangan simpulkan putus: hasilnya bisa basi.
+        if (addr != null && !alive && !polledWhileBusy && !busy) {
+            log(LogLevel.ERR, "Koneksi ke $addr terputus" + (if (cableGone) ", kabel USB dicabut" else "") + " · ${Fmt.clock(System.currentTimeMillis())}")
+            adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
+            showUsbDevice(null)
+            lostAddr = addr
+            adb.sessionLabel = null
+            connectedAddr = null
+            connectedSince = 0L
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+        }
+        refreshHeader()
+    }
+
+    // ---------- Pair dengan QR ----------
+
+    /** Tampilkan QR; HP target memindainya, lalu aplikasi menemukan layanan pairing via mDNS dan pair + connect otomatis. */
+    private fun showQrPairing() {
+        if (busy) return
+        val session = AdbDiscovery.newQrSession()
+        val cancel = java.util.concurrent.atomic.AtomicBoolean(false)
+        val size = dp(260)
+        val img = android.widget.ImageView(this).apply {
+            setImageBitmap(AdbDiscovery.qrBitmap(session.payload, size))
+            layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL }
+        }
+        val hint = TextView(this).apply {
+            text = "HP target: Opsi Developer › Wireless debugging › Pair device with QR code, lalu arahkan kamera ke QR ini.\n\nHP teknisi dan HP target harus di Wi-Fi yang sama."
+            textSize = 13f
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text))
+            setPadding(0, dp(12), 0, 0)
+        }
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(dp(20), dp(16), dp(20), 0)
+            addView(img); addView(hint)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle("Scan QR untuk Pair")
+            .setView(box)
+            .setNegativeButton("Batal", null)
+            .setOnDismissListener { cancel.set(true) }
+            .create()
+        val shownAt = System.currentTimeMillis()
+        dialog.show()
+        io.execute {
+            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _, _ -> name == session.serviceName }
+            if (found == null) {
+                if (!cancel.get()) runOnUiThread {
+                    dialog.dismiss()
+                    logHead("Pair dengan QR", shownAt)
+                    log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam 120 dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    logEnd("Pair dengan QR", false, shownAt)
+                }
+                return@execute
+            }
+            runOnUiThread {
+                dialog.dismiss()
+                if (busy) return@runOnUiThread
+                edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString()); edtPairCode.setText(session.password)
+                run("Pair dengan QR") { doPairQr(found, session.password) }
+            }
         }
     }
 
-    /** Perbarui teks kartu loading. [pct] null = animasi tak tentu; 0..100 = progres pasti. */
-    private fun setBusyDetail(title: String, info: String, pct: Int?) {
-        val root = busyRoot ?: return
-        if (root.visibility != View.VISIBLE) return
-        root.findViewById<TextView>(R.id.busyTitle).text = title
-        root.findViewById<TextView>(R.id.busyInfo).text = info
-        val bar = root.findViewById<com.google.android.material.progressindicator.LinearProgressIndicator>(R.id.busyBar)
-        if (pct == null) {
-            if (!bar.isIndeterminate) { bar.visibility = View.INVISIBLE; bar.isIndeterminate = true; bar.visibility = View.VISIBLE }
-        } else {
-            if (bar.isIndeterminate) { bar.visibility = View.INVISIBLE; bar.isIndeterminate = false; bar.visibility = View.VISIBLE }
-            bar.setProgressCompat(pct, true)
+    private fun doPairQr(f: AdbDiscovery.Found, password: String): Boolean {
+        if (!doPair(f.addr, password, showNext = false)) return false
+        // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
+        // Beri waktu adbd di HP target siap menerima koneksi TLS setelah pairing.
+        try { Thread.sleep(2_000) } catch (e: InterruptedException) { }
+        val ca = adb.findConnectAddr(f.host)
+        if (ca == null) {
+            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect")
+            return true
         }
+        val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
+        runOnUiThread { edtConnIp.setText(ip); edtConnPort.setText(port) }
+        // Hasil connect menentukan penutup proses: jangan "✓ Selesai" tepat setelah "✗ Connect gagal".
+        return doConnect(ca)
+    }
+
+    // ---------- Langkah (jalan di thread kerja) ----------
+
+    /** [showNext] false untuk Pair dengan QR: connect dilanjutkan otomatis, jadi petunjuk "Berikutnya" tidak perlu. */
+    private fun doPair(addr: String, code: String, showNext: Boolean = true): Boolean {
+        val ok = adb.pair(addr, code)
+        if (ok) {
+            // Pairing berhasil: IP connect otomatis diisi sama dengan IP pairing (HP target sama).
+            // Port connect berbeda dari port pairing, jadi hanya IP yang diisi; port diisi manual.
+            val pairIp = addr.substringBeforeLast(':').trim()
+            runOnUiThread {
+                if (pairIp.isNotEmpty()) edtConnIp.setText(pairIp)
+                if (showNext && pairIp.isNotEmpty()) {
+                    log(LogLevel.STEP, "IP connect diisi otomatis: $pairIp")
+                    log(LogLevel.STEP, "Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk Connect")
+                }
+                refreshHeader()
+            }
+        }
+        return ok
+    }
+
+    private fun doConnect(addr: String): Boolean {
+        val ok = adb.connect(addr)
+        if (ok) {
+            connectedAddr = addr
+            connectedSince = System.currentTimeMillis()
+            adb.sessionLabel = addr; adb.sessionSince = connectedSince
+            lostAddr = null
+            lastProbe = connectedSince
+            showUsbDevice(null)
+            skipInfoRefresh = true
+            updateOwner()
+        } else {
+            // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
+            connectedAddr = null
+            connectedSince = 0L
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+        }
+        runOnUiThread { refreshHeader() }
+        return ok
+    }
+
+    /** Tampilkan nama device yang dipilih di tab USB (null = sembunyikan). Aman dipanggil dari thread mana pun. */
+    private fun showUsbDevice(label: String?) = runOnUiThread {
+        findViewById<TextView>(R.id.txtUsbDevice).apply {
+            text = if (label == null) "" else "Perangkat: $label"
+            visibility = if (label == null) View.GONE else View.VISIBLE
+        }
+    }
+
+    private fun doConnectUsb(t: UsbAdbBridge.Target): Boolean {
+        val label = adb.connectUsb(t)
+        if (label != null) {
+            connectedAddr = label
+            connectedSince = System.currentTimeMillis()
+            adb.sessionLabel = label; adb.sessionSince = connectedSince
+            lostAddr = null
+            lastProbe = connectedSince
+            skipInfoRefresh = true
+            updateOwner()
+        } else {
+            connectedAddr = null
+            connectedSince = 0L
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+            showUsbDevice(null)
+        }
+        runOnUiThread { refreshHeader() }
+        return label != null
+    }
+
+    /** Cek ulang device owner di HP target (panggil dari thread kerja). */
+    private fun updateOwner() {
+        ownerState = adb.queryDeviceOwner()
+        // Informasi Status (launcher default, instalasi aplikasi, permission) sengaja TIDAK dibaca di sini:
+        // baru dibaca saat pengguna mengetuk kartu Informasi Status.
+        kasperskyInstalled = adb.queryKasperskyInstalled()
+        hmdmInstalled = adb.queryHmdmInstalled()
+        tcpipActive = adb.queryTcpipActive()
+        runOnUiThread { refreshHeader() }
+    }
+
+    /** `adb tcpip 5555`: adbd di HP target restart dalam mode TCP, sesi USB ini otomatis putus. */
+    private fun doEnableTcpip(): Boolean {
+        // Bila TCP/IP sudah aktif di HP target, sesi USB dibiarkan tetap tersambung (tidak ada yang diubah).
+        val already = adb.queryTcpipActive() == true
+        val ok = adb.enableTcpip()
+        if (ok && already) { tcpipActive = true; runOnUiThread { refreshHeader() }; return true }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; showUsbDevice(null) }
+        runOnUiThread { refreshHeader() }
+        return ok
+    }
+
+    private fun doDisconnect(): Boolean {
+        val ok = adb.disconnect()
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; showUsbDevice(null) }
+        runOnUiThread { refreshHeader() }
+        return ok
+    }
+
+    private fun doSetOwner(): Boolean {
+        val ok = adb.setDeviceOwner()
+        runOnUiThread { refreshHeader() }
+        return ok
+    }
+
+    private fun run(title: String, work: () -> Boolean) {
+        if (busy) return
+        busy = true
+        setBusy(true, "Sedang berjalan: $title...")
+        val startedAt = System.currentTimeMillis()
+        logHead(title, startedAt)
+        worker.execute {
+            // Tunggu probe yang sedang berjalan (bila ada) selesai sebelum memakai koneksi.
+            synchronized(adb.probeLock) { }
+            var ok = false
+            try { ok = work() } catch (e: Throwable) {
+                runOnUiThread {
+                    log(LogLevel.ERR, "$title gagal: kesalahan tak terduga. Coba lagi, dan laporkan bila berulang")
+                    log(LogLevel.DETAIL, Fmt.cause(e))
+                }
+            }
+            // Perbarui status device owner setelah setiap operasi (install / set owner / dll).
+            // Tepat setelah Connect, Informasi Status (launcher, instalasi, permission) tidak ikut dibaca.
+            val skipInfo = skipInfoRefresh
+            skipInfoRefresh = false
+            try {
+                if (adb.isConnected) {
+                    val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st
+                    adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
+                    adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
+                    adb.queryTcpipActive()?.let { tcpipActive = it }
+                    if (!skipInfo) {
+                        val t = deviceType
+                        adb.queryRequiredPackages(t)?.let { appsInstalled = it; appsType = t }
+                        if (hmdmInType(t)) adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
+                    }
+                }
+            } catch (e: Throwable) { }
+            runOnUiThread {
+                logEnd(title, ok, startedAt)
+                busy = false
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
+                refreshHeader()
+            }
+        }
+    }
+
+    // ---------- Progress install (inline di halaman, di atas log) ----------
+
+    private var progShown = false
+
+    private fun showInstallProgress(idx: Int, total: Int, name: String, sent: Long, size: Long) {
+        if (isFinishing || !busy) return
+        val box = findViewById<View>(R.id.progBox)
+        val bar = findViewById<ProgressBar>(R.id.barInstall)
+        val n = findViewById<TextView>(R.id.txtProgName)
+        val info = findViewById<TextView>(R.id.txtProgInfo)
+        if (!progShown) {
+            progShown = true
+            box.visibility = View.VISIBLE
+            // Gulir halaman sekali agar progress terlihat.
+            box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
+        }
+        n.text = "Memasang APK $idx dari $total: $name"
+        if (size > 0 && sent >= size) {
+            bar.isIndeterminate = true
+            info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
+        } else {
+            bar.isIndeterminate = false
+            val pct = if (size > 0) (sent * 100 / size).toInt() else 0
+            bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
+            info.text = "$pct% · ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
+        }
+    }
+
+    private fun hideInstallProgress() {
+        if (!progShown) return
+        progShown = false
+        findViewById<View>(R.id.progBox)?.visibility = View.GONE
     }
 
     private fun setBusy(on: Boolean, status: String) {
@@ -964,8 +1247,8 @@ class MainActivity : AppCompatActivity() {
         applyTypeChipState(on)
         apkListBox.alpha = if (on) 0.5f else 1f
         progress.visibility = if (on) View.VISIBLE else View.GONE
+        if (on) loading.show(status) else loading.hide()
         txtStatus.text = status
-        updateBusyCard(on, status)
     }
 
     // ---------- UI helper ----------
