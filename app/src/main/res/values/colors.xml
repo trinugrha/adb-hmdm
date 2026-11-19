@@ -61,7 +61,7 @@
     <!-- Tab melayang: bar warna aksen, tab aktif putih -->
     <color name="tab_bar_bg">#1D8A7F</color>
     <color name="tab_selected_text">#000000</color>
-    <color name="tab_unselected_text">#000000</color>
+    <color name="tab_unselected_text">#FFFFFF</color>
 
     <!-- Popup hasil -->
     <color name="ok">#15803D</color>
