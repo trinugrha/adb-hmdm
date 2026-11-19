@@ -202,7 +202,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logCause(e)
             return null
         }
-        logWarn("Bila muncul dialog 'Izinkan USB debugging?' di HP target: centang 'Selalu izinkan' lalu OK")
+        logWarn("Bila muncul dialog \"Izinkan USB debugging?\" di HP target: centang \"Selalu izinkan\" lalu OK")
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..USB_CONNECT_ATTEMPTS) {
@@ -1117,7 +1117,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
-                logWarn("Perintah '$cmd' tidak selesai dalam ${Fmt.duration(timeoutMs)}, dilanjutkan")
+                logWarn("Perintah \"$cmd\" tidak selesai dalam ${Fmt.duration(timeoutMs)}, dilanjutkan")
             }
         }
         error?.let { throw it }

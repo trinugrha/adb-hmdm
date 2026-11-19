@@ -51,7 +51,7 @@ class App : Application() {
                 previous?.uncaughtException(t, e)
             } else {
                 try {
-                    logListener?.invoke(LogLevel.WARN, "Kesalahan tak terduga di thread '${t.name}', aplikasi tetap berjalan")
+                    logListener?.invoke(LogLevel.WARN, "Kesalahan tak terduga di thread \"${t.name}\", aplikasi tetap berjalan")
                     logListener?.invoke(LogLevel.DETAIL, Fmt.cause(e))
                 } catch (ignored: Throwable) { }
             }

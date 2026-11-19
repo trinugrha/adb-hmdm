@@ -507,7 +507,7 @@ class MainActivity : AppCompatActivity() {
             if (targets.isEmpty()) {
                 val t0 = System.currentTimeMillis()
                 logHead("Connect USB", t0)
-                log(LogLevel.ERR, "Connect USB gagal: tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'")
+                log(LogLevel.ERR, "Connect USB gagal: tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB \"Transfer file\"")
                 logEnd("Connect USB", false, t0)
                 showConnProblem(
                     "Connect USB gagal",
@@ -515,7 +515,7 @@ class MainActivity : AppCompatActivity() {
                         "Periksa:\n" +
                         "• Kabel (OTG) terpasang kuat ke HP target\n" +
                         "• USB debugging aktif di Opsi Developer HP target\n" +
-                        "• Mode USB di HP target: Transfer file\n\n" +
+                        "• Mode USB di HP target: \"Transfer file\"\n\n" +
                         "Rincian lengkap ada di log."
                 )
                 return@setOnClickListener
@@ -1024,11 +1024,10 @@ class MainActivity : AppCompatActivity() {
 
     private var connDialog: AlertDialog? = null
 
-    /** Popup hasil proses (gagal, putus, atau berhasil). Popup lama diganti agar tidak bertumpuk. */
-    private fun showConnProblem(title: String, message: String) {
+    /** Popup hasil proses (gagal, putus, atau berhasil). [ok] true = ikon dan tombol hijau. Popup lama diganti agar tidak bertumpuk. */
+    private fun showConnProblem(title: String, message: String, ok: Boolean = false) {
         if (isFinishing || isDestroyed) return
         connDialog?.dismiss()
-        val ok = title == "Berhasil"
         val v = layoutInflater.inflate(R.layout.dialog_result, null)
         val tint = ContextCompat.getColor(this, if (ok) R.color.ok else R.color.danger)
         v.findViewById<View>(R.id.resultIconBg).setBackgroundResource(if (ok) R.drawable.bg_badge_ok else R.drawable.bg_badge_danger)
@@ -1404,7 +1403,7 @@ class MainActivity : AppCompatActivity() {
                     val hint = when {
                         title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan perangkat ini satu jaringan Wi-Fi"
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
-                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih Izinkan\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang Selalu izinkan)\n• Mode USB di HP target: Transfer file"
+                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih Izinkan\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
                         isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Sudah Pair bila diminta"
                         else -> ""
                     }
@@ -1423,7 +1422,7 @@ class MainActivity : AppCompatActivity() {
                         "Pasang Aplikasi + Jadikan MDM Mode" -> "Semua APK berhasil dipasang dan HMDM berhasil dijadikan MDM Mode di HP target."
                         else -> null
                     }
-                    if (okMsg != null) showConnProblem("$title berhasil", okMsg)
+                    if (okMsg != null) showConnProblem("$title berhasil", okMsg, ok = true)
                 }
             }
         }

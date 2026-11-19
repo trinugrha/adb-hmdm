@@ -106,7 +106,7 @@ class PinLockView(
         }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(16) })
 
         card.addView(TextView(context).apply {
-            text = "Silakan login untuk mengakses HMDM ADB Installer"
+            text = "Silakan login untuk mengakses HMDM Installer"
             textSize = 14f
             setTextColor(color(R.color.muted))
             gravity = Gravity.CENTER

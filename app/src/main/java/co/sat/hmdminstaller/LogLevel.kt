@@ -47,6 +47,8 @@ package co.sat.hmdminstaller
  * - Popup gagal memuat baris ✗ proses itu sebagai butir "Penyebab" tanpa awalan "<Aksi> gagal: " (judul popup sudah memuat aksinya),
  *   lewat `MainActivity.errReason`.
  * - Teks status di layar (header, progres) memakai "·" hanya untuk label dan durasi; petunjuk dan angka dipisah koma atau "dari".
+ * - Kutipan nama tombol, dialog, atau perintah memakai tanda kutip ganda ("..."), di log maupun di popup; tidak pakai kutip tunggal.
+ * - Popup hasil: ikon dan warna ditentukan parameter `ok` di `showConnProblem`, bukan dari teks judul.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {
