@@ -832,7 +832,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         logCmd("adb shell dpm set-device-owner $OWNER_COMPONENT")
         val out = try { shell("dpm set-device-owner $OWNER_COMPONENT", doneWhen = { it.contains("Success") }) } catch (e: Throwable) {
-            "Error: ${e.message ?: e.javaClass.simpleName}"
+            errorOut(e)
         }
         if (isSuccess(out)) {
             logOk("MDM Mode aktif: ${OWNER_COMPONENT.substringBefore('/')}")
@@ -849,7 +849,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         logCmd("adb shell cmd package set-home-activity \"$HOME_COMPONENT\"")
         val out = try { shell("cmd package set-home-activity \"$HOME_COMPONENT\"", doneWhen = pmDone) } catch (e: Throwable) {
-            "Error: ${e.message ?: e.javaClass.simpleName}"
+            errorOut(e)
         }
         if (!isSuccess(out)) {
             val reason = when {
@@ -873,7 +873,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         logCmd("adb shell pm clear $KASPERSKY_PACKAGE")
         val out = try { shell("pm clear $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
-            "Error: ${e.message ?: e.javaClass.simpleName}"
+            errorOut(e)
         }
         if (!isSuccess(out)) {
             logErr("Hapus data aplikasi Kaspersky gagal: perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target")
@@ -889,7 +889,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!ensureConnected()) return false
         logCmd("adb shell pm uninstall -k --user 0 $KASPERSKY_PACKAGE")
         val out = try { shell("pm uninstall -k --user 0 $KASPERSKY_PACKAGE", doneWhen = pmDone) } catch (e: Throwable) {
-            "Error: ${e.message ?: e.javaClass.simpleName}"
+            errorOut(e)
         }
         if (!isSuccess(out)) {
             val reason = when {
@@ -929,7 +929,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 it.contains("restarting", ignoreCase = true) || it.contains("error", ignoreCase = true) || it.contains("failed", ignoreCase = true)
             }
         } catch (e: Throwable) {
-            "Error: ${e.message ?: e.javaClass.simpleName}"
+            errorOut(e)
         }
         val failed = out.contains("error", ignoreCase = true) || out.contains("failed", ignoreCase = true)
         val restarted = out.contains("restarting", ignoreCase = true)
@@ -970,6 +970,12 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     private fun isSuccess(out: String) = out.contains("Success", ignoreCase = true)
+
+    /**
+     * Keluaran pengganti saat perintah gagal dengan exception. Awalan "Error:" dikenali [isTransient] dan [installFailureReason];
+     * teks exception hanya lewat [Fmt.cause] dan akhirnya tampil sebagai baris DETAIL, tidak pernah di baris ✗.
+     */
+    private fun errorOut(e: Throwable) = "Error: ${Fmt.cause(e)}"
 
     /**
      * Output mentah device sebagai baris rincian (maks. 6 baris) untuk diagnosis.
@@ -1114,7 +1120,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     private fun installTry(file: File): String =
-        try { installOne(file) } catch (e: Throwable) { "Error: ${e.message ?: e.javaClass.simpleName}" }
+        try { installOne(file) } catch (e: Throwable) { errorOut(e) }
 
     /** Kegagalan tanpa pesan dari pm (stream putus), bukan penolakan install seperti INSTALL_FAILED_*. */
     private fun isTransient(out: String): Boolean =
@@ -1188,7 +1194,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
             val out = readAll(stream.openInputStream(), pmDone)
             if (out.isBlank() && writeError != null) {
-                return "Error: ${writeError.message ?: "stream closed"}"
+                return errorOut(writeError)
             }
             return out
         } finally {

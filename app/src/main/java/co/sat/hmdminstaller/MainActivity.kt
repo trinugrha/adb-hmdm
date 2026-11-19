@@ -405,7 +405,7 @@ class MainActivity : AppCompatActivity() {
             if (connectedAddr != null && adb.isConnected) return@setOnClickListener
             val addr = addr(edtPairIp.text.toString(), edtPairPort.text.toString())
             val code = clean(edtPairCode.text.toString())
-            run("Pairing") { doPair(addr, code) }
+            run("Pair") { doPair(addr, code) }
         }
         // Tombol "Done" di keyboard pada kolom kode pairing = tekan tombol Pair.
         edtPairCode.setOnEditorActionListener { v, actionId, _ ->
@@ -1023,9 +1023,9 @@ class MainActivity : AppCompatActivity() {
             if (found == null) {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
-                    logHead("Pairing QR", shownAt)
-                    log(LogLevel.ERR, "Pairing QR gagal: HP target tidak memindai QR dalam 120 dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
-                    logEnd("Pairing QR", false, shownAt)
+                    logHead("Pair dengan QR", shownAt)
+                    log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam 120 dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    logEnd("Pair dengan QR", false, shownAt)
                 }
                 return@execute
             }
@@ -1033,13 +1033,13 @@ class MainActivity : AppCompatActivity() {
                 dialog.dismiss()
                 if (busy) return@runOnUiThread
                 edtPairIp.setText(found.host); edtPairPort.setText(found.port.toString()); edtPairCode.setText(session.password)
-                run("Pairing QR") { doPairQr(found, session.password) }
+                run("Pair dengan QR") { doPairQr(found, session.password) }
             }
         }
     }
 
     private fun doPairQr(f: AdbDiscovery.Found, password: String): Boolean {
-        if (!doPair(f.addr, password)) return false
+        if (!doPair(f.addr, password, showNext = false)) return false
         // Setelah pair, cari port connect HP yang sama lalu sambung otomatis.
         // Beri waktu adbd di HP target siap menerima koneksi TLS setelah pairing.
         try { Thread.sleep(2_000) } catch (e: InterruptedException) { }
@@ -1056,9 +1056,22 @@ class MainActivity : AppCompatActivity() {
 
     // ---------- Langkah (jalan di thread kerja) ----------
 
-    private fun doPair(addr: String, code: String): Boolean {
+    /** [showNext] false untuk Pair dengan QR: connect dilanjutkan otomatis, jadi petunjuk "Berikutnya" tidak perlu. */
+    private fun doPair(addr: String, code: String, showNext: Boolean = true): Boolean {
         val ok = adb.pair(addr, code)
-        if (ok) runOnUiThread { refreshHeader() }
+        if (ok) {
+            // Pairing berhasil: IP connect otomatis diisi sama dengan IP pairing (HP target sama).
+            // Port connect berbeda dari port pairing, jadi hanya IP yang diisi; port diisi manual.
+            val pairIp = addr.substringBeforeLast(':').trim()
+            runOnUiThread {
+                if (pairIp.isNotEmpty()) edtConnIp.setText(pairIp)
+                if (showNext && pairIp.isNotEmpty()) {
+                    log(LogLevel.STEP, "IP connect diisi otomatis: $pairIp")
+                    log(LogLevel.STEP, "Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk Connect")
+                }
+                refreshHeader()
+            }
+        }
         return ok
     }
 
@@ -1182,7 +1195,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
-                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title. Lihat log")
                 refreshHeader()
             }
         }
@@ -1212,7 +1225,7 @@ class MainActivity : AppCompatActivity() {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "$pct% · ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
+            info.text = "$pct%, ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
         }
     }
 

@@ -66,6 +66,15 @@ Ringkasan: 1 berhasil, 1 gagal dari 2 APK
 ✗ agent.apk: versi lebih rendah dari yang terpasang
 ✗ Gagal: Pasang Aplikasi · 6.0 dtk
 ```
+Contoh proses Pair (manual): IP connect terisi otomatis dari IP pairing, port connect diisi teknisi.
+```
+── Pair · 14:01:40
+> adb pair 192.168.1.20:37215 ******
+✓ Pairing berhasil: 192.168.1.20:37215
+IP connect diisi otomatis: 192.168.1.20
+Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk Connect
+✓ Selesai: Pair · 1.3 dtk
+```
 Output mentah HP target (baris rincian) hanya ditampilkan bila menambah informasi: stack trace, baris "Performing ...", dan baris yang mengulang alasan di atasnya dibuang. Proses baru selalu didahului satu baris kosong. Baris yang terlipat sejajar dengan isi pesan.
 
 Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) tampil di baris rincian abu-abu di bawah baris ✗ / !, bukan di dalamnya. Baris rincian yang terlalu panjang dipotong dan diakhiri "…".
