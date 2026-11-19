@@ -681,6 +681,7 @@ class MainActivity : AppCompatActivity() {
             text = s
             textSize = size
             setTextColor(color)
+            setLineSpacing(0f, 1.25f)
             if (bold) setTypeface(typeface, Typeface.BOLD)
         }
 
@@ -748,7 +749,7 @@ class MainActivity : AppCompatActivity() {
             fields.clear()
             val pkgs = draftPkgs.getValue(current)
             val vers = draftVers.getValue(current)
-            list.addView(label("DAFTAR APLIKASI · ${pkgs.size}", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(20))
+            list.addView(label("DAFTAR APLIKASI · ${pkgs.size}", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(24))
             for (pkg in pkgs.toList()) {
                 val et = field("tanpa cek versi", vers[pkg].orEmpty()).apply {
                     // Hanya tampilan; ubah lewat ikon pensil (kotak ini sendiri tidak bisa diketuk).
@@ -790,24 +791,24 @@ class MainActivity : AppCompatActivity() {
                     setTypeface(typeface, Typeface.BOLD)
                     setTextColor(if (verText.isEmpty()) cMuted else cAccent)
                     background = rounded(if (verText.isEmpty()) cCard else cAccentSoft, null).apply { cornerRadius = dp(8).toFloat() }
-                    setPadding(dp(8), dp(3), dp(8), dp(3))
+                    setPadding(dp(10), dp(4), dp(10), dp(4))
                 }
                 // Kiri: nama paket + lencana versi. Kanan: tombol edit & hapus berukuran kecil.
                 val textCol = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.VERTICAL
                     addView(name)
-                    addView(badge, android.widget.LinearLayout.LayoutParams(wrapP, wrapP).apply { topMargin = dp(6) })
+                    addView(badge, android.widget.LinearLayout.LayoutParams(wrapP, wrapP).apply { topMargin = dp(8) })
                 }
                 val card = android.widget.LinearLayout(this).apply {
                     orientation = android.widget.LinearLayout.HORIZONTAL
                     gravity = android.view.Gravity.CENTER_VERTICAL
                     background = rounded(cSurface, cStroke).apply { cornerRadius = dp(14).toFloat() }
-                    setPadding(dp(14), dp(10), dp(8), dp(10))
+                    setPadding(dp(16), dp(12), dp(10), dp(12))
                     addView(textCol, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
                     addView(edit, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
                     addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
                 }
-                list.addView(card, lpTop(8))
+                list.addView(card, lpTop(10))
                 fields[pkg] = et
             }
         }
@@ -819,8 +820,8 @@ class MainActivity : AppCompatActivity() {
                 orientation = android.widget.LinearLayout.VERTICAL
                 setPadding(dp(22), dp(16), dp(22), dp(8))
                 addView(label(pkg, bold = true, size = 13f, color = cText))
-                addView(label("Versi (versionName)", bold = true, color = cText), lpTop(12))
-                addView(inVer, lpTop(4, dp(44)))
+                addView(label("Versi (versionName)", bold = true, color = cText), lpTop(16))
+                addView(inVer, lpTop(6, dp(44)))
             }
             val dlg = AlertDialog.Builder(this)
                 .setTitle("Edit Versi")
@@ -845,9 +846,9 @@ class MainActivity : AppCompatActivity() {
                 orientation = android.widget.LinearLayout.VERTICAL
                 setPadding(dp(22), dp(16), dp(22), dp(8))
                 addView(label("Nama paket", bold = true, color = cText))
-                addView(inPkg, lpTop(4, dp(44)))
-                addView(label("Versi (wajib diisi)", bold = true, color = cText), lpTop(12))
-                addView(inVer, lpTop(4, dp(44)))
+                addView(inPkg, lpTop(6, dp(44)))
+                addView(label("Versi (wajib diisi)", bold = true, color = cText), lpTop(16))
+                addView(inVer, lpTop(6, dp(44)))
             }
             val dlg = AlertDialog.Builder(this)
                 .setTitle("Tambah aplikasi ke $current")
@@ -978,7 +979,7 @@ class MainActivity : AppCompatActivity() {
         val headText = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             addView(label("Setting Aplikasi & Versi", bold = true, size = 18f, color = cText))
-            addView(label("Daftar aplikasi dan versi yang dicek per jenis perangkat"), lpTop(4))
+            addView(label("Daftar aplikasi dan versi yang dicek per jenis perangkat"), lpTop(6))
         }
         val head = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
@@ -988,14 +989,14 @@ class MainActivity : AppCompatActivity() {
         }
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(dp(22), dp(22), dp(22), dp(8))
+            setPadding(dp(22), dp(24), dp(22), dp(16))
             // Judul ikut bergulir bersama isi dialog (bukan judul tetap bawaan AlertDialog).
             addView(head)
-            addView(info, lpTop(14))
-            addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(20))
-            addView(typeRow, lpTop(8))
-            addView(buttons, lpTop(10, dp(44)))
-            addView(ioButtons, lpTop(10, dp(44)))
+            addView(info, lpTop(16))
+            addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccent).apply { letterSpacing = 0.08f }, lpTop(24))
+            addView(typeRow, lpTop(10))
+            addView(buttons, lpTop(12, dp(44)))
+            addView(ioButtons, lpTop(8, dp(44)))
             addView(list)
         }
         scroll.addView(box)
@@ -1180,16 +1181,20 @@ class MainActivity : AppCompatActivity() {
             setImageBitmap(AdbDiscovery.qrBitmap(session.payload, size))
             layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL }
         }
-        val hint = TextView(this).apply {
-            text = "HP target: Opsi Developer › Wireless debugging › Pair device with QR code, lalu arahkan kamera ke QR ini.\n\nHP teknisi dan HP target harus di Wi-Fi yang sama."
+        fun para(t: String) = TextView(this).apply {
+            text = t
             textSize = 13f
+            setLineSpacing(0f, 1.3f)
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text))
-            setPadding(0, dp(12), 0, 0)
         }
+        val hint = para("HP target: Opsi Developer › Wireless debugging › Pair device with QR code, lalu arahkan kamera ke QR ini.")
+        val hint2 = para("HP teknisi dan HP target harus di Wi-Fi yang sama.")
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(dp(22), dp(16), dp(22), dp(8))
-            addView(img); addView(hint)
+            setPadding(dp(24), dp(20), dp(24), dp(12))
+            addView(img)
+            addView(hint, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20) })
+            addView(hint2, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         }
         val dialog = AlertDialog.Builder(this)
             .setTitle("Scan QR untuk Pair")
