@@ -54,7 +54,8 @@
         style="@style/Widget.Hmdm.Button.Blue"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:minHeight="46dp"
+        android:layout_marginTop="18dp"
+        android:minHeight="48dp"
+        app:cornerRadius="14dp"
         android:text="OK" />
 </LinearLayout>

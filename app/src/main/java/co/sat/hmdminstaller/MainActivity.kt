@@ -523,14 +523,14 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
-            AlertDialog.Builder(this)
-                .setTitle("Pilih perangkat USB")
-                .setItems(names) { _, i ->
+            ModernDialog(this)
+                .title("Pilih perangkat USB")
+                .items(names) { i ->
                     val t = targets[i]
                     showUsbDevice(t.label)
                     run("Connect USB") { doConnectUsb(t) }
                 }
-                .setNegativeButton("Batal", null)
+                .negative("Batal")
                 .show()
         }
         btnDisconnect.setOnClickListener {
@@ -549,22 +549,22 @@ class MainActivity : AppCompatActivity() {
             run("Jadikan MDM Mode") { skipInfoRefresh = true; doSetOwner() }
         }
         btnClearKaspersky.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Hapus Data Aplikasi Kaspersky?")
-                .setMessage("Perintah: \"adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}\"\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2, yaitu mematikan Aplikasi Admin Kaspersky di HP target.")
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Hapus") { _, _ ->
+            ModernDialog(this)
+                .title("Hapus Data Aplikasi Kaspersky?")
+                .message("Perintah: \"adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}\"\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2, yaitu mematikan Aplikasi Admin Kaspersky di HP target.")
+                .negative("Batal")
+                .positive("Hapus", danger = true) {
                     // Selesai hapus data: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
                     run("Hapus Data Aplikasi Kaspersky") { skipInfoRefresh = true; adb.clearKasperskyData() }
                 }
                 .show()
         }
         btnUninstallKaspersky.setOnClickListener {
-            AlertDialog.Builder(this)
-                .setTitle("Uninstall Aplikasi Kaspersky?")
-                .setMessage("Perintah: \"adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\"\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.")
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Uninstall") { _, _ ->
+            ModernDialog(this)
+                .title("Uninstall Aplikasi Kaspersky?")
+                .message("Perintah: \"adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\"\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.")
+                .negative("Batal")
+                .positive("Uninstall", danger = true) {
                     // Selesai uninstall: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
                     run("Uninstall Aplikasi Kaspersky") { skipInfoRefresh = true; adb.uninstallKaspersky() }
                 }
@@ -835,11 +835,11 @@ class MainActivity : AppCompatActivity() {
                 addView(label("Versi (versionName)", bold = true, color = cText), lpTop(16))
                 addView(inVer, lpTop(6, dp(44)))
             }
-            val dlg = AlertDialog.Builder(this)
-                .setTitle("Edit versi")
-                .setView(form)
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("OK") { _, _ ->
+            val dlg = ModernDialog(this)
+                .title("Edit versi")
+                .view(form)
+                .negative("Batal")
+                .positive("OK") {
                     val v = inVer.text?.toString()?.trim().orEmpty()
                     if (v.isNotEmpty()) draftVers.getValue(current)[pkg] = v else draftVers.getValue(current).remove(pkg)
                     buildFields()
@@ -862,16 +862,12 @@ class MainActivity : AppCompatActivity() {
                 addView(label("Versi (wajib diisi)", bold = true, color = cText), lpTop(16))
                 addView(inVer, lpTop(6, dp(44)))
             }
-            val dlg = AlertDialog.Builder(this)
-                .setTitle("Tambah aplikasi ke $current")
-                .setView(form)
-                .setNegativeButton("Batal", null)
-                .setPositiveButton("Tambah", null)
-                .create()
-            dlg.show()
-            dlg.window?.clearFlags(WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM)
-            // Pasang listener sendiri supaya dialog tidak tertutup saat isian belum valid.
-            dlg.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
+            // dismiss = false: dialog tidak tertutup otomatis saat isian belum valid.
+            ModernDialog(this)
+                .title("Tambah aplikasi ke $current")
+                .view(form)
+                .negative("Batal")
+                .positive("Tambah", dismiss = false) { dlg ->
                 val pkg = inPkg.text?.toString()?.trim().orEmpty()
                 val ver = inVer.text?.toString()?.trim().orEmpty()
                 when {
@@ -890,7 +886,7 @@ class MainActivity : AppCompatActivity() {
                         dlg.dismiss()
                     }
                 }
-            }
+            }.show()
         }
 
         // Pilihan jenis perangkat: tombol segmen (POS / TABLET / PDA).
@@ -1015,10 +1011,10 @@ class MainActivity : AppCompatActivity() {
         // bila kosong, keyboard diblokir (FLAG_ALT_FOCUSABLE_IM) dan versi tidak bisa diketik.
         buildFields()
 
-        val settingsDialog = AlertDialog.Builder(this)
-            .setView(scroll)
-            .setNegativeButton("Batal", null)
-            .setPositiveButton("Simpan") { _, _ ->
+        val settingsDialog = ModernDialog(this)
+            .view(scroll)
+            .negative("Batal")
+            .positive("Simpan") {
                 commitFields()
                 for (t in types) VersionStore.save(t, draftPkgs.getValue(t), draftVers.getValue(t))
                 // Hasil cek lama dibuat tidak berlaku karena daftar/versi berubah; status kembali "Belum diperiksa".
@@ -1049,6 +1045,7 @@ class MainActivity : AppCompatActivity() {
         v.findViewById<TextView>(R.id.resultTitle).text = title
         v.findViewById<TextView>(R.id.resultMessage).text = message
         val dlg = AlertDialog.Builder(this).setView(v).create()
+        ModernDialog.styleWindow(dlg)
         v.findViewById<MaterialButton>(R.id.resultOk).apply {
             setOnClickListener { dlg.dismiss() }
         }
@@ -1060,11 +1057,11 @@ class MainActivity : AppCompatActivity() {
     private fun confirmExit() {
         if (isFinishing) return
         val warn = if (busy) "\n\nPerhatian: masih ada proses yang berjalan dan akan ikut terhenti." else ""
-        AlertDialog.Builder(this)
-            .setTitle("Keluar dari aplikasi?")
-            .setMessage("Koneksi ADB akan diputus, layanan latar dihentikan, dan daftar APK dikosongkan.$warn")
-            .setNegativeButton("Batal", null)
-            .setPositiveButton("Keluar") { _, _ -> exitApp() }
+        ModernDialog(this)
+            .title("Keluar dari aplikasi?")
+            .message("Koneksi ADB akan diputus, layanan latar dihentikan, dan daftar APK dikosongkan.$warn")
+            .negative("Batal")
+            .positive("Keluar", danger = true) { exitApp() }
             .show()
     }
 
@@ -1210,11 +1207,11 @@ class MainActivity : AppCompatActivity() {
             addView(hint, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(20) })
             addView(hint2, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(10) })
         }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle("Scan QR untuk Pair")
-            .setView(box)
-            .setNegativeButton("Batal", null)
-            .setOnDismissListener { cancel.set(true) }
+        val dialog = ModernDialog(this)
+            .title("Scan QR untuk Pair")
+            .view(box)
+            .negative("Batal")
+            .onDismiss { cancel.set(true) }
             .create()
         val shownAt = System.currentTimeMillis()
         dialog.show()

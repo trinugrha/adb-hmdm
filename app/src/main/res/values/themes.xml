@@ -29,7 +29,7 @@
     <!-- Popup / dialog -->
     <style name="ShapeAppearance.Hmdm.Dialog" parent="">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">24dp</item>
+        <item name="cornerSize">28dp</item>
     </style>
 
     <style name="ThemeOverlay.Hmdm.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
