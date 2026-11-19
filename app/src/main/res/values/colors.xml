@@ -21,12 +21,12 @@
 
     <!-- Header -->
     <color name="side">#0B2A33</color>
-    <color name="header_end">#0F766E</color>
-    <color name="header_bg">#1D8A7F</color>
+    <color name="header_end">#0A1A2F</color>
+    <color name="header_bg">#0A1A2F</color>
     <color name="header_text">#FFFFFF</color>
-    <color name="header_subtext">#D5F0EC</color>
+    <color name="header_subtext">#B8C7DB</color>
     <color name="header_chip">#29FFFFFF</color>
-    <color name="header_divider">#176F66</color>
+    <color name="header_divider">#1B3558</color>
 
     <!-- Log terminal -->
     <color name="log_bg">#0B1220</color>
@@ -59,7 +59,7 @@
     <color name="yellow_fill">#FACC15</color>
     <color name="on_yellow_fill">#422006</color>
     <!-- Tab melayang: bar warna aksen, tab aktif putih -->
-    <color name="tab_bar_bg">#1D8A7F</color>
+    <color name="tab_bar_bg">#0A1A2F</color>
     <color name="tab_selected_text">#000000</color>
     <color name="tab_unselected_text">#FFFFFF</color>
 
