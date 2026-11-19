@@ -549,7 +549,7 @@ class MainActivity : AppCompatActivity() {
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Hapus Data Aplikasi Kaspersky?")
-                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
+                .setMessage("Perintah: \"adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}\"\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2, yaitu mematikan Aplikasi Admin Kaspersky di HP target.")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ ->
                     // Selesai hapus data: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -560,7 +560,7 @@ class MainActivity : AppCompatActivity() {
         btnUninstallKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
                 .setTitle("Uninstall Aplikasi Kaspersky?")
-                .setMessage("Menjalankan: pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\n\nPastikan Langkah 2 (Aplikasi Admin Kaspersky) sudah dinonaktifkan, kalau tidak uninstall akan ditolak.")
+                .setMessage("Perintah: \"adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\"\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Uninstall") { _, _ ->
                     // Selesai uninstall: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -832,7 +832,7 @@ class MainActivity : AppCompatActivity() {
                 addView(inVer, lpTop(6, dp(44)))
             }
             val dlg = AlertDialog.Builder(this)
-                .setTitle("Edit Versi")
+                .setTitle("Edit versi")
                 .setView(form)
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("OK") { _, _ ->
@@ -958,7 +958,7 @@ class MainActivity : AppCompatActivity() {
                         draftVers[t] = pv.second.toMutableMap()
                     }
                     buildFields()
-                    Toast.makeText(this, "Versi aplikasi diimpor (${parsed.keys.joinToString()}). Ketuk Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Versi aplikasi diimpor (${parsed.keys.joinToString()}). Ketuk \"Simpan\" untuk menerapkan", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
                     // Pesan dari kode ini sendiri (IllegalArgumentException / "tidak bisa ...") sudah berbahasa Indonesia
                     // dan dipakai sebagai alasan; exception sistem diganti alasan umum. Teks mentah hanya di log DETAIL.
@@ -1021,7 +1021,7 @@ class MainActivity : AppCompatActivity() {
                 appsInstalled = null
                 appsType = null
                 refreshApps()
-                Toast.makeText(this, "Pengaturan versi disimpan. Ketuk Cek Status untuk mengecek ulang", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Pengaturan versi disimpan. Ketuk \"Cek Status\" untuk mengecek ulang", Toast.LENGTH_LONG).show()
             }
             .create()
         settingsDialog.show()
@@ -1059,7 +1059,7 @@ class MainActivity : AppCompatActivity() {
         val warn = if (busy) "\n\nPerhatian: masih ada proses yang berjalan dan akan ikut terhenti." else ""
         AlertDialog.Builder(this)
             .setTitle("Keluar dari aplikasi?")
-            .setMessage("Koneksi ADB akan diputus, service dihentikan, dan daftar APK dikosongkan.$warn")
+            .setMessage("Koneksi ADB akan diputus, layanan latar dihentikan, dan daftar APK dikosongkan.$warn")
             .setNegativeButton("Batal", null)
             .setPositiveButton("Keluar") { _, _ -> exitApp() }
             .show()
@@ -1159,6 +1159,7 @@ class MainActivity : AppCompatActivity() {
         if (addr != null && !alive && !polledWhileBusy && !busy) {
             log(LogLevel.ERR, "Koneksi ke $addr terputus" + (if (cableGone) ", kabel USB dicabut" else "") + " · ${Fmt.clock(System.currentTimeMillis())}")
             adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
+            adb.lastDropDetail.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, it) }
             showConnProblem(
                 "Koneksi terputus",
                 "Koneksi ke $addr terputus" + (if (cableGone) " karena kabel USB dicabut" else "") + "." +
@@ -1237,7 +1238,7 @@ class MainActivity : AppCompatActivity() {
         try { Thread.sleep(2_000) } catch (e: InterruptedException) { }
         val ca = adb.findConnectAddr(f.host)
         if (ca == null) {
-            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk Connect")
+            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk \"Connect\"")
             return true
         }
         val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
@@ -1259,7 +1260,7 @@ class MainActivity : AppCompatActivity() {
                 if (pairIp.isNotEmpty()) edtConnIp.setText(pairIp)
                 if (showNext && pairIp.isNotEmpty()) {
                     log(LogLevel.STEP, "IP connect diisi otomatis: $pairIp")
-                    log(LogLevel.STEP, "Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk Connect")
+                    log(LogLevel.STEP, "Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk \"Connect\"")
                 }
                 refreshHeader()
             }
@@ -1389,7 +1390,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
-                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title (lihat log)")
+                setBusy(false, if (ok) "Selesai: $title" else "Gagal: $title, lihat log")
                 refreshHeader()
                 val inst = adb.lastInstall
                 val isInstall = title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode"
@@ -1401,7 +1402,7 @@ class MainActivity : AppCompatActivity() {
                         "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal:\n\n$shown$more\n\n" +
                             (if (inst.ok > 0) "APK yang berhasil tidak perlu dipasang ulang. " else "") +
                             "Perbaiki penyebabnya, lalu pasang ulang APK yang gagal." +
-                            (if (title.contains("MDM")) "\n\nLangkah Jadikan MDM Mode tetap dijalankan; cek hasilnya di log." else "")
+                            (if (title.contains("MDM")) "\n\nLangkah \"Jadikan MDM Mode\" tetap dijalankan, cek hasilnya di log." else "")
                     )
                 } else if (!ok) {
                     val isPair = title == "Pair" || title == "Pair dengan QR"
@@ -1410,8 +1411,8 @@ class MainActivity : AppCompatActivity() {
                     val hint = when {
                         title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan perangkat ini satu jaringan Wi-Fi"
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
-                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih Izinkan\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
-                        isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Sudah Pair bila diminta"
+                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
+                        isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
                         else -> ""
                     }
                     val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• ${errReason(it)}" }

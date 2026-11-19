@@ -79,6 +79,8 @@ Output mentah HP target (baris rincian) hanya ditampilkan bila menambah informas
 
 Penyebab teknis (alasan putus koneksi, galat tak terduga, jejak crash) tampil di baris rincian abu-abu di bawah baris ✗ / !, bukan di dalamnya. Baris rincian yang terlalu panjang dipotong dan diakhiri "…".
 
+Nama tombol di pesan log, popup, dan Toast ditulis dengan kutip ganda (ketuk "Cek Status"); penyebab putus koneksi di popup berbahasa sehari-hari, rincian teknisnya hanya di log.
+
 Warna ditentukan oleh `LogLevel`, format angka oleh `Fmt`. Aturan penulisan pesan ada di KDoc `LogLevel.kt`.
 
 ## Catatan teknis

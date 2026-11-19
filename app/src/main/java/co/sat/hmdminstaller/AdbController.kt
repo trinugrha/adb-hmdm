@@ -102,8 +102,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val REQUIRED_PACKAGES: List<String> = DEVICE_PACKAGES.values.flatten().distinct()
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
+        /** Penyebab putus bila soket ditutup pihak lain. */
+        const val DROP_CLOSED = "koneksi ditutup oleh HP target atau jaringan"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
-        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Pair lalu Connect, atau Connect USB terlebih dahulu"
+        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan \"Pair\" lalu \"Connect\", atau \"Connect USB\", terlebih dahulu"
     }
 
     private val appContext = context.applicationContext
@@ -194,7 +196,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logStep("HP target: $label")
         if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
         if (!usbBridge.requestPermission(t.device)) {
-            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk Pilih Perangkat lagi lalu pilih Izinkan")
+            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk \"Pilih Perangkat\" lagi lalu pilih \"Izinkan\"")
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
@@ -233,7 +235,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
         forcedDown = true
         connCache = false
-        lastDropReason = "Wi-Fi HP teknisi hilang"
+        setDrop("Wi-Fi HP teknisi hilang")
         logWarn("Wi-Fi terputus, koneksi ADB ditutup")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
@@ -298,24 +300,29 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Cek library lalu perbarui cache. Panggil dari thread latar saja. */
     fun syncConnected(): Boolean {
         val c = libConnected
-        if (!c && connCache && !forcedDown) lastDropReason = "library melaporkan soket sudah tertutup (HP target atau jaringan menutup koneksi)"
+        if (!c && connCache && !forcedDown) setDrop(DROP_CLOSED)
         connCache = c
         return c
     }
 
     /** Alasan probe/sesi terakhir gagal, untuk diagnosis. Ditampilkan di log saat koneksi dinyatakan putus. */
     @Volatile var lastDropReason: String = ""
+    /** Rincian teknis penyebab putus (nama exception, jawaban mentah). Hanya untuk baris DETAIL di log, tidak untuk popup. */
+    @Volatile var lastDropDetail: String = ""
+
+    private fun setDrop(reason: String, detail: String = "") { lastDropReason = reason; lastDropDetail = detail }
 
     /**
      * Cek ringan apakah koneksi benar-benar hidup (bukan sekadar flag): jalankan `echo` di device.
      * Dipanggil dari thread pemantau; menunggu paling lama 6 detik.
      */
     fun probe(addr: String? = lastAddr): Boolean {
-        if (!libConnected) { lastDropReason = "library melaporkan soket sudah tertutup (HP target atau jaringan menutup koneksi)"; return false }
+        if (!libConnected) { setDrop(DROP_CLOSED); return false }
         val ok = java.util.concurrent.atomic.AtomicBoolean(false)
         val done = java.util.concurrent.CountDownLatch(1)
         val holder = java.util.concurrent.atomic.AtomicReference<io.github.muntashirakon.adb.AdbStream?>(null)
         val why = java.util.concurrent.atomic.AtomicReference("")
+        val whyDetail = java.util.concurrent.atomic.AtomicReference("")
         // openStream() sendiri bisa menggantung di soket yang mati, jadi seluruhnya dijalankan di thread terpisah
         // dan pemanggil (thread pemantau) menunggu paling lama 6 detik.
         Thread {
@@ -329,17 +336,17 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                     holder.set(s)
                     val out = readAll(s.openInputStream())
                     ok.set(out.contains("ok"))
-                    if (!ok.get()) why.set("jawaban shell tidak sesuai: '${out.take(40)}'")
-                } else why.set("TCP ke $addr tidak terjangkau")
+                    if (!ok.get()) { why.set("HP target memberi jawaban tak terduga"); whyDetail.set("Jawaban: \"${Fmt.clip(out.trim(), 40)}\"") }
+                } else { why.set("HP target tidak terjangkau di jaringan"); whyDetail.set("Koneksi TCP ke $addr gagal") }
             } catch (e: Throwable) {
-                why.set(Fmt.cause(e))
+                why.set("pemeriksaan koneksi gagal"); whyDetail.set(Fmt.cause(e))
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
         val finished = done.await(PROBE_TIMEOUT_S, java.util.concurrent.TimeUnit.SECONDS)
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
-        if (!finished) why.set("tidak ada jawaban dari HP target dalam $PROBE_TIMEOUT_S dtk")
+        if (!finished) { why.set("HP target tidak menjawab dalam $PROBE_TIMEOUT_S dtk"); whyDetail.set("") }
         val result = finished && ok.get()
-        if (!result) lastDropReason = why.get().ifEmpty { "pemeriksaan koneksi gagal" }
+        if (!result) setDrop(why.get().ifEmpty { "pemeriksaan koneksi gagal" }, whyDetail.get())
         return result
     }
 
@@ -517,7 +524,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val pkgs = VersionStore.packages(type)
         val expected = VersionStore.expected(type)
         if (pkgs.isEmpty()) {
-            logWarn("Daftar aplikasi untuk $type kosong, tidak ada yang dicek. Tambahkan aplikasi lewat tombol Setting")
+            logWarn("Daftar aplikasi untuk $type kosong, tidak ada yang dicek. Tambahkan aplikasi lewat ikon gerigi di kartu \"Informasi Status\"")
             return all
         }
         val missing = pkgs.filter { all[it] == null }
@@ -905,7 +912,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!isSuccess(out)) {
             val reason = when {
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
-                    "Kaspersky masih aktif sebagai aplikasi admin perangkat. Ulangi Langkah 2: Pengaturan > Keamanan > Aplikasi admin perangkat > Kaspersky > Nonaktifkan"
+                    "Kaspersky masih aktif sebagai aplikasi admin perangkat. Ulangi Langkah 2: Pengaturan › Keamanan › Aplikasi admin perangkat › Kaspersky › Nonaktifkan"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
                     "diblokir kebijakan device owner atau profile owner"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
@@ -927,7 +934,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun enableTcpip(): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
-            logErr("Ubah ke Mode Nirkabel gagal: perintah ini hanya untuk koneksi USB. Gunakan tab USB debugging lalu Pilih Perangkat")
+            logErr("Ubah ke Mode Nirkabel gagal: perintah ini hanya untuk koneksi USB. Gunakan tab \"USB\" lalu ketuk \"Pilih Perangkat\"")
             return false
         }
         if (queryTcpipActive() == true) {
@@ -952,7 +959,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         }
         // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
         logOk("Mode TCP/IP aktif di port $TCPIP_PORT, koneksi USB terputus otomatis")
-        logStep("Berikutnya: cabut kabel, buka tab Wireless debugging, lalu Connect ke <IP HP target>:$TCPIP_PORT")
+        logStep("Berikutnya: cabut kabel, buka tab \"Wireless\", isi IP HP target dan port $TCPIP_PORT, lalu ketuk \"Connect\"")
         lastAddr = null
         sessionLabel = null
         keepAlive(false)
@@ -1034,8 +1041,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         return when {
             out == stallError ->
                 if (!advice) "pengiriman macet"
-                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu Pilih Perangkat ulang"
-                else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu Connect ulang"
+                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu ketuk \"Pilih Perangkat\" lagi"
+                else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu ketuk \"Connect\" lagi"
             friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
             code != null -> code
             // Kegagalan kirim tanpa kode install (stream putus, exception): teks mentahnya (sering berbahasa Inggris,
@@ -1059,7 +1066,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner. Reset HP target ke pengaturan pabrik bila ingin menggantinya"
             "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
             "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. Pasang Aplikasi terlebih dahulu"
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. jalankan \"Pasang Aplikasi\" terlebih dahulu"
             else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
         }
     }

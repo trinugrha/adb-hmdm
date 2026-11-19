@@ -482,7 +482,7 @@
                         android:layout_marginTop="4dp"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk Pilih Perangkat." />
+                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk &quot;Pilih Perangkat&quot;." />
 
                     <TextView
                         android:id="@+id/txtUsbDevice"
@@ -554,7 +554,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Pilih satu atau beberapa file APK sekaligus untuk diinstal ke perangkat target." />
+                        android:text="Pilih satu atau beberapa file APK sekaligus untuk dipasang ke HP target." />
 
                     <!-- Area unggah (ketuk untuk memilih file) -->
                     <LinearLayout
@@ -670,7 +670,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Jadikan Headwind MDM sebagai MDM Mode penuh di perangkat Android target." />
+                        android:text="Jadikan Headwind MDM sebagai MDM Mode penuh di HP target." />
 
                     <!-- Status MDM Mode (cek ulang hanya lewat ikon refresh) -->
                     <LinearLayout
@@ -823,7 +823,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Pasang APK lalu atur MDM Mode sekaligus dalam satu klik. Perangkat harus Terhubung lebih dulu." />
+                        android:text="Pasang APK lalu atur MDM Mode sekaligus dengan sekali ketuk. Perangkat harus terhubung lebih dulu." />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnAll"
@@ -964,7 +964,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="-4dp"
                         android:lineSpacingExtra="2dp"
-                        android:text="Cek Status untuk melihat status aplikasi dan izin." />
+                        android:text="Ketuk &quot;Cek Status&quot; untuk melihat status aplikasi dan izin." />
 
                     <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
                     <LinearLayout
@@ -1167,7 +1167,7 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"
-                            android:text="Uninstall aplikasi Kaspersky dari perangkat. Ikuti urutan langkah berikut agar uninstall tidak ditolak." />
+                            android:text="Uninstall aplikasi Kaspersky dari HP target. Ikuti urutan langkah berikut agar uninstall tidak ditolak." />
 
                         <!-- Langkah 1: hapus data -->
                         <LinearLayout
@@ -1205,7 +1205,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="4dp"
-                                    android:text="Hubungkan perangkat, lalu klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data aplikasi Kaspersky dihapus&quot;."
+                                    android:text="Hubungkan HP target terlebih dahulu, lalu ketuk tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data aplikasi Kaspersky dihapus&quot;."
                                     android:textSize="13sp" />
 
                                 <com.google.android.material.button.MaterialButton
@@ -1250,7 +1250,7 @@
                                     style="@style/Hmdm.CardTitle"
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
-                                    android:text="Matikan Security / Aplikasi Admin Kaspersky di HP"
+                                    android:text="Matikan Aplikasi Admin Kaspersky di HP target"
                                     android:textSize="15sp" />
 
                                 <TextView
@@ -1300,7 +1300,7 @@
                                     android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="4dp"
-                                    android:text="Klik tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Aplikasi Kaspersky di-uninstall&quot;."
+                                    android:text="Ketuk tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Aplikasi Kaspersky di-uninstall&quot;."
                                     android:textSize="13sp" />
 
                                 <com.google.android.material.button.MaterialButton

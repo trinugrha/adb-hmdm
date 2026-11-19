@@ -47,7 +47,11 @@ package co.sat.hmdminstaller
  * - Popup gagal memuat baris ✗ proses itu sebagai butir "Penyebab" tanpa awalan "<Aksi> gagal: " (judul popup sudah memuat aksinya),
  *   lewat `MainActivity.errReason`.
  * - Teks status di layar (header, progres) memakai "·" hanya untuk label dan durasi; petunjuk dan angka dipisah koma atau "dari".
- * - Kutipan nama tombol, dialog, atau perintah memakai tanda kutip ganda ("..."), di log maupun di popup; tidak pakai kutip tunggal.
+ * - Kutipan nama tombol, dialog, atau perintah memakai tanda kutip ganda ("..."), di log, popup, maupun Toast; tidak pakai kutip tunggal.
+ *   Petunjuk ke tombol memakai kata "ketuk" (bukan "klik") dan nama tombol persis seperti tulisan di layar, mis. ketuk "Cek Status".
+ * - Jalur menu Android ditulis dengan "›" (Pengaturan › Keamanan), bukan ">".
+ * - Penyebab putus koneksi (`AdbController.lastDropReason`) ditulis dalam bahasa sehari-hari karena tampil di popup; nama exception
+ *   dan jawaban mentah ada di `lastDropDetail`, hanya untuk baris DETAIL.
  * - Popup hasil: ikon dan warna ditentukan parameter `ok` di `showConnProblem`, bukan dari teks judul.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
