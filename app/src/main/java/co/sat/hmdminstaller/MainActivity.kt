@@ -538,11 +538,35 @@ class MainActivity : AppCompatActivity() {
         txtSession = findViewById(R.id.txtSession)
         findViewById<View>(R.id.btnLogout).setOnClickListener { confirmExit() }
         findViewById<View>(R.id.btnSettings).setOnClickListener { showVersionSettings() }
-        showLock()
+        // Setelah ganti tema Activity dibuat ulang: jangan minta PIN lagi dan pulihkan isi log.
+        if (skipLockOnce) skipLockOnce = false else showLock()
+
+        // ---- Tema gelap / terang ----
+        val themePrefs = getSharedPreferences("ui_prefs", Context.MODE_PRIVATE)
+        val btnTheme = findViewById<android.widget.ImageView>(R.id.btnTheme)
+        val isDark = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        // Ikon menunjukkan tema tujuan: bulan = pindah ke gelap, matahari = pindah ke terang.
+        btnTheme.setImageResource(if (isDark) R.drawable.ic_light_mode else R.drawable.ic_dark_mode)
+        btnTheme.setOnClickListener {
+            if (busy) {
+                Toast.makeText(this, "Ganti tema gagal: masih ada proses berjalan. Tunggu selesai, lalu coba lagi", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+            themePrefs.edit().putString("theme", if (isDark) "light" else "dark").apply()
+            keepLog = txtLog.text
+            skipLockOnce = lockView == null
+            androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(
+                if (isDark) androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO
+                else androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES
+            )
+            recreate()
+        }
 
         restorePickedApks()
         refreshApkList()
         refreshHeader()
+        keepLog?.let { txtLog.text = it; keepLog = null }
     }
 
     override fun onStart() {
@@ -1868,6 +1892,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
+        /** Dipakai saat ganti tema: lewati kunci PIN sekali dan bawa isi log ke Activity baru. */
+        @Volatile private var skipLockOnce = false
+        @Volatile private var keepLog: CharSequence? = null
         /** Aplikasi dikunci lagi bila ditinggalkan lebih dari ini (ms). */
         private const val LOCK_TIMEOUT_MS = 30 * 60_000L
         private const val LOG_MAX_CHARS = 60_000
