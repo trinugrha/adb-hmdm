@@ -76,6 +76,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         const val TCPIP_PORT = 5555
         /** Jumlah percobaan Connect USB (percobaan pertama bisa habis waktu selagi dialog otorisasi belum disetujui). */
         private const val USB_CONNECT_ATTEMPTS = 3
+        /** Batas tanpa kemajuan saat APK dikirim, dan batas menunggu hasil pm setelah APK terkirim penuh. */
+        private const val STALL_SENDING_MS = 20_000L
+        /** Batas menunggu jawaban uji koneksi (probe), dalam detik. */
+        private const val PROBE_TIMEOUT_S = 6L
+        private const val STALL_REPLY_MS = 180_000L
         const val HMDM_PACKAGE = "com.hmdm.launcher"
         /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
@@ -98,7 +103,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Activity launcher HMDM yang dijadikan home default. */
         const val HOME_COMPONENT = "com.hmdm.launcher/.ui.MainActivity"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
-        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan Pair dan Connect (atau Connect USB) terlebih dahulu"
+        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Pair lalu Connect, atau Connect USB terlebih dahulu"
     }
 
     private val appContext = context.applicationContext
@@ -330,9 +335,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 why.set(Fmt.cause(e))
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
-        val finished = done.await(6, java.util.concurrent.TimeUnit.SECONDS)
+        val finished = done.await(PROBE_TIMEOUT_S, java.util.concurrent.TimeUnit.SECONDS)
         Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
-        if (!finished) why.set("tidak ada jawaban dari HP target dalam 6 dtk")
+        if (!finished) why.set("tidak ada jawaban dari HP target dalam $PROBE_TIMEOUT_S dtk")
         val result = finished && ok.get()
         if (!result) lastDropReason = why.get().ifEmpty { "pemeriksaan koneksi gagal" }
         return result
@@ -1012,7 +1017,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         "INSTALL_FAILED_INVALID_APK" to "file APK rusak atau tidak valid",
         "INSTALL_FAILED_NO_MATCHING_ABIS" to "arsitektur CPU tidak cocok",
         "INSTALL_FAILED_OLDER_SDK" to "versi Android HP target terlalu lama",
-        "INSTALL_FAILED_USER_RESTRICTED" to "install dibatasi kebijakan HP target",
+        "INSTALL_FAILED_USER_RESTRICTED" to "pemasangan dibatasi kebijakan HP target",
         "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
     )
 
@@ -1147,7 +1152,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 while (true) {
                     Thread.sleep(1000)
                     val idle = System.currentTimeMillis() - lastActivity.get()
-                    val limit = if (sendingDone.get()) 180_000L else 20_000L
+                    val limit = if (sendingDone.get()) STALL_REPLY_MS else STALL_SENDING_MS
                     if (idle > limit) {
                         stalled.set(true)
                         stream.close()
@@ -1186,8 +1191,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             }
             if (stalled.get()) {
                 // Setelah APK terkirim penuh, "terkirim X dari X" tidak berguna; cukup sebut ukurannya.
-                if (sendingDone.get()) logWarn("Pengiriman macet: tidak ada jawaban dari HP target selama 180 dtk setelah APK terkirim penuh (${Fmt.size(total)})")
-                else logWarn("Pengiriman macet: tidak ada kemajuan selama 20 dtk (terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)})")
+                if (sendingDone.get()) logWarn("Pengiriman macet: tidak ada jawaban dari HP target selama ${STALL_REPLY_MS / 1000} dtk setelah APK terkirim penuh (${Fmt.size(total)})")
+                else logWarn("Pengiriman macet: tidak ada kemajuan selama ${STALL_SENDING_MS / 1000} dtk (terkirim ${Fmt.size(sent)} dari ${Fmt.size(total)})")
                 if (viaUsb) logDetail("USB: ${usbBridge.stats()}")
                 return stallError
             }

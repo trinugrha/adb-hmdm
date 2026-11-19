@@ -44,6 +44,9 @@ package co.sat.hmdminstaller
  * - Gagal connect yang dicetak pemanggil (USB, sambung ulang) tetap diikuti baris DETAIL penyebab teknis, sama seperti connect biasa.
  * - Pesan Toast memakai bentuk yang sama ("<Aksi> gagal: <alasan singkat>. <Saran>"). Teks exception mentah (`e.message`) tidak pernah
  *   masuk ke baris ✗ atau Toast; ia hanya ditulis sebagai baris DETAIL lewat [Fmt.cause].
+ * - Popup gagal memuat baris ✗ proses itu sebagai butir "Penyebab" tanpa awalan "<Aksi> gagal: " (judul popup sudah memuat aksinya),
+ *   lewat `MainActivity.errReason`.
+ * - Teks status di layar (header, progres) memakai "·" hanya untuk label dan durasi; petunjuk dan angka dipisah koma atau "dari".
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

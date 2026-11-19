@@ -93,11 +93,12 @@ class MainActivity : AppCompatActivity() {
     private fun hideKeyboard() {
         val visible = ViewCompat.getRootWindowInsets(window.decorView)
             ?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
-        val focus = currentFocus ?: return
         if (!visible) return
+        // Tanpa fokus (mis. kolom input sudah disembunyikan), tetap tutup lewat token jendela.
+        val focus = currentFocus
         (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
-            .hideSoftInputFromWindow(focus.windowToken, 0)
-        focus.clearFocus()
+            .hideSoftInputFromWindow((focus ?: window.decorView).windowToken, 0)
+        focus?.clearFocus()
     }
 
     private lateinit var edtPairIp: TextInputEditText
@@ -412,6 +413,8 @@ class MainActivity : AppCompatActivity() {
         val cardTcpip: View = findViewById(R.id.cardTcpip)
         tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
+                // Pindah tab (swipe atau ketuk): tutup keyboard dulu, sebelum kolom input di tab lama disembunyikan.
+                hideKeyboard()
                 val usb = tab.position == 1
                 tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
                 tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
@@ -460,6 +463,15 @@ class MainActivity : AppCompatActivity() {
                 logHead("Connect USB", t0)
                 log(LogLevel.ERR, "Connect USB gagal: tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB 'Transfer file'")
                 logEnd("Connect USB", false, t0)
+                showConnProblem(
+                    "Connect USB gagal",
+                    "Tidak ada HP target yang terdeteksi di port USB.\n\n" +
+                        "Periksa:\n" +
+                        "• Kabel (OTG) terpasang kuat ke HP target\n" +
+                        "• USB debugging aktif di Opsi Developer HP target\n" +
+                        "• Mode USB di HP target: Transfer file\n\n" +
+                        "Rincian lengkap ada di log."
+                )
                 return@setOnClickListener
             }
             val names = targets.map { it.label + "\n" + it.device.deviceName }.toTypedArray()
@@ -490,8 +502,8 @@ class MainActivity : AppCompatActivity() {
         }
         btnClearKaspersky.setOnClickListener {
             AlertDialog.Builder(this)
-                .setTitle("Hapus data aplikasi Kaspersky?")
-                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data & pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
+                .setTitle("Hapus Data Aplikasi Kaspersky?")
+                .setMessage("Menjalankan: pm clear ${AdbController.KASPERSKY_PACKAGE}\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2 (matikan Aplikasi Admin Kaspersky di HP).")
                 .setNegativeButton("Batal", null)
                 .setPositiveButton("Hapus") { _, _ ->
                     // Selesai hapus data: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -888,7 +900,7 @@ class MainActivity : AppCompatActivity() {
                         draftVers[t] = pv.second.toMutableMap()
                     }
                     buildFields()
-                    Toast.makeText(this, "Diimpor (${parsed.keys.joinToString()}). Ketuk Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
+                    Toast.makeText(this, "Versi aplikasi diimpor (${parsed.keys.joinToString()}). Ketuk Simpan untuk menerapkan", Toast.LENGTH_LONG).show()
                 } catch (e: Exception) {
                     // Pesan dari kode ini sendiri (IllegalArgumentException / "tidak bisa ...") sudah berbahasa Indonesia
                     // dan dipakai sebagai alasan; exception sistem diganti alasan umum. Teks mentah hanya di log DETAIL.
@@ -952,7 +964,7 @@ class MainActivity : AppCompatActivity() {
                 appsInstalled = null
                 appsType = null
                 refreshApps()
-                Toast.makeText(this, "Disimpan. Ketuk Cek Status untuk mengecek ulang", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Pengaturan versi disimpan. Ketuk Cek Status untuk mengecek ulang", Toast.LENGTH_LONG).show()
             }
             .create()
         settingsDialog.show()
@@ -1139,12 +1151,12 @@ class MainActivity : AppCompatActivity() {
         val shownAt = System.currentTimeMillis()
         dialog.show()
         io.execute {
-            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, 120_000, cancel) { name, _, _ -> name == session.serviceName }
+            val found = AdbDiscovery.find(this, AdbDiscovery.TYPE_PAIRING, QR_PAIR_TIMEOUT_MS, cancel) { name, _, _ -> name == session.serviceName }
             if (found == null) {
                 if (!cancel.get()) runOnUiThread {
                     dialog.dismiss()
                     logHead("Pair dengan QR", shownAt)
-                    log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam 120 dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
+                    log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                     logEnd("Pair dengan QR", false, shownAt)
                 }
                 return@execute
@@ -1334,17 +1346,17 @@ class MainActivity : AppCompatActivity() {
                 } else if (!ok) {
                     val isPair = title == "Pair" || title == "Pair dengan QR"
                     val isConn = title == "Connect" || title == "Connect USB"
-                    val popupTitle = when { isPair -> "Gagal pairing"; isConn -> "Gagal terhubung"; else -> "$title gagal" }
+                    val popupTitle = "$title gagal"
                     val hint = when {
                         title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan perangkat ini satu jaringan Wi-Fi"
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
-                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang dan izin USB debugging disetujui di HP target"
+                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih Izinkan\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang Selalu izinkan)\n• Mode USB di HP target: Transfer file"
                         isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Sudah Pair bila diminta"
                         else -> ""
                     }
-                    val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• $it" }
+                    val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• ${errReason(it)}" }
                     val msg = buildString {
-                        append(if (isPair || isConn) "Proses $title tidak berhasil." else "Proses \"$title\" tidak berhasil.")
+                        append("Proses \"$title\" tidak berhasil.")
                         if (reasons.isNotEmpty()) append("\n\nPenyebab:\n").append(reasons)
                         if (hint.isNotEmpty()) append("\n\n").append(hint)
                         append("\n\nRincian lengkap ada di log.")
@@ -1357,7 +1369,7 @@ class MainActivity : AppCompatActivity() {
                         "Pasang Aplikasi + Jadikan MDM Mode" -> "Semua APK berhasil dipasang dan HMDM berhasil dijadikan MDM Mode di HP target."
                         else -> null
                     }
-                    if (okMsg != null) showConnProblem("Berhasil", okMsg)
+                    if (okMsg != null) showConnProblem("$title berhasil", okMsg)
                 }
             }
         }
@@ -1387,7 +1399,7 @@ class MainActivity : AppCompatActivity() {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "$pct% · ${Fmt.mb(sent)} / ${Fmt.mb(size)}"
+            info.text = "$pct%, ${Fmt.mb(sent)} dari ${Fmt.mb(size)}"
         }
     }
 
@@ -1425,11 +1437,11 @@ class MainActivity : AppCompatActivity() {
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(74, 222, 128))
             }
             lost != null -> {
-                txtConn.text = "Terputus · $lost · Connect ulang"
+                txtConn.text = "Terputus · $lost, Connect ulang"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(248, 113, 113))
             }
             else -> {
-                txtConn.text = "Belum terhubung · Pair lalu Connect, atau Connect USB"
+                txtConn.text = "Belum terhubung, Pair lalu Connect atau Connect USB"
                 statusDot.backgroundTintList = ColorStateList.valueOf(Color.rgb(148, 163, 184))
             }
         }
@@ -1763,14 +1775,24 @@ class MainActivity : AppCompatActivity() {
         scrollLogToEnd()
     }
 
+    /** Baris ERR selama satu proses, dipakai sebagai isi popup bila proses gagal. */
+    private val runErrors = mutableListOf<String>()
+
+    /**
+     * Isi satu butir "Penyebab" di popup: baris ✗ tanpa awalan "<Aksi> gagal: " / "Gagal: ", karena judul popup
+     * sudah memuat aksinya ("Connect USB gagal"). Huruf pertama dibuat kapital.
+     */
+    private fun errReason(s: String): String {
+        val stripped = s.replace(Regex("^(?:[^:]{1,60}? )?[Gg]agal: "), "")
+        // Kapitalkan hanya bila awalan benar-benar dibuang; baris seperti "agent.apk: ..." dibiarkan.
+        return if (stripped.length != s.length) stripped.replaceFirstChar { it.uppercase() } else s
+    }
+
     /**
      * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
      * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda), dan titik di
      * akhir pesan dibuang supaya semua baris seragam (elipsis "..." dibiarkan).
      */
-    /** Baris ERR selama satu proses, dipakai sebagai isi popup bila proses gagal. */
-    private val runErrors = mutableListOf<String>()
-
     private fun log(level: LogLevel, s: String) {
         if (s.isBlank()) return
         if (level == LogLevel.ERR) runErrors.add(s.trim())
@@ -1873,5 +1895,7 @@ class MainActivity : AppCompatActivity() {
         private const val LOCK_TIMEOUT_MS = 30 * 60_000L
         private const val LOG_MAX_CHARS = 60_000
         private const val LOG_KEEP_CHARS = 40_000
+        /** Batas menunggu HP target memindai QR pairing. */
+        private const val QR_PAIR_TIMEOUT_MS = 120_000L
     }
 }
