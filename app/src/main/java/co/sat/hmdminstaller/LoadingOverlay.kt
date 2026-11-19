@@ -87,7 +87,7 @@ class LoadingOverlay(private val activity: Activity) {
             ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
             Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
         ).apply {
-            bottomMargin = dp(24)
+            bottomMargin = dp(88)  // di atas tab melayang
             marginStart = dp(20)
             marginEnd = dp(20)
         }
