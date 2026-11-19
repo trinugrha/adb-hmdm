@@ -392,12 +392,14 @@ class MainActivity : AppCompatActivity() {
         tabMode = findViewById(R.id.tabMode)
         val tabWireless: View = findViewById(R.id.tabWireless)
         val tabUsb: View = findViewById(R.id.tabUsb)
+        val txtConnTitle: TextView = findViewById(R.id.txtConnTitle)
         val cardTcpip: View = findViewById(R.id.cardTcpip)
         tabMode.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) {
                 val usb = tab.position == 1
                 tabWireless.visibility = if (usb) View.GONE else View.VISIBLE
                 tabUsb.visibility = if (usb) View.VISIBLE else View.GONE
+                txtConnTitle.text = if (usb) "KONEKSI USB DEBUGGING" else "KONEKSI WIRELESS DEBUGGING"
                 cardTcpip.visibility = if (usb) View.VISIBLE else View.GONE
             }
             override fun onTabUnselected(tab: TabLayout.Tab) {}
