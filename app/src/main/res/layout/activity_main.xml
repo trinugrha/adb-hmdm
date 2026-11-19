@@ -151,13 +151,6 @@
                 android:orientation="vertical"
                 android:padding="14dp">
 
-            <TextView
-                style="@style/Hmdm.SectionLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginBottom="8dp"
-                android:text="KONEKSI ADB" />
 
 
             <LinearLayout
@@ -1525,6 +1518,7 @@
     <!-- Tab metode koneksi: melayang di bawah layar -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/tabBar"
+        android:alpha="1"
         style="@style/Widget.Hmdm.Card"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -1532,16 +1526,21 @@
         android:layout_marginStart="20dp"
         android:layout_marginEnd="20dp"
         android:layout_marginBottom="16dp"
+        app:cardBackgroundColor="@color/accent"
         app:cardCornerRadius="28dp"
-        app:cardElevation="10dp">
+        app:cardElevation="10dp"
+        app:strokeWidth="0dp">
 
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@android:color/transparent"
+            android:alpha="1"
+            android:background="@color/accent"
             android:padding="4dp"
             app:tabGravity="fill"
+            app:tabIconTint="@color/tab_unselected_text"
+            app:tabInlineLabel="true"
             app:tabIndicator="@drawable/bg_tab_indicator"
             app:tabIndicatorColor="@null"
             app:tabIndicatorFullWidth="true"
@@ -1549,18 +1548,20 @@
             app:tabIndicatorAnimationMode="elastic"
             app:tabMode="fixed"
             app:tabRippleColor="@android:color/transparent"
-            app:tabSelectedTextColor="@color/accent"
-            app:tabTextColor="@color/muted">
+            app:tabSelectedTextColor="@color/tab_selected_text"
+            app:tabTextColor="@color/tab_unselected_text">
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Wireless debugging" />
+                android:icon="@drawable/ic_wifi"
+                android:text="Wireless" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="USB debugging" />
+                android:icon="@drawable/ic_usb"
+                android:text="USB" />
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>
