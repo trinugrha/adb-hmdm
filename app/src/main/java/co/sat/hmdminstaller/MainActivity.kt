@@ -202,6 +202,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pinStore: PinStore
     private var lockView: PinLockView? = null
     private var lastActivityAt = SystemClock.elapsedRealtime()
+    /** Waktu detak timer sesi terakhir; dipakai untuk menahan (pause) hitungan mundur saat operasi berjalan. */
+    private var timerTickAt = SystemClock.elapsedRealtime()
     private lateinit var txtSession: TextView
     private val backWhileLocked = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() { moveTaskToBack(true) }
@@ -607,6 +609,8 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         // Kunci ulang bila aplikasi ditinggalkan lebih lama dari batas waktu (koneksi ADB tetap berjalan).
         if (lockView == null && !busy && sessionRemainingMs() <= 0) showLock()
+        // Pemantau berhenti saat aplikasi di latar belakang; jangan hitung jeda itu sebagai waktu sibuk.
+        timerTickAt = SystemClock.elapsedRealtime()
         // Setelah layar HP dibuka kembali, kembalikan posisi tab ke tempat semula.
         tabKbOffset = 0f
         applyTabOffset()
@@ -1095,10 +1099,13 @@ class MainActivity : AppCompatActivity() {
     /** Sisa waktu sesi (ms) sebelum aplikasi terkunci otomatis. Hitung mundur dimulai saat login dan TIDAK direset oleh sentuhan layar. */
     private fun sessionRemainingMs() = LOCK_TIMEOUT_MS - (SystemClock.elapsedRealtime() - lastActivityAt)
 
-    /** Dipanggil tiap detik dari pemantau. Saat operasi (install dll) berjalan, timer ditahan penuh. */
+    /** Dipanggil tiap detik dari pemantau. Saat operasi (install dll) berjalan, timer DITAHAN (pause) di sisa waktu terakhir, tidak direset. */
     private fun updateSessionTimer() {
         if (lockView != null) return
-        if (busy) lastActivityAt = SystemClock.elapsedRealtime()
+        val now = SystemClock.elapsedRealtime()
+        // Geser titik awal sebesar waktu yang berlalu selama sibuk, sehingga sisa waktu tetap sama lalu lanjut menghitung setelah selesai.
+        if (busy) lastActivityAt += now - timerTickAt
+        timerTickAt = now
         val left = sessionRemainingMs()
         if (left <= 0) { showLock(); return }
         val sec = (left + 999) / 1000
@@ -1112,6 +1119,7 @@ class MainActivity : AppCompatActivity() {
         lockView = null
         backWhileLocked.isEnabled = false
         lastActivityAt = SystemClock.elapsedRealtime()
+        timerTickAt = lastActivityAt
         updateSessionTimer()
     }
 

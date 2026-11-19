@@ -808,7 +808,7 @@
                             android:layout_height="22dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_bolt"
-                            app:tint="@color/accent" />
+                            app:tint="@color/accent_text" />
 
                         <TextView
                             style="@style/Hmdm.CardTitle"
@@ -933,7 +933,7 @@
                             android:layout_height="22dp"
                             android:contentDescription="@null"
                             android:src="@drawable/ic_info"
-                            app:tint="@color/accent" />
+                            app:tint="@color/accent_text" />
 
                         <TextView
                             style="@style/Hmdm.CardTitle"
@@ -1455,7 +1455,7 @@
                     android:layout_width="20dp"
                     android:layout_height="20dp"
                     android:layout_marginEnd="8dp"
-                    android:indeterminateTint="@color/accent"
+                    android:indeterminateTint="@color/accent_text"
                     android:visibility="gone" />
 
                 <com.google.android.material.button.MaterialButton
@@ -1504,8 +1504,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:max="1000"
-                    android:progressTint="@color/accent"
-                    android:indeterminateTint="@color/accent" />
+                    android:progressTint="@color/accent_text"
+                    android:indeterminateTint="@color/accent_text" />
 
                 <TextView
                     android:id="@+id/txtProgInfo"

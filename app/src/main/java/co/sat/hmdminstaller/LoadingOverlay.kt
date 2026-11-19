@@ -135,7 +135,7 @@ class LoadingOverlay(private val activity: Activity) {
         var phase = 0f
             set(v) { field = v; invalidate() }
         private val barPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            color = ContextCompat.getColor(ctx, R.color.accent)
+            color = ContextCompat.getColor(ctx, R.color.accent_text)
         }
         private val clip = Path()
         private val rect = RectF()
@@ -165,7 +165,7 @@ class LoadingOverlay(private val activity: Activity) {
     private class SpinnerView(ctx: Context) : View(ctx) {
         var phase = 0f
             set(v) { field = v; invalidate() }
-        private val accent = ContextCompat.getColor(ctx, R.color.accent)
+        private val accent = ContextCompat.getColor(ctx, R.color.accent_text)
         private val d = ctx.resources.displayMetrics.density
         private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE; strokeWidth = 3 * d; color = accent; alpha = 40
