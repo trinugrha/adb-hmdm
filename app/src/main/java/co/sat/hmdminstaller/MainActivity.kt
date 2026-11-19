@@ -1217,10 +1217,10 @@ class MainActivity : AppCompatActivity() {
         if (!progShown) {
             progShown = true
             box.visibility = View.VISIBLE
-            // Gulir halaman sekali agar progress terlihat.
-            box.post { box.requestRectangleOnScreen(android.graphics.Rect(0, 0, box.width, box.height)) }
+            // Halaman tidak digulir otomatis; progres juga tampil di kartu loading.
         }
         n.text = "Memasang APK $idx dari $total: $name"
+        loading.update("Memasang APK $idx dari $total")
         if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
             info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
@@ -1593,10 +1593,15 @@ class MainActivity : AppCompatActivity() {
         logBlank()
     }
 
+    /** Gulir isi log saja ke bawah, tanpa memindahkan fokus/halaman utama. */
+    private fun scrollLogToEnd() {
+        logScroll.post { logScroll.scrollTo(0, (logScroll.getChildAt(0).height - logScroll.height).coerceAtLeast(0)) }
+    }
+
     /** Satu baris kosong sebagai pemisah antar proses. */
     private fun logBlank() {
         txtLog.append("\n")
-        logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
+        scrollLogToEnd()
     }
 
     /**
@@ -1621,7 +1626,7 @@ class MainActivity : AppCompatActivity() {
         if (hang > 0) sp.setSpan(LeadingMarginSpan.Standard(0, hang), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
         txtLog.append(sp)
         trimLog()
-        logScroll.post { logScroll.fullScroll(View.FOCUS_DOWN) }
+        scrollLogToEnd()
     }
 
     /** Batasi panjang log agar tidak membengkak: buang baris paling lama (dipotong di batas baris). */
