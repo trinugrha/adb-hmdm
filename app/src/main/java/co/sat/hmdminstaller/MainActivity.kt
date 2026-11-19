@@ -883,11 +883,23 @@ class MainActivity : AppCompatActivity() {
     private fun showConnProblem(title: String, message: String) {
         if (isFinishing || isDestroyed) return
         connDialog?.dismiss()
-        connDialog = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK", null)
-            .show()
+        val ok = title == "Berhasil"
+        val v = layoutInflater.inflate(R.layout.dialog_result, null)
+        val tint = ContextCompat.getColor(this, if (ok) R.color.ok else R.color.danger)
+        v.findViewById<View>(R.id.resultIconBg).setBackgroundResource(if (ok) R.drawable.bg_badge_ok else R.drawable.bg_badge_danger)
+        v.findViewById<android.widget.ImageView>(R.id.resultIcon).apply {
+            setImageResource(if (ok) R.drawable.ic_check else R.drawable.ic_warning)
+            imageTintList = ColorStateList.valueOf(tint)
+        }
+        v.findViewById<TextView>(R.id.resultTitle).text = title
+        v.findViewById<TextView>(R.id.resultMessage).text = message
+        val dlg = AlertDialog.Builder(this).setView(v).create()
+        v.findViewById<MaterialButton>(R.id.resultOk).apply {
+            if (ok) backgroundTintList = ColorStateList.valueOf(tint)
+            setOnClickListener { dlg.dismiss() }
+        }
+        connDialog = dlg
+        dlg.show()
     }
 
     /** Minta konfirmasi sebelum keluar; peringatkan bila masih ada proses berjalan. */
@@ -942,7 +954,7 @@ class MainActivity : AppCompatActivity() {
         val sec = (left + 999) / 1000
         txtSession.text = if (sec >= 3600) "Sesi %d:%02d:%02d".format(sec / 3600, sec % 3600 / 60, sec % 60)
                           else "Sesi %02d:%02d".format(sec / 60, sec % 60)
-        txtSession.setTextColor(if (sec <= 60) Color.rgb(251, 191, 36) else ContextCompat.getColor(this, R.color.header_subtext))
+        txtSession.setTextColor(if (sec <= 60) Color.rgb(217, 119, 6) else ContextCompat.getColor(this, R.color.header_subtext))
     }
 
     private fun removeLock() {

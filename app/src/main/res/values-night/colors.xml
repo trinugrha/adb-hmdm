@@ -17,6 +17,11 @@
 
     <color name="side">#08181D</color>
     <color name="header_end">#0B5A54</color>
+    <color name="header_bg">#131B24</color>
+    <color name="header_text">#E6EDF3</color>
+    <color name="header_subtext">#8B9BAB</color>
+    <color name="header_chip">#1E2A38</color>
+    <color name="header_divider">#223040</color>
 
     <color name="log_bg">#070B10</color>
     <color name="log_stroke">#1A2430</color>
@@ -47,4 +52,8 @@
     <color name="tab_bar_bg">#2DD4BF</color>
     <color name="tab_selected_text">#000000</color>
     <color name="tab_unselected_text">#000000</color>
+
+    <!-- Popup hasil -->
+    <color name="ok">#4ADE80</color>
+    <color name="badge_ok_bg">#12301F</color>
 </resources>
