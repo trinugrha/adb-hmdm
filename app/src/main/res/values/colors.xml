@@ -22,11 +22,11 @@
     <!-- Header -->
     <color name="side">#0B2A33</color>
     <color name="header_end">#0F766E</color>
-    <color name="header_bg">#FFFFFF</color>
-    <color name="header_text">#0F172A</color>
-    <color name="header_subtext">#64748B</color>
-    <color name="header_chip">#F1F5F9</color>
-    <color name="header_divider">#E5E9F0</color>
+    <color name="header_bg">#1D8A7F</color>
+    <color name="header_text">#FFFFFF</color>
+    <color name="header_subtext">#D5F0EC</color>
+    <color name="header_chip">#29FFFFFF</color>
+    <color name="header_divider">#176F66</color>
 
     <!-- Log terminal -->
     <color name="log_bg">#0B1220</color>
