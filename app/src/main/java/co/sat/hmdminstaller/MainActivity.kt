@@ -1031,22 +1031,21 @@ class MainActivity : AppCompatActivity() {
 
     private var connDialog: AlertDialog? = null
 
-    /** Popup hasil proses (gagal, putus, atau berhasil). [ok] true = ikon dan tombol hijau. Popup lama diganti agar tidak bertumpuk. */
+    /** Popup hasil proses (gagal, putus, atau berhasil). [ok] true = ikon centang warna navy (seragam dengan popup lain); gagal = ikon merah. Tombol OK selalu navy (btn_main). Popup lama diganti agar tidak bertumpuk. */
     private fun showConnProblem(title: String, message: String, ok: Boolean = false) {
         if (isFinishing || isDestroyed) return
         connDialog?.dismiss()
         val v = layoutInflater.inflate(R.layout.dialog_result, null)
-        val tint = ContextCompat.getColor(this, if (ok) R.color.ok else R.color.danger)
-        v.findViewById<View>(R.id.resultIconBg).setBackgroundResource(if (ok) R.drawable.bg_badge_ok else R.drawable.bg_badge_danger)
+        val tint = ContextCompat.getColor(this, if (ok) R.color.accent_text else R.color.danger)
+        v.findViewById<View>(R.id.resultIconBg).setBackgroundResource(if (ok) R.drawable.bg_badge_navy else R.drawable.bg_badge_danger)
         v.findViewById<android.widget.ImageView>(R.id.resultIcon).apply {
-            setImageResource(if (ok) R.drawable.ic_check else R.drawable.ic_warning)
+            setImageResource(if (ok) R.drawable.ic_check_circle else R.drawable.ic_warning)
             imageTintList = ColorStateList.valueOf(tint)
         }
         v.findViewById<TextView>(R.id.resultTitle).text = title
         v.findViewById<TextView>(R.id.resultMessage).text = message
         val dlg = AlertDialog.Builder(this).setView(v).create()
         v.findViewById<MaterialButton>(R.id.resultOk).apply {
-            if (ok) backgroundTintList = ColorStateList.valueOf(tint)
             setOnClickListener { dlg.dismiss() }
         }
         connDialog = dlg
@@ -1428,6 +1427,9 @@ class MainActivity : AppCompatActivity() {
                         "Pasang Aplikasi" -> "Semua APK berhasil dipasang ke HP target."
                         "Jadikan MDM Mode" -> "HMDM berhasil dijadikan MDM Mode di HP target."
                         "Pasang Aplikasi + Jadikan MDM Mode" -> "Semua APK berhasil dipasang dan HMDM berhasil dijadikan MDM Mode di HP target."
+                        "Hapus Data Aplikasi Kaspersky" -> "Data dan pengaturan aplikasi Kaspersky berhasil dihapus dari HP target."
+                        "Uninstall Aplikasi Kaspersky" -> "Aplikasi Kaspersky berhasil di-uninstall dari HP target."
+                        "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target. Lanjutkan dengan menyambung lewat tab Wireless."
                         else -> null
                     }
                     if (okMsg != null) showConnProblem("$title berhasil", okMsg, ok = true)

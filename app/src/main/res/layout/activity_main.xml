@@ -976,50 +976,59 @@
                         android:orientation="vertical"
                         android:padding="14dp">
 
-                    <!-- Pilih jenis perangkat untuk ceklist instalasi (dinaikkan; clipToPadding=false agar checkbox tidak terpotong) -->
+                    <!-- Pilih jenis perangkat untuk ceklist instalasi: tombol segmen (sama seperti dialog Setting Aplikasi & Versi) -->
                     <LinearLayout
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="-8dp"
-                        android:clipChildren="false"
-                        android:orientation="horizontal">
+                        android:background="@drawable/bg_chip"
+                        android:orientation="horizontal"
+                        android:padding="4dp">
 
                         <CheckBox
                             android:id="@+id/typePos"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="0dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_segment_item"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="0dp"
                             android:text="POS"
-                            android:textColor="@color/text"
+                            android:textColor="@color/segment_text"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <CheckBox
                             android:id="@+id/typeTablet"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_segment_item"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="0dp"
                             android:text="TABLET"
-                            android:textColor="@color/text"
+                            android:textColor="@color/segment_text"
                             android:textSize="13sp"
                             android:textStyle="bold" />
 
                         <CheckBox
                             android:id="@+id/typePda"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:button="@drawable/btn_check_round"
-                            android:minHeight="40dp"
-                            android:paddingStart="6dp"
+                            android:layout_width="0dp"
+                            android:layout_height="38dp"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_segment_item"
+                            android:button="@null"
+                            android:gravity="center"
+                            android:minWidth="0dp"
+                            android:minHeight="0dp"
+                            android:padding="0dp"
                             android:text="PDA"
-                            android:textColor="@color/text"
+                            android:textColor="@color/segment_text"
                             android:textSize="13sp"
                             android:textStyle="bold" />
                     </LinearLayout>
@@ -1117,7 +1126,6 @@
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnRefreshInfo"
                     style="@style/Widget.Hmdm.Button.Blue"
-                    app:backgroundTint="@color/btn_status"
                     android:layout_width="match_parent"
                     android:layout_height="44dp"
                     android:layout_marginTop="10dp"
