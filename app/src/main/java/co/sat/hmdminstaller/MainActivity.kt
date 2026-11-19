@@ -259,7 +259,15 @@ class MainActivity : AppCompatActivity() {
                 val h = root.height
                 if (w != lastW) { lastW = w; fullH = 0 }
                 if (h > fullH) fullH = h
-                bar.translationY = (fullH - h).coerceAtLeast(0).toFloat()
+                // Hanya penyusutan akibat keyboard yang dikompensasi. Penyusutan lain (layar dikunci/dibuka,
+                // bar sistem berubah, overlay PIN) dianggap tinggi layar baru, sehingga tab tidak tertinggal
+                // turun rapat ke dasar layar.
+                val shrink = (fullH - h).coerceAtLeast(0)
+                val imeVisible = ViewCompat.getRootWindowInsets(root)
+                    ?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
+                val keyboardShrink = imeVisible || shrink > fullH / 5
+                if (!keyboardShrink) fullH = h
+                bar.translationY = if (keyboardShrink) shrink.toFloat() else 0f
             }
         }
 
@@ -561,6 +569,8 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         // Kunci ulang bila aplikasi ditinggalkan lebih lama dari batas waktu (koneksi ADB tetap berjalan).
         if (lockView == null && !busy && sessionRemainingMs() <= 0) showLock()
+        // Setelah layar HP dibuka kembali, kembalikan posisi tab ke tempat semula.
+        findViewById<View>(R.id.tabBar).translationY = 0f
         pollTask?.cancel(false)
         pollTask = poller.scheduleWithFixedDelay({ pollConnection() }, 0, 1, TimeUnit.SECONDS)
     }
