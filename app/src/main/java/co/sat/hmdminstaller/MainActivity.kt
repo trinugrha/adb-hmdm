@@ -65,6 +65,30 @@ class MainActivity : AppCompatActivity() {
         })
     }
 
+    // Posisi tab bar = geser karena keyboard + geser karena disembunyikan saat gulir.
+    private var tabKbOffset = 0f
+    private var tabHideOffset = 0f
+    private var tabHidden = false
+    private var tabAnim: android.animation.ValueAnimator? = null
+
+    private fun applyTabOffset() {
+        findViewById<View>(R.id.tabBar).translationY = tabKbOffset + tabHideOffset
+    }
+
+    private fun setTabHidden(hide: Boolean, bar: View) {
+        if (tabHidden == hide) return
+        tabHidden = hide
+        val d = resources.displayMetrics.density
+        // Cukup jauh agar bar beserta bayangan dan jarak 16dp ke dasar layar ikut hilang.
+        val target = if (hide) bar.height + 32 * d else 0f
+        tabAnim?.cancel()
+        tabAnim = android.animation.ValueAnimator.ofFloat(tabHideOffset, target).apply {
+            duration = 180
+            addUpdateListener { tabHideOffset = it.animatedValue as Float; applyTabOffset() }
+            start()
+        }
+    }
+
     private var touchDownX = 0f
     private var touchDownY = 0f
     private var kbHandledForGesture = false
@@ -267,7 +291,21 @@ class MainActivity : AppCompatActivity() {
                     ?.isVisible(WindowInsetsCompat.Type.ime()) ?: false
                 val keyboardShrink = imeVisible || shrink > fullH / 5
                 if (!keyboardShrink) fullH = h
-                bar.translationY = if (keyboardShrink) shrink.toFloat() else 0f
+                tabKbOffset = if (keyboardShrink) shrink.toFloat() else 0f
+                applyTabOffset()
+            }
+
+            // Tab melayang ikut sembunyi saat isi digulir ke bawah, dan muncul lagi saat digulir ke atas.
+            val density = resources.displayMetrics.density
+            val slop = 4 * density
+            var acc = 0f
+            findViewById<ScrollView>(R.id.pageScroll).setOnScrollChangeListener { _, _, y, _, oldY ->
+                val dy = (y - oldY).toFloat()
+                if (y <= 0) { acc = 0f; setTabHidden(false, bar); return@setOnScrollChangeListener }
+                // Akumulasi searah agar getaran kecil tidak membuat tab kedip.
+                acc = if (dy * acc < 0) dy else acc + dy
+                if (acc > slop) setTabHidden(true, bar)
+                else if (acc < -slop) setTabHidden(false, bar)
             }
         }
 
@@ -570,7 +608,8 @@ class MainActivity : AppCompatActivity() {
         // Kunci ulang bila aplikasi ditinggalkan lebih lama dari batas waktu (koneksi ADB tetap berjalan).
         if (lockView == null && !busy && sessionRemainingMs() <= 0) showLock()
         // Setelah layar HP dibuka kembali, kembalikan posisi tab ke tempat semula.
-        findViewById<View>(R.id.tabBar).translationY = 0f
+        tabKbOffset = 0f
+        applyTabOffset()
         pollTask?.cancel(false)
         pollTask = poller.scheduleWithFixedDelay({ pollConnection() }, 0, 1, TimeUnit.SECONDS)
     }
