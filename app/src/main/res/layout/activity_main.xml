@@ -68,18 +68,6 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/btnTheme"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:layout_marginStart="8dp"
-                    android:background="@drawable/bg_pill"
-                    android:clickable="true"
-                    android:contentDescription="Ganti tema gelap / terang"
-                    android:focusable="true"
-                    android:padding="10dp"
-                    app:tint="@color/header_text" />
-
                 <LinearLayout
                     android:id="@+id/btnLogout"
                     android:layout_width="wrap_content"
@@ -1539,7 +1527,7 @@
         android:id="@+id/tabBar"
         android:alpha="1"
         style="@style/Widget.Hmdm.Card"
-        android:layout_width="280dp"
+        android:layout_width="260dp"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
         android:layout_marginBottom="16dp"

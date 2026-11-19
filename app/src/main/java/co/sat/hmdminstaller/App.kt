@@ -28,11 +28,6 @@ class App : Application() {
     override fun onCreate() {
         super.onCreate()
         VersionStore.init(this)
-        // Tema pilihan pengguna (gelap / terang); tanpa pilihan mengikuti sistem.
-        when (getSharedPreferences("ui_prefs", MODE_PRIVATE).getString("theme", null)) {
-            "dark" -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_YES)
-            "light" -> androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_NO)
-        }
         installCrashGuard()
         watchWifi()
         // Wireless debugging memakai TLS 1.3; Conscrypt dibutuhkan oleh libadb-android.
