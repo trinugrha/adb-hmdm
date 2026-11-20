@@ -94,6 +94,32 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
          */
         val EXPECTED_VERSIONS: Map<String, Map<String, String>> = emptyMap()
 
+        /** Daftar model (ro.product.model) per jenis perangkat; dipakai kartu Informasi Status untuk memilih POS / PDA / TABLET otomatis. */
+        val DEVICE_MODELS: Map<String, List<String>> = linkedMapOf(
+            "POS" to listOf("T2s", "HK316T", "HK566G", "178A"),
+            "PDA" to listOf("PM80", "PM75"),
+            "TABLET" to listOf("SM-T225", "SM-T295", "SM-T385", "SM-X110", "SM-X115", "SM-X133", "SM-X135G")
+        )
+
+        private fun normModel(s: String): String = s.uppercase().filter { it.isLetterOrDigit() }
+
+        /**
+         * Cocokkan [model] dengan [DEVICE_MODELS]. Cocok bila sama persis (abaikan huruf besar/kecil, spasi, tanda hubung)
+         * atau model hanya berbeda 1-2 huruf varian di belakang (mis. SM-T225N untuk SM-T225). null = tidak dikenal.
+         */
+        fun detectType(model: String): String? {
+            val m = normModel(model)
+            if (m.isEmpty()) return null
+            for ((type, list) in DEVICE_MODELS) {
+                for (c in list) {
+                    val n = normModel(c)
+                    if (m == n) return type
+                    if (n.startsWith("SM") && m.startsWith(n) && m.length - n.length <= 2 && m.substring(n.length).all { it.isLetter() }) return type
+                }
+            }
+            return null
+        }
+
         /** Versi terbaca sama dengan harapan (abaikan spasi dan huruf besar/kecil). */
         fun versionMatches(expected: String, actual: String?): Boolean =
             actual != null && actual.trim().equals(expected.trim(), ignoreCase = true)
@@ -454,6 +480,23 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             val out = shell("getprop service.adb.tcp.port; getprop persist.adb.tcp.port", 5_000, quiet = true)
             if (out.isBlank() && lastShellTimedOut) return null
             out.lineSequence().any { (it.trim().toIntOrNull() ?: 0) > 0 }
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+    /**
+     * Baca model HP target (ro.product.model; cadangan ro.product.device / ro.product.name).
+     * Hasil: Pair(model yang ditampilkan, jenis POS/PDA/TABLET atau null bila tidak ada di daftar). null = tidak terbaca.
+     */
+    fun queryDeviceModel(): Pair<String, String?>? {
+        if (!libConnected) return null
+        return try {
+            val out = shell("getprop ro.product.model; getprop ro.product.device; getprop ro.product.name", 5_000, quiet = true)
+            val lines = out.lineSequence().map { it.trim() }.filter { it.isNotEmpty() }.toList()
+            if (lines.isEmpty()) return null
+            val hit = lines.firstNotNullOfOrNull { l -> detectType(l)?.let { l to it } }
+            hit ?: (lines.first() to null)
         } catch (e: Throwable) {
             null
         }

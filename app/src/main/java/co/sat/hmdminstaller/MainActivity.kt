@@ -189,6 +189,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var typeChips: Map<String, android.widget.CheckBox>
     /** Status tiga permission com.hmdm.launcher di HP target: null = belum diketahui. */
     @Volatile private var hmdmPerms: HmdmPermissions? = null
+    /** Model HP target hasil baca di kartu Informasi Status (model, jenis terdeteksi atau null). */
+    @Volatile private var deviceModel: Pair<String, String?>? = null
+    private lateinit var txtModel: TextView
     /** Jenis perangkat yang dicek untuk [hmdmPerms]; hasil dipakai hanya bila sama dengan jenis yang sedang terceklis. */
     @Volatile private var permType: String? = null
 
@@ -349,6 +352,7 @@ class MainActivity : AppCompatActivity() {
                 refreshPerms()
             }
         }
+        txtModel = findViewById(R.id.txtModel)
         appsDot = findViewById(R.id.appsDot)
         txtApps = findViewById(R.id.txtApps)
         txtAppsDetail = findViewById(R.id.txtAppsDetail)
@@ -433,9 +437,25 @@ class MainActivity : AppCompatActivity() {
             if (busy) return@setOnClickListener
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
-            val type = deviceType
             skipInfoRefresh = true
             run("Cek Informasi Status") {
+                // Baca model HP target; bila ada di daftar POS / PDA / TABLET, jenis perangkat dipilih otomatis.
+                val dm = adb.queryDeviceModel()
+                if (dm != null) {
+                    deviceModel = dm
+                    if (dm.second != null) {
+                        runOnUiThread { log(LogLevel.OK, "Model perangkat: ${dm.first} -> ${dm.second}") }
+                        if (dm.second != deviceType) {
+                            deviceType = dm.second!!
+                            getSharedPreferences("ui_prefs", Context.MODE_PRIVATE).edit().putString("device_type", deviceType).apply()
+                        }
+                    } else {
+                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} (tidak ada di daftar POS / PDA / TABLET, pilih jenis secara manual)") }
+                    }
+                } else {
+                    runOnUiThread { log(LogLevel.WARN, "Model perangkat tidak terbaca") }
+                }
+                val type = deviceType
                 val r = adb.checkRequiredPackages(type)
                 if (r != null) { appsInstalled = r; appsType = type }
                 // Permission hanya dicek bila com.hmdm.launcher termasuk dalam jenis perangkat yang terceklis.
@@ -1260,7 +1280,7 @@ class MainActivity : AppCompatActivity() {
             adb.sessionLabel = null
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; deviceModel = null
         }
         refreshHeader()
     }
@@ -1374,7 +1394,7 @@ class MainActivity : AppCompatActivity() {
             // Connect gagal: koneksi lama sudah diputus, jangan tampilkan alamat lama sebagai terhubung.
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; deviceModel = null
         }
         runOnUiThread { refreshHeader() }
         return ok
@@ -1401,7 +1421,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             connectedAddr = null
             connectedSince = 0L
-            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null
+            ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; deviceModel = null
             showUsbDevice(null)
         }
         runOnUiThread { refreshHeader() }
@@ -1425,14 +1445,14 @@ class MainActivity : AppCompatActivity() {
         val already = adb.queryTcpipActive() == true
         val ok = adb.enableTcpip()
         if (ok && already) { tcpipActive = true; runOnUiThread { refreshHeader() }; return true }
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; deviceModel = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
 
     private fun doDisconnect(): Boolean {
         val ok = adb.disconnect()
-        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; showUsbDevice(null) }
+        if (ok) { connectedAddr = null; connectedSince = 0L; lostAddr = null; ownerState = OwnerState.Unknown; homeState = HomeState.Unknown; kasperskyInstalled = null; hmdmInstalled = null; tcpipActive = null; appsInstalled = null; hmdmPerms = null; permType = null; deviceModel = null; showUsbDevice(null) }
         runOnUiThread { refreshHeader() }
         return ok
     }
@@ -1787,6 +1807,12 @@ class MainActivity : AppCompatActivity() {
         }
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
+        val dm = if (connected) deviceModel else null
+        txtModel.text = when {
+            dm == null -> "Belum diperiksa"
+            dm.second != null -> "${dm.first} · ${dm.second}"
+            else -> "${dm.first} · tidak dikenal"
+        }
         // Rincian aplikasi bermasalah tidak ditampilkan di kartu; hanya ada di log.
         txtAppsDetail.text = ""
         txtAppsDetail.visibility = View.GONE

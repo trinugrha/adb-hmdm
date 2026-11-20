@@ -1118,6 +1118,30 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:text="MODEL PERANGKAT"
+                        android:textColor="@color/muted" />
+
+                    <TextView
+                        android:id="@+id/txtModel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_chip"
+                        android:maxLines="1"
+                        android:ellipsize="end"
+                        android:paddingStart="12dp"
+                        android:paddingTop="7dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="7dp"
+                        android:text="Belum terhubung"
+                        android:textColor="@color/text"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        style="@style/Hmdm.SectionLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
                         android:text="INSTALLATION STATUS"
                         android:textColor="@color/muted" />
 

@@ -28,6 +28,7 @@ syarat di atas terpenuhi.
 
 ## Pengaturan aplikasi & versi
 Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Installation Status, tanpa build ulang.
+- Saat tombol refresh ditekan, model HP target dibaca (`ro.product.model`) dan jenis dipilih otomatis: POS = T2s, HK316T, HK566G, 178A; PDA = PM80, PM75; TABLET = SM-T225, SM-T295, SM-T385, SM-X110, SM-X115, SM-X133, SM-X135G (`DEVICE_MODELS` di `AdbController.kt`). Model di luar daftar ditampilkan "tidak dikenal" dan jenis dipilih manual.
 - Pilih jenis perangkat (POS / TABLET / PDA), ubah kolom versionName per aplikasi. Kolom kosong = aplikasi hanya dicek terpasang.
 - **+ Tambah aplikasi**: isi nama paket (mis. `com.contoh.app`) dan versi (boleh kosong).
 - Ikon **sampah** di samping tiap aplikasi: hapus dari daftar jenis itu.
