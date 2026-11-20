@@ -66,6 +66,8 @@ package co.sat.hmdminstaller
  * - Butir "Penyebab" di popup selalu diawali huruf kapital, juga untuk penyebab putus koneksi (`lastDropReason`, yang di log ditulis huruf kecil).
  * - Contoh isian di Toast ditulis sebagai kalimat sendiri: "Isi nama model. Contoh: SM-T225".
  * - Judul proses cek status memakai nama tombol "Cek Status" (bukan "Cek Informasi Status").
+ * - Klausa berurutan dipisah koma sebelum "lalu" ("Colok ulang kabel, lalu ketuk ..."); urutan dua nama tombol tetap tanpa koma ("Pair" lalu "Connect").
+ * - Petunjuk ke HP ini ditulis "layar HP ini", bukan "layar aplikasi ini".
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

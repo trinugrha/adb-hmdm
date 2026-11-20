@@ -216,13 +216,13 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val label = "USB · ${t.label}"
         logCmd("adb -d usb (USB debugging)")
         if (!listUsbTargets().any { it.device.deviceName == t.device.deviceName }) {
-            logErr("Connect USB gagal: $label sudah tidak terpasang. Colok ulang kabel lalu pilih lagi")
+            logErr("Connect USB gagal: $label sudah tidak terpasang. Colok ulang kabel, lalu ketuk \"Pilih Perangkat\" lagi")
             return null
         }
         logStep("HP target: $label")
-        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar aplikasi ini")
+        if (!usbBridge.hasPermission(t.device)) logWarn("Izinkan akses USB pada dialog yang muncul di layar HP ini")
         if (!usbBridge.requestPermission(t.device)) {
-            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk \"Pilih Perangkat\" lagi lalu pilih \"Izinkan\"")
+            logErr("Connect USB gagal: izin akses USB ditolak atau tidak dijawab. Ketuk \"Pilih Perangkat\" lagi, lalu pilih \"Izinkan\"")
             return null
         }
         val port = try { usbBridge.start(t.device) } catch (e: Throwable) {
@@ -561,7 +561,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logCmd("adb shell dumpsys package <paket> | grep versionName")
         val all = queryRequiredPackages(type)
         if (all == null) {
-            logErr("Baca versi aplikasi gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            logErr("Baca versi aplikasi gagal: HP target tidak menjawab. Cek koneksi, lalu coba lagi")
             return null
         }
         val pkgs = VersionStore.packages(type)
@@ -638,7 +638,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logCmd("adb shell appops get $HMDM_PACKAGE SYSTEM_ALERT_WINDOW")
         logCmd("adb shell appops get $HMDM_PACKAGE GET_USAGE_STATS")
         val r = queryHmdmPermissions() ?: run {
-            logErr("Baca izin gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            logErr("Baca izin gagal: HP target tidak menjawab. Cek koneksi, lalu coba lagi")
             return null
         }
         fun line(name: String, v: Boolean?) = when (v) {
@@ -677,7 +677,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             is HomeState.Hmdm -> logOk("Launcher default: HMDM (${st.component})")
             is HomeState.Other -> logWarn("Launcher default: aplikasi lain (${st.component})")
             is HomeState.None -> logWarn("Belum ada launcher default di HP target")
-            is HomeState.Unknown -> logErr("Baca launcher default gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            is HomeState.Unknown -> logErr("Baca launcher default gagal: HP target tidak menjawab. Cek koneksi, lalu coba lagi")
         }
         return st
     }
@@ -691,7 +691,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             is OwnerState.Hmdm -> logOk("MDM Mode: HMDM (${st.pkg})")
             is OwnerState.Other -> logWarn("MDM Mode: aplikasi lain (${st.pkg})")
             is OwnerState.None -> logWarn("Belum ada MDM Mode di HP target")
-            is OwnerState.Unknown -> logErr("Baca MDM Mode gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            is OwnerState.Unknown -> logErr("Baca MDM Mode gagal: HP target tidak menjawab. Cek koneksi, lalu coba lagi")
         }
         return st
     }
@@ -977,7 +977,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun enableTcpip(): Boolean {
         if (!ensureConnected()) return false
         if (!viaUsb) {
-            logErr("Ubah ke Mode Nirkabel gagal: perintah ini hanya untuk koneksi USB. Gunakan tab \"USB\" lalu ketuk \"Pilih Perangkat\"")
+            logErr("Ubah ke Mode Nirkabel gagal: perintah ini hanya untuk koneksi USB. Gunakan tab \"USB\", lalu ketuk \"Pilih Perangkat\"")
             return false
         }
         if (queryTcpipActive() == true) {

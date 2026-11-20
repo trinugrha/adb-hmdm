@@ -441,7 +441,7 @@ class MainActivity : AppCompatActivity() {
                             getSharedPreferences("ui_prefs", Context.MODE_PRIVATE).edit().putString("device_type", deviceType).apply()
                         }
                     } else {
-                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} tidak ada di daftar POS / PDA / TABLET. Status instalasi dan permission tidak dicek. Tambahkan model di Pengaturan Model Perangkat, lalu cek ulang") }
+                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} tidak ada di daftar POS / PDA / TABLET. Status instalasi dan izin tidak dicek. Tambahkan model di Pengaturan Model Perangkat, lalu cek ulang") }
                     }
                 } else {
                     runOnUiThread { log(LogLevel.WARN, "Model perangkat tidak terbaca") }
@@ -977,7 +977,7 @@ class MainActivity : AppCompatActivity() {
                     val reason = e.message?.takeIf {
                         e is IllegalArgumentException || (e is java.io.IOException && it.startsWith("tidak bisa"))
                     } ?: "file tidak bisa dibaca"
-                    val msg = "Impor versi aplikasi gagal: $reason. Pilih file hasil ekspor aplikasi ini"
+                    val msg = "Impor versi aplikasi gagal: $reason. Pilih file hasil ekspor versi aplikasi"
                     Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
                     log(LogLevel.ERR, msg)
                     log(LogLevel.DETAIL, Fmt.cause(e))
@@ -1320,7 +1320,7 @@ class MainActivity : AppCompatActivity() {
         try { Thread.sleep(2_000) } catch (e: InterruptedException) { }
         val ca = adb.findConnectAddr(f.host)
         if (ca == null) {
-            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging) lalu ketuk \"Connect\"")
+            log(LogLevel.WARN, "Port connect tidak ditemukan otomatis. Isi IP dan port connect (layar utama Wireless debugging), lalu ketuk \"Connect\"")
             return true
         }
         val (ip, port) = ca.substringBeforeLast(':') to ca.substringAfterLast(':')
@@ -1494,7 +1494,7 @@ class MainActivity : AppCompatActivity() {
                     val hint = when {
                         title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan HP ini satu jaringan Wi-Fi"
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan HP ini satu jaringan Wi-Fi"
-                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
+                        title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar HP ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
                         isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan HP ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
                         title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode" -> "Periksa:\n• Layar HP target menyala dan koneksi masih tersambung\n• Penyimpanan HP target cukup\n• Versi APK tidak lebih rendah dari yang sudah terpasang\n• Dialog di HP target (bila muncul) disetujui"
                         title == "Jadikan MDM Mode" -> "Periksa:\n• Semua akun (Google dan lainnya) di HP target sudah dihapus\n• HP target baru atau baru direset ke pengaturan pabrik\n• Belum ada aplikasi lain yang menjadi MDM Mode di HP target"
