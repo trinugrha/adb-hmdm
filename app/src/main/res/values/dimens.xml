@@ -19,7 +19,7 @@
 
     <!-- Ukuran kontrol -->
     <dimen name="control_height">40dp</dimen>
-    <dimen name="control_height_dialog">44dp</dimen>
+    <dimen name="control_height_dialog">40dp</dimen>
     <dimen name="icon_button_size">40dp</dimen>
     <dimen name="icon_button_padding">8dp</dimen>
     <dimen name="icon_size">20dp</dimen>
@@ -29,7 +29,7 @@
     <dimen name="logo_size">48dp</dimen>
     <dimen name="log_height">280dp</dimen>
     <dimen name="control_height_large">52dp</dimen>
-    <dimen name="segment_height">38dp</dimen>
+    <dimen name="segment_height">40dp</dimen>
     <dimen name="list_item_height">56dp</dimen>
     <dimen name="qr_size">260dp</dimen>
     <dimen name="pin_box_width">56dp</dimen>

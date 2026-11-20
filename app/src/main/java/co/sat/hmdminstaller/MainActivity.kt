@@ -685,9 +685,6 @@ class MainActivity : AppCompatActivity() {
             list.removeAllViews()
             val items = draft.getValue(current)
             list.addView(ui.sectionLabel("DAFTAR MODEL · ${items.size}"), ui.lpTop(24))
-            if (items.isEmpty()) {
-                list.addView(ui.label("Belum ada model untuk $current"), ui.lpTop(10))
-            }
             for (m in items.toList()) {
                 val del = ui.iconButton(R.drawable.ic_delete, ui.cDanger, "Hapus $m") {
                     draft.getValue(current).remove(m)
