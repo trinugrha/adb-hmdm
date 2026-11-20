@@ -1555,6 +1555,7 @@ class MainActivity : AppCompatActivity() {
         val bar = findViewById<ProgressBar>(R.id.barInstall)
         val n = findViewById<TextView>(R.id.txtProgName)
         val info = findViewById<TextView>(R.id.txtProgInfo)
+        val pctView = findViewById<TextView>(R.id.txtProgPct)
         if (!progShown) {
             progShown = true
             box.visibility = View.VISIBLE
@@ -1564,12 +1565,14 @@ class MainActivity : AppCompatActivity() {
         loading.update("Memasang APK $idx dari $total")
         if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
+            pctView.text = "100%"
             info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
         } else {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
-            info.text = "$pct%, ${Fmt.mb(sent)} dari ${Fmt.mb(size)}"
+            pctView.text = "$pct%"
+            info.text = "${Fmt.mb(sent)} dari ${Fmt.mb(size)}"
         }
     }
 
