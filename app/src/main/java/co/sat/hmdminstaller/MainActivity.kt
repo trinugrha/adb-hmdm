@@ -1021,6 +1021,34 @@ class MainActivity : AppCompatActivity() {
     private enum class PopupTone { NAVY, DANGER }
 
     /**
+     * Merapikan teks isi popup: label ("Penyebab:", "Periksa:", "Langkah berikutnya:", "Catatan:", "Perhatian:", "Perintah:")
+     * ditebalkan, perintah adb memakai huruf monospace, dan baris "• " diberi indent gantung supaya baris lanjutan sejajar dengan isi.
+     */
+    private fun formatPopupMessage(text: String): CharSequence {
+        val labelRe = Regex("^(Penyebab|Periksa|Langkah berikutnya|Catatan|Perhatian|Perintah):")
+        val strong = ContextCompat.getColor(this, R.color.text)
+        val sb = android.text.SpannableStringBuilder()
+        val lines = text.split("\n")
+        for ((i, line) in lines.withIndex()) {
+            val start = sb.length
+            sb.append(line)
+            if (i < lines.lastIndex) sb.append('\n')
+            val m = labelRe.find(line)
+            if (m != null) {
+                val labelEnd = start + m.value.length
+                sb.setSpan(StyleSpan(Typeface.BOLD), start, labelEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                sb.setSpan(ForegroundColorSpan(strong), start, labelEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                if (m.groupValues[1] == "Perintah") {
+                    sb.setSpan(android.text.style.TypefaceSpan("monospace"), labelEnd, start + line.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+            } else if (line.startsWith("• ")) {
+                sb.setSpan(LeadingMarginSpan.Standard(0, dp(12)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+        }
+        return sb
+    }
+
+    /**
      * Satu-satunya bentuk popup di aplikasi (layout dialog_popup): ikon bulat, judul di tengah, isi, lalu tombol.
      * Semua popup (hasil, konfirmasi, pilihan, form, QR, pengaturan) lewat sini supaya tampilannya seragam.
      * [tone] NAVY = netral/berhasil, DANGER = gagal/berbahaya. Tombol positif selalu navy.
@@ -1053,7 +1081,11 @@ class MainActivity : AppCompatActivity() {
         }
         v.findViewById<TextView>(R.id.popupTitle).text = title
         val msg = v.findViewById<TextView>(R.id.popupMessage)
-        if (message.isNullOrEmpty()) msg.visibility = View.GONE else msg.text = message
+        if (message.isNullOrEmpty()) msg.visibility = View.GONE else {
+            msg.text = formatPopupMessage(message)
+            // Satu kalimat pendek: rata tengah di bawah judul; pesan berparagraf/berdaftar: rata kiri.
+            msg.gravity = if (message.contains("\n")) android.view.Gravity.START else android.view.Gravity.CENTER_HORIZONTAL
+        }
         if (content != null) {
             if (ownScroll) {
                 val body = v.findViewById<android.widget.FrameLayout>(R.id.popupBody)
@@ -1220,8 +1252,8 @@ class MainActivity : AppCompatActivity() {
             showConnProblem(
                 "Koneksi terputus",
                 "Koneksi ke $addr terputus" + (if (cableGone) " karena kabel USB dicabut" else "") + "." +
-                    (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab: $it" } ?: "") +
-                    "\n\nSambungkan ulang untuk melanjutkan."
+                    (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab:\n• $it" } ?: "") +
+                    "\n\nLangkah berikutnya: sambungkan ulang lewat Pair dan Connect atau Connect USB."
             )
             showUsbDevice(null)
             lostAddr = addr
@@ -1454,14 +1486,15 @@ class MainActivity : AppCompatActivity() {
                 val inst = adb.lastInstall
                 val isInstall = title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode"
                 if (!ok && isInstall && inst != null && inst.total > 1 && inst.failed.isNotEmpty()) {
-                    val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "✗ $name\n    $why" }
-                    val more = if (inst.failed.size > 8) "\n… dan ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
+                    val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "• $name: $why" }
+                    val more = if (inst.failed.size > 8) "\n• dan ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
                     showConnProblem(
                         if (inst.ok == 0) "Semua APK gagal dipasang" else "${inst.failed.size} APK gagal dipasang",
-                        "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal:\n\n$shown$more\n\n" +
-                            (if (inst.ok > 0) "APK yang berhasil tidak perlu dipasang ulang. " else "") +
-                            "Perbaiki penyebabnya, lalu pasang ulang APK yang gagal." +
-                            (if (title.contains("MDM")) "\n\nLangkah \"Jadikan MDM Mode\" tetap dijalankan, cek hasilnya di log." else "")
+                        "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal.\n\n" +
+                            "Penyebab:\n$shown$more\n\n" +
+                            "Langkah berikutnya: perbaiki penyebabnya, lalu pasang ulang APK yang gagal." +
+                            (if (inst.ok > 0) " APK yang berhasil tidak perlu dipasang ulang." else "") +
+                            (if (title.contains("MDM")) "\n\nCatatan: langkah \"Jadikan MDM Mode\" tetap dijalankan, cek hasilnya di log." else "")
                     )
                 } else if (!ok) {
                     val isPair = title == "Pair" || title == "Pair dengan QR"
