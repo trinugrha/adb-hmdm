@@ -282,4 +282,9 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
     </style>
+
+    <!-- Teks tab menu (kecil) -->
+    <style name="Hmdm.TabText" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">12sp</item>
+    </style>
 </resources>

@@ -701,9 +701,8 @@ class MainActivity : AppCompatActivity() {
             val inModel = ui.field("contoh: SM-T225", "", capitalize = true)
             val form = android.widget.LinearLayout(this).apply {
                 orientation = android.widget.LinearLayout.VERTICAL
-                addView(ui.label("Nama model (ro.product.model)", bold = true, color = ui.cText))
+                addView(ui.label("Nama model", bold = true, color = ui.cText))
                 addView(inModel, ui.lpField())
-                addView(ui.label("Isi sesuai ro.product.model HP target (huruf besar/kecil tidak dibedakan)."), ui.lpTop(10))
             }
             showPopup(
                 "Tambah Model ke $current", icon = R.drawable.ic_add, content = form, hasInput = true,

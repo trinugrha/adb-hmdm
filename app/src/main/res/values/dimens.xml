@@ -13,20 +13,15 @@
     <dimen name="card_gap">12dp</dimen>
     <dimen name="section_gap">20dp</dimen>
     <!-- Ruang kosong di bawah isi agar tidak tertutup tab melayang -->
-    <dimen name="tab_bar_clearance">88dp</dimen>
-    <dimen name="tab_bar_width">250dp</dimen>
-    <dimen name="tab_bar_margin_bottom">16dp</dimen>
+    <dimen name="tab_bar_clearance">68dp</dimen>
+    <dimen name="tab_bar_width">196dp</dimen>
+    <dimen name="tab_bar_margin_bottom">12dp</dimen>
 
     <!-- Ukuran kontrol -->
     <dimen name="control_height">40dp</dimen>
     <dimen name="control_height_dialog">44dp</dimen>
     <dimen name="icon_button_size">40dp</dimen>
     <dimen name="icon_button_padding">8dp</dimen>
-    <!-- Tombol ikon kecil di baris judul kartu Informasi Status -->
-    <dimen name="icon_button_small">24dp</dimen>
-    <dimen name="icon_button_small_padding">4dp</dimen>
-    <!-- Jarak judul ke hint kartu Informasi Status: space_xs (4dp) dikurangi selisih tinggi baris (24dp vs 22dp) -->
-    <dimen name="info_hint_gap">2dp</dimen>
     <dimen name="icon_size">20dp</dimen>
     <dimen name="icon_size_title">22dp</dimen>
     <dimen name="dot_size">10dp</dimen>
@@ -47,5 +42,5 @@
     <dimen name="radius_lg">14dp</dimen>
     <dimen name="radius_xl">16dp</dimen>
     <dimen name="radius_dialog">24dp</dimen>
-    <dimen name="radius_tab_bar">28dp</dimen>
+    <dimen name="radius_tab_bar">22dp</dimen>
 </resources>

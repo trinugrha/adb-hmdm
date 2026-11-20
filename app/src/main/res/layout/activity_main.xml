@@ -880,52 +880,57 @@
                             <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:gravity="center_vertical"
+                                android:gravity="top"
                                 android:orientation="horizontal">
 
                                 <ImageView
                                     android:layout_width="@dimen/icon_size_title"
                                     android:layout_height="@dimen/icon_size_title"
+                                    android:layout_marginTop="8dp"
                                     android:contentDescription="@null"
                                     android:src="@drawable/ic_info"
                                     app:tint="@color/accent_text" />
 
-                                <TextView
-                                    style="@style/Hmdm.CardTitle"
+                                <!-- Judul + petunjuk ditumpuk di sini agar jaraknya sama dengan kartu lain (space_xs), tidak terpengaruh tinggi tombol ikon 40dp -->
+                                <LinearLayout
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="10dp"
                                     android:layout_weight="1"
-                                    android:includeFontPadding="false"
-                                    android:text="@string/info_title" />
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/Hmdm.CardTitle"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="9dp"
+                                        android:text="@string/info_title" />
+
+                                    <TextView
+                                        style="@style/Hmdm.CardHint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="@dimen/space_xs"
+                                        android:text="@string/info_hint" />
+                                </LinearLayout>
 
                                 <ImageView
                                     android:id="@+id/btnModels"
                                     style="@style/Hmdm.IconButton"
-                                    android:layout_width="@dimen/icon_button_small"
-                                    android:layout_height="@dimen/icon_button_small"
+                                    android:layout_width="@dimen/icon_button_size"
+                                    android:layout_height="@dimen/icon_button_size"
                                     android:layout_marginEnd="@dimen/space_sm"
-                                    android:padding="@dimen/icon_button_small_padding"
                                     android:contentDescription="@string/cd_model_settings"
                                     android:src="@drawable/ic_add" />
 
                                 <ImageView
                                     android:id="@+id/btnSettings"
                                     style="@style/Hmdm.IconButton"
-                                    android:layout_width="@dimen/icon_button_small"
-                                    android:layout_height="@dimen/icon_button_small"
-                                    android:padding="@dimen/icon_button_small_padding"
+                                    android:layout_width="@dimen/icon_button_size"
+                                    android:layout_height="@dimen/icon_button_size"
                                     android:contentDescription="@string/cd_version_settings"
                                     android:src="@drawable/ic_settings" />
                             </LinearLayout>
-
-                            <!-- Baris judul setinggi tombol kecil 24dp (judul kartu lain ~22dp), jadi selisihnya dikurangi dari space_xs agar jarak hint sama seperti kartu lain -->
-                            <TextView
-                                style="@style/Hmdm.CardHint"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="@dimen/info_hint_gap"
-                                android:text="@string/info_hint" />
 
                             <!-- Kotak status -->
                             <LinearLayout
@@ -1388,7 +1393,7 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabMode"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:background="@color/tab_bar_bg"
             app:tabGravity="fill"
             app:tabIconTint="@color/tab_icon_tint"
@@ -1400,10 +1405,13 @@
             app:tabInlineLabel="true"
             app:tabMaxWidth="0dp"
             app:tabMode="fixed"
+            app:tabPaddingBottom="0dp"
             app:tabPaddingEnd="@dimen/space_xs"
             app:tabPaddingStart="@dimen/space_xs"
+            app:tabPaddingTop="0dp"
             app:tabRippleColor="@android:color/transparent"
             app:tabSelectedTextColor="@color/tab_selected_text"
+            app:tabTextAppearance="@style/Hmdm.TabText"
             app:tabTextColor="@color/tab_unselected_text">
 
             <com.google.android.material.tabs.TabItem
