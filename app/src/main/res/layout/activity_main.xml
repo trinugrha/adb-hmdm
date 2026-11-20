@@ -894,7 +894,6 @@
                                         style="@style/Hmdm.CardTitle"
                                         android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="9dp"
                                         android:text="@string/info_title" />
 
                                     <TextView
