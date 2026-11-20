@@ -82,8 +82,8 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:layout_weight="1"
-            android:minHeight="46dp"
-            android:text="Batal"
+            android:minHeight="48dp"
+            android:text="@string/popup_cancel"
             android:visibility="gone" />
 
         <com.google.android.material.button.MaterialButton
@@ -92,7 +92,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:minHeight="46dp"
-            android:text="OK" />
+            android:minHeight="48dp"
+            android:text="@string/popup_ok" />
     </LinearLayout>
 </LinearLayout>

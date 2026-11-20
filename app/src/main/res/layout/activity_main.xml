@@ -11,7 +11,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header -->
+        <!-- ===== Header ===== -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -20,7 +20,7 @@
             android:paddingStart="20dp"
             android:paddingTop="16dp"
             android:paddingEnd="20dp"
-            android:paddingBottom="24dp">
+            android:paddingBottom="20dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -44,19 +44,18 @@
                     android:orientation="vertical">
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="HMDM ADB Installer"
+                        android:text="@string/header_title"
                         android:textColor="@color/header_text"
                         android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:lineSpacingMultiplier="1.2"
-                        android:text="Wireless / USB debugging · MDM Mode"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/header_subtitle"
                         android:textColor="@color/header_subtext"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -69,38 +68,36 @@
                     android:background="@drawable/bg_pill_danger"
                     android:clickable="true"
                     android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
                     android:gravity="center_vertical"
                     android:minHeight="44dp"
                     android:orientation="horizontal"
                     android:paddingStart="14dp"
-                    android:paddingTop="10dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="10dp">
+                    android:paddingEnd="16dp">
 
                     <ImageView
                         android:layout_width="18dp"
                         android:layout_height="18dp"
                         android:contentDescription="@null"
                         android:src="@drawable/ic_logout"
-                        app:tint="@android:color/white" />
+                        app:tint="@color/on_danger_fill" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:text="Keluar"
-                        android:textColor="@android:color/white"
+                        android:text="@string/action_logout"
+                        android:textColor="@color/on_danger_fill"
                         android:textSize="13sp"
                         android:textStyle="bold" />
                 </LinearLayout>
-
             </LinearLayout>
 
             <!-- Status koneksi -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_pill"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
@@ -111,9 +108,9 @@
 
                 <View
                     android:id="@+id/statusDot"
+                    style="@style/Hmdm.Dot"
                     android:layout_width="10dp"
-                    android:layout_height="10dp"
-                    android:background="@drawable/bg_dot" />
+                    android:layout_height="10dp" />
 
                 <TextView
                     android:id="@+id/txtConn"
@@ -121,9 +118,8 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="10dp"
                     android:layout_weight="1"
-                    android:lineSpacingMultiplier="1.2"
                     android:maxLines="2"
-                    android:text="Belum terhubung"
+                    android:text="@string/conn_not_connected"
                     android:textColor="@color/header_text"
                     android:textSize="13sp" />
 
@@ -133,513 +129,422 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="12dp"
                     android:fontFeatureSettings="tnum"
-                    android:text="Sesi 30:00"
+                    android:text="@string/session_default"
                     android:textColor="@color/header_subtext"
                     android:textSize="12sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
 
-    <ScrollView
-        android:id="@+id/pageScroll"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:paddingBottom="84dp"
-        android:clipToPadding="false"
-        android:fillViewport="true">
-
-        <LinearLayout
+        <!-- ===== Konten ===== -->
+        <!-- paddingBottom memberi ruang agar konten tidak tertutup tab melayang -->
+        <ScrollView
+            android:id="@+id/pageScroll"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingBottom="84dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="16dp">
 
-            <TextView
-                android:id="@+id/txtConnTitle"
-                style="@style/Hmdm.SectionLabel"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="4dp"
-                android:text="KONEKSI WIRELESS DEBUGGING" />
+                <TextView
+                    android:id="@+id/txtConnTitle"
+                    style="@style/Hmdm.SectionLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="@string/section_conn_wireless" />
 
-            <LinearLayout
-                android:id="@+id/tabWireless"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-            <!-- Pair -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
+                <!-- Tab: Wireless -->
                 <LinearLayout
+                    android:id="@+id/tabWireless"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:orientation="vertical">
 
-                    <LinearLayout
+                    <!-- Pair -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.Hmdm.Card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
+                        android:layout_marginTop="12dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="0dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            style="@style/Hmdm.CardBody"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
                             <TextView
                                 style="@style/Hmdm.CardTitle"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="ADB Pair" />
+                                android:text="@string/pair_title" />
 
                             <TextView
                                 style="@style/Hmdm.CardHint"
-                                android:layout_marginTop="6dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
                                 android:lineSpacingExtra="2dp"
+                                android:text="@string/pair_hint" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnPairQr"
+                                style="@style/Widget.Hmdm.Button.Large.Outlined"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="12dp"
+                                android:text="@string/pair_qr" />
+
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah" />
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Hmdm.TextInput.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="12dp"
+                                    android:layout_weight="2"
+                                    android:hint="@string/pair_ip">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/edtPairIp"
+                                        style="@style/Hmdm.Input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:digits="0123456789.:"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number"
+                                        android:nextFocusForward="@+id/edtPairPort" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Hmdm.TextInput.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/hint_port">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/edtPairPort"
+                                        style="@style/Hmdm.Input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number"
+                                        android:nextFocusForward="@+id/edtPairCode" />
+                                </com.google.android.material.textfield.TextInputLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:gravity="top"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Hmdm.TextInput.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="12dp"
+                                    android:layout_weight="2"
+                                    android:hint="@string/pair_code">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/edtPairCode"
+                                        style="@style/Hmdm.Input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionDone"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnPair"
+                                    style="@style/Widget.Hmdm.Button.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="48dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/pair_action" />
+                            </LinearLayout>
                         </LinearLayout>
-                    </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnPairQr"
-                        style="@style/Widget.Hmdm.Button.Outlined"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="0dp"
-                        android:textSize="14sp"
-                        android:text="Pair dengan QR code (scan)" />
-
-                    <LinearLayout
+                    <!-- Connect -->
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.Hmdm.Card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Hmdm.TextInput.Large"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            android:layout_weight="2"
-                            android:hint="IP pairing">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtPairIp"
-                                android:imeOptions="actionNext"
-                                android:nextFocusForward="@+id/edtPairPort"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="monospace"
-                                android:digits="0123456789.:"
-                                android:inputType="number"
-                                android:minHeight="44dp"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Hmdm.TextInput.Large"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="Port">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtPairPort"
-                                android:imeOptions="actionNext"
-                                android:nextFocusForward="@+id/edtPairCode"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="monospace"
-                                android:inputType="number"
-                                android:minHeight="44dp"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="top"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Hmdm.TextInput.Large"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            android:layout_weight="2"
-                            android:hint="Kode pairing">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtPairCode"
-                                android:imeOptions="actionDone"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="monospace"
-                                android:inputType="number"
-                                android:minHeight="44dp"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnPair"
-                            style="@style/Widget.Hmdm.Button.Blue"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:minHeight="0dp"
-                            android:textSize="14sp"
-                            android:layout_weight="1"
-                            android:text="Pair" />
-                    </LinearLayout>
-
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Connect -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
+                        android:layout_marginTop="12dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="0dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            style="@style/Hmdm.CardBody"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
                             <TextView
                                 style="@style/Hmdm.CardTitle"
-                                android:layout_width="wrap_content"
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="ADB Connect" />
+                                android:text="@string/connect_title" />
 
                             <TextView
                                 style="@style/Hmdm.CardHint"
-                                android:layout_marginTop="6dp"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
                                 android:lineSpacingExtra="2dp"
+                                android:text="@string/connect_hint" />
+
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="IP dan port yang tampil di layar utama Wireless debugging" />
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Hmdm.TextInput.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginEnd="12dp"
+                                    android:layout_weight="2"
+                                    android:hint="@string/connect_ip">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/edtConnIp"
+                                        style="@style/Hmdm.Input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:digits="0123456789.:"
+                                        android:imeOptions="actionNext"
+                                        android:inputType="number"
+                                        android:nextFocusForward="@+id/edtConnPort" />
+                                </com.google.android.material.textfield.TextInputLayout>
+
+                                <com.google.android.material.textfield.TextInputLayout
+                                    style="@style/Widget.Hmdm.TextInput.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:hint="@string/hint_port">
+
+                                    <com.google.android.material.textfield.TextInputEditText
+                                        android:id="@+id/edtConnPort"
+                                        style="@style/Hmdm.Input"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:imeOptions="actionDone"
+                                        android:inputType="number" />
+                                </com.google.android.material.textfield.TextInputLayout>
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnDisconnect"
+                                    style="@style/Widget.Hmdm.Button.Large.Outlined"
+                                    android:layout_width="0dp"
+                                    android:layout_height="48dp"
+                                    android:layout_marginEnd="12dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/disconnect_action" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnConnect"
+                                    style="@style/Widget.Hmdm.Button.Large"
+                                    android:layout_width="0dp"
+                                    android:layout_height="48dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/connect_action" />
+                            </LinearLayout>
                         </LinearLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Hmdm.TextInput.Large"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="12dp"
-                            android:layout_weight="2"
-                            android:hint="IP connect">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtConnIp"
-                                android:imeOptions="actionNext"
-                                android:nextFocusForward="@+id/edtConnPort"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="monospace"
-                                android:digits="0123456789.:"
-                                android:inputType="number"
-                                android:minHeight="44dp"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-
-                        <com.google.android.material.textfield.TextInputLayout
-                            style="@style/Widget.Hmdm.TextInput.Large"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:hint="Port">
-
-                            <com.google.android.material.textfield.TextInputEditText
-                                android:id="@+id/edtConnPort"
-                                android:imeOptions="actionDone"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:fontFamily="monospace"
-                                android:inputType="number"
-                                android:minHeight="44dp"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:singleLine="true" />
-                        </com.google.android.material.textfield.TextInputLayout>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnDisconnect"
-                            style="@style/Widget.Hmdm.Button.BlueOutlined"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:minHeight="0dp"
-                            android:textSize="14sp"
-                            android:layout_marginEnd="12dp"
-                            android:layout_weight="1"
-                            android:text="Disconnect" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnConnect"
-                            style="@style/Widget.Hmdm.Button.Blue"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:minHeight="0dp"
-                            android:textSize="14sp"
-                            android:layout_weight="1"
-                            android:text="Connect" />
-                    </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/tabUsb"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-            <!-- USB debugging -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
+                <!-- Tab: USB -->
                 <LinearLayout
+                    android:id="@+id/tabUsb"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:visibility="gone">
 
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="USB Debugging (Kabel)" />
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_marginTop="4dp"
+                    <com.google.android.material.card.MaterialCardView
+                        style="@style/Widget.Hmdm.Card"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk &quot;Pilih Perangkat&quot;." />
+                        android:layout_marginTop="12dp">
 
-                    <TextView
-                        android:id="@+id/txtUsbDevice"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:fontFamily="monospace"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:visibility="gone" />
+                        <LinearLayout
+                            style="@style/Hmdm.CardBody"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnConnectUsb"
-                        style="@style/Widget.Hmdm.Button.Blue"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="0dp"
-                        android:textSize="14sp"
-                        android:text="Pilih Perangkat" />
+                            <TextView
+                                style="@style/Hmdm.CardTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/usb_title" />
+
+                            <TextView
+                                style="@style/Hmdm.CardHint"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/usb_hint" />
+
+                            <TextView
+                                android:id="@+id/txtUsbDevice"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:fontFamily="monospace"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:visibility="gone" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnConnectUsb"
+                                style="@style/Widget.Hmdm.Button.Large"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="12dp"
+                                android:text="@string/usb_pick" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
 
-            </LinearLayout>
-
-            <!-- 1. Instalasi aplikasi -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
+                <!-- Langkah 1: instalasi aplikasi -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.Hmdm.Card"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_marginTop="12dp">
 
                     <LinearLayout
+                        style="@style/Hmdm.CardBody"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:layout_height="wrap_content">
 
-                        <TextView
-                            style="@style/Hmdm.Badge"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:text="1" />
-
-                        <TextView
-                            style="@style/Hmdm.SectionLabel"
-                            android:layout_width="wrap_content"
+                        <LinearLayout
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:text="INSTALASI APLIKASI" />
-                    </LinearLayout>
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/txtApkTitle"
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Pilih File APK (Bisa Banyak)" />
+                            <TextView
+                                style="@style/Hmdm.Badge"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:text="1" />
 
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Pilih satu atau beberapa file APK sekaligus untuk dipasang ke HP target." />
-
-                    <!-- Area unggah (ketuk untuk memilih file) -->
-                    <LinearLayout
-                        android:id="@+id/dropZone"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_empty"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="22dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="22dp">
-
-                        <ImageView
-                            android:layout_width="32dp"
-                            android:layout_height="32dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_upload_file"
-                            app:tint="@color/muted" />
+                            <TextView
+                                style="@style/Hmdm.SectionLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="@string/step1_label" />
+                        </LinearLayout>
 
                         <TextView
-                            android:id="@+id/txtApkEmpty"
-                            android:layout_width="wrap_content"
+                            android:id="@+id/txtApkTitle"
+                            style="@style/Hmdm.CardTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:gravity="center"
-                            android:text="Pilih File APK Di Sini"
-                            android:textColor="@color/muted"
-                            android:textSize="14sp" />
+                            android:layout_marginTop="12dp"
+                            android:text="@string/apk_title" />
 
                         <TextView
-                            android:id="@+id/txtDropSub"
-                            android:layout_width="wrap_content"
+                            style="@style/Hmdm.CardHint"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="4dp"
-                            android:gravity="center"
-                            android:text="Dapat memilih lebih dari satu file APK"
-                            android:textColor="@color/muted"
-                            android:textSize="12sp" />
-                    </LinearLayout>
+                            android:text="@string/apk_hint" />
 
-                    <!-- Daftar APK yang akan dipasang (diisi dari kode) -->
-                    <LinearLayout
-                        android:id="@+id/apkListBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="vertical"
-                        android:visibility="gone" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnInstallOnly"
-                        style="@style/Widget.Hmdm.Button.Blue"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="0dp"
-                        android:text="Pasang Aplikasi"
-                        android:textSize="14sp"
-                        app:icon="@drawable/ic_download"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
-
-                    <!-- Progress install (tampil hanya saat memasang APK) -->
-                    <LinearLayout
-                        android:id="@+id/progBox"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status_box"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="12dp"
-                        android:visibility="gone">
-
+                        <!-- Area unggah (ketuk untuk memilih file) -->
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:id="@+id/dropZone"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_empty"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="20dp">
+
+                            <ImageView
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_upload_file"
+                                app:tint="@color/muted" />
+
+                            <TextView
+                                android:id="@+id/txtApkEmpty"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:gravity="center"
+                                android:text="@string/apk_drop_title"
+                                android:textColor="@color/muted"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/txtDropSub"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:gravity="center"
+                                android:text="@string/apk_drop_sub"
+                                android:textColor="@color/muted"
+                                android:textSize="12sp" />
+                        </LinearLayout>
+
+                        <!-- Daftar APK yang akan dipasang (diisi dari kode) -->
+                        <LinearLayout
+                            android:id="@+id/apkListBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical"
+                            android:visibility="gone" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnInstallOnly"
+                            style="@style/Widget.Hmdm.Button.Large"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/apk_install"
+                            app:icon="@drawable/ic_download" />
+
+                        <!-- Progress install (tampil hanya saat memasang APK) -->
+                        <LinearLayout
+                            android:id="@+id/progBox"
+                            style="@style/Hmdm.StatusBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:orientation="vertical"
+                            android:visibility="gone">
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -702,502 +607,9 @@
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                </com.google.android.material.card.MaterialCardView>
 
-            <!-- 2. Atur hak akses -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            style="@style/Hmdm.Badge"
-                            android:layout_width="28dp"
-                            android:layout_height="28dp"
-                            android:text="2" />
-
-                        <TextView
-                            style="@style/Hmdm.SectionLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
-                            android:text="ATUR HAK AKSES" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/Hmdm.CardTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Jadikan MDM Mode" />
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="Jadikan Headwind MDM sebagai MDM Mode penuh di HP target." />
-
-                    <!-- Status MDM Mode (cek ulang hanya lewat ikon refresh) -->
-                    <LinearLayout
-                        android:id="@+id/ownerPill"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status_box"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="14dp">
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                style="@style/Hmdm.SectionLabel"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="STATUS MDM MODE"
-                                android:textColor="@color/muted" />
-
-                            <LinearLayout
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:background="@drawable/bg_chip"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:paddingStart="12dp"
-                                android:paddingTop="7dp"
-                                android:paddingEnd="14dp"
-                                android:paddingBottom="7dp">
-
-                                <View
-                                    android:id="@+id/ownerDot"
-                                    android:layout_width="10dp"
-                                    android:layout_height="10dp"
-                                    android:background="@drawable/bg_dot" />
-
-                                <TextView
-                                    android:id="@+id/txtOwner"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginStart="8dp"
-                                    android:maxLines="1"
-                                    android:ellipsize="end"
-                                    android:text="Belum diperiksa"
-                                    android:textColor="@color/text"
-                                    android:textSize="14sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <ImageView
-                            android:id="@+id/btnRefreshOwner"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:layout_marginStart="12dp"
-                            android:background="@drawable/bg_chip"
-                            android:clickable="true"
-                            android:contentDescription="Cek ulang status"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackgroundBorderless"
-                            android:padding="8dp"
-                            android:src="@drawable/ic_refresh"
-                            app:tint="@color/muted" />
-                    </LinearLayout>
-
-                    <!-- Peringatan -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_warn"
-                        android:orientation="horizontal"
-                        android:padding="14dp">
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginTop="2dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_warning"
-                            app:tint="@color/warn_text" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:layout_weight="1"
-                            android:text="@string/owner_warning"
-                            android:textColor="@color/warn_text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnOwner"
-                        style="@style/Widget.Hmdm.Button.Blue"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="0dp"
-                        android:text="Jadikan MDM Mode"
-                        android:textSize="14sp"
-                        app:icon="@drawable/ic_person"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Proses otomatis -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_bolt"
-                            app:tint="@color/accent_text" />
-
-                        <TextView
-                            style="@style/Hmdm.CardTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:text="Proses Otomatis" />
-                    </LinearLayout>
-
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:text="Pasang APK lalu atur MDM Mode sekaligus dengan sekali ketuk. Perangkat harus terhubung lebih dulu." />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnAll"
-                        style="@style/Widget.Hmdm.Button.Blue"
-                        android:layout_width="match_parent"
-                        android:layout_height="44dp"
-                        android:layout_marginTop="10dp"
-                        android:minHeight="0dp"
-                        android:text="Pasang Aplikasi + Jadikan MDM Mode"
-                        android:textSize="14sp"
-                        app:icon="@drawable/ic_bolt"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- Pemisah: klik "Klik lainnya" untuk menampilkan Uninstall Kaspersky & Aktifkan Mode Nirkabel (TCP/IP) -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1"
-                    android:background="@color/outline" />
-
-                <LinearLayout
-                    android:id="@+id/btnMoreToggle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="12dp"
-                    android:background="@drawable/bg_chip"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:gravity="center_vertical"
-                    android:minHeight="36dp"
-                    android:orientation="horizontal"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="10dp">
-
-                    <TextView
-                        android:id="@+id/txtMoreToggle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Lihat Lainnya"
-                        android:textColor="@color/muted"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <ImageView
-                        android:id="@+id/icMoreToggle"
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
-                        android:layout_marginStart="4dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/ic_expand_more"
-                        app:tint="@color/muted" />
-                </LinearLayout>
-
-                <View
-                    android:layout_width="0dp"
-                    android:layout_height="1dp"
-                    android:layout_weight="1"
-                    android:background="@color/outline" />
-            </LinearLayout>
-
-            <!-- Konten tersembunyi sampai "Klik lainnya" ditekan: Uninstall Kaspersky + Aktifkan Mode Nirkabel (TCP/IP) -->
-            <LinearLayout
-                android:id="@+id/moreContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-            <!-- Informasi Status (dibaca lewat tombol refresh) -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/appsPill"
-                style="@style/Widget.Hmdm.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="top"
-                android:orientation="vertical"
-                android:padding="14dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_info"
-                            app:tint="@color/accent_text" />
-
-                        <TextView
-                            style="@style/Hmdm.CardTitle"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:layout_weight="1"
-                            android:includeFontPadding="false"
-                            android:text="Informasi Status" />
-
-                        <ImageView
-                            android:id="@+id/btnModels"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:layout_marginEnd="8dp"
-                            android:background="@drawable/bg_chip"
-                            android:clickable="true"
-                            android:contentDescription="Setting model perangkat"
-                            android:focusable="true"
-                            android:padding="8dp"
-                            android:src="@drawable/ic_add"
-                            app:tint="@color/accent_text" />
-
-                        <ImageView
-                            android:id="@+id/btnSettings"
-                            android:layout_width="36dp"
-                            android:layout_height="36dp"
-                            android:background="@drawable/bg_chip"
-                            android:clickable="true"
-                            android:contentDescription="Setting versi aplikasi"
-                            android:focusable="true"
-                            android:padding="8dp"
-                            android:src="@drawable/ic_settings"
-                            app:tint="@color/accent_text" />
-                    </LinearLayout>
-
-                    <!-- Baris judul setinggi ikon 36dp; margin negatif merapatkan teks hint ke judul seperti kartu lain -->
-                    <TextView
-                        style="@style/Hmdm.CardHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="-4dp"
-                        android:lineSpacingExtra="2dp"
-                        android:text="Ketuk &quot;Cek Status&quot; untuk melihat status aplikasi dan izin." />
-
-                    <!-- Kotak status (gaya sama seperti Status MDM Mode) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:background="@drawable/bg_status_box"
-                        android:clipToPadding="false"
-                        android:orientation="vertical"
-                        android:padding="14dp">
-
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="0dp"
-                        android:text="MODEL PERANGKAT"
-                        android:textColor="@color/muted" />
-
-                    <TextView
-                        android:id="@+id/txtModel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp"
-                        android:text="Belum terhubung"
-                        android:textColor="@color/text"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="INSTALLATION STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/appsDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtApps"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/txtAppsDetail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="4dp"
-                        android:layout_marginTop="6dp"
-                        android:text=""
-                        android:textColor="@color/muted"
-                        android:textSize="12sp"
-                        android:visibility="gone" />
-
-                    <!-- Status permission com.hmdm.launcher -->
-                    <TextView
-                        style="@style/Hmdm.SectionLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="PERMISSION STATUS"
-                        android:textColor="@color/muted" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:background="@drawable/bg_chip"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:paddingStart="12dp"
-                        android:paddingTop="7dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="7dp">
-
-                        <View
-                            android:id="@+id/permAdminDot"
-                            android:layout_width="10dp"
-                            android:layout_height="10dp"
-                            android:background="@drawable/bg_dot" />
-
-                        <TextView
-                            android:id="@+id/txtPermAdmin"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="8dp"
-                            android:maxLines="1"
-                            android:ellipsize="end"
-                            android:text="Belum terhubung"
-                            android:textColor="@color/text"
-                            android:textSize="14sp" />
-                    </LinearLayout>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRefreshInfo"
-                    style="@style/Widget.Hmdm.Button.Blue"
-                    app:backgroundTint="@color/btn_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="44dp"
-                    android:layout_marginTop="10dp"
-                    android:minHeight="0dp"
-                    android:textSize="14sp"
-                    android:contentDescription="Cek ulang status"
-                    android:text="Cek Status" />
-            </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-
+                <!-- Langkah 2: atur hak akses -->
                 <com.google.android.material.card.MaterialCardView
                     style="@style/Widget.Hmdm.Card"
                     android:layout_width="match_parent"
@@ -1205,10 +617,149 @@
                     android:layout_marginTop="12dp">
 
                     <LinearLayout
+                        style="@style/Hmdm.CardBody"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
+                        android:layout_height="wrap_content">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <TextView
+                                style="@style/Hmdm.Badge"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:text="2" />
+
+                            <TextView
+                                style="@style/Hmdm.SectionLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="12dp"
+                                android:text="@string/step2_label" />
+                        </LinearLayout>
+
+                        <TextView
+                            style="@style/Hmdm.CardTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/owner_title" />
+
+                        <TextView
+                            style="@style/Hmdm.CardHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:text="@string/owner_hint" />
+
+                        <!-- Status MDM Mode (cek ulang lewat ikon refresh) -->
+                        <LinearLayout
+                            android:id="@+id/ownerPill"
+                            style="@style/Hmdm.StatusBox"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    style="@style/Hmdm.FieldLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/owner_status_label" />
+
+                                <LinearLayout
+                                    style="@style/Hmdm.Chip"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp">
+
+                                    <View
+                                        android:id="@+id/ownerDot"
+                                        style="@style/Hmdm.Dot"
+                                        android:layout_width="10dp"
+                                        android:layout_height="10dp" />
+
+                                    <TextView
+                                        android:id="@+id/txtOwner"
+                                        style="@style/Hmdm.ChipText"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:text="@string/owner_not_checked" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <ImageView
+                                android:id="@+id/btnRefreshOwner"
+                                style="@style/Hmdm.IconButton"
+                                android:layout_width="40dp"
+                                android:layout_height="40dp"
+                                android:layout_marginStart="12dp"
+                                android:contentDescription="@string/owner_recheck"
+                                android:src="@drawable/ic_refresh"
+                                app:tint="@color/muted" />
+                        </LinearLayout>
+
+                        <!-- Peringatan -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:background="@drawable/bg_warn"
+                            android:orientation="horizontal"
+                            android:padding="14dp">
+
+                            <ImageView
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:layout_marginTop="1dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/ic_warning"
+                                app:tint="@color/warn_text" />
+
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/owner_warning"
+                                android:textColor="@color/warn_text"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnOwner"
+                            style="@style/Widget.Hmdm.Button.Large"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/owner_title"
+                            app:icon="@drawable/ic_person" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Proses otomatis -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.Hmdm.Card"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp">
+
+                    <LinearLayout
+                        style="@style/Hmdm.CardBody"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1220,182 +771,269 @@
                                 android:layout_width="22dp"
                                 android:layout_height="22dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/ic_shield"
-                                app:tint="@color/danger" />
+                                android:src="@drawable/ic_bolt"
+                                app:tint="@color/accent_text" />
 
                             <TextView
                                 style="@style/Hmdm.CardTitle"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginStart="10dp"
-                                android:text="Uninstall Aplikasi Kaspersky" />
+                                android:text="@string/auto_title" />
                         </LinearLayout>
 
                         <TextView
                             style="@style/Hmdm.CardHint"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="Uninstall aplikasi Kaspersky dari HP target. Ikuti urutan langkah berikut agar uninstall tidak ditolak." />
+                            android:layout_marginTop="4dp"
+                            android:text="@string/auto_hint" />
 
-                        <!-- Langkah 1: hapus data -->
-                        <LinearLayout
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAll"
+                            style="@style/Widget.Hmdm.Button.Large"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
+                            android:layout_height="48dp"
                             android:layout_marginTop="12dp"
-                            android:background="@drawable/bg_status_box"
-                            android:orientation="horizontal"
-                            android:padding="14dp">
-
-                            <TextView
-                                style="@style/Hmdm.Badge"
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:background="@drawable/bg_badge_danger"
-                                android:text="1"
-                                android:textColor="@color/danger" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    style="@style/Hmdm.CardTitle"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Hapus Data Aplikasi Kaspersky"
-                                    android:textSize="15sp" />
-
-                                <TextView
-                                    style="@style/Hmdm.CardHint"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="Hubungkan HP target terlebih dahulu, lalu ketuk tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Data aplikasi Kaspersky dihapus&quot;."
-                                    android:textSize="13sp" />
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnClearKaspersky"
-                                    style="@style/Widget.Hmdm.Button.DangerFilled"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="40dp"
-                                    android:layout_marginTop="10dp"
-                                    android:minHeight="0dp"
-                                    android:text="Hapus Data Aplikasi Kaspersky"
-                                    app:icon="@drawable/ic_delete"
-                                    app:iconGravity="textStart"
-                                    app:iconPadding="8dp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Langkah 2: nonaktifkan admin (manual di HP) -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_status_box"
-                            android:orientation="horizontal"
-                            android:padding="14dp">
-
-                            <TextView
-                                style="@style/Hmdm.Badge"
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:background="@drawable/bg_badge_amber"
-                                android:text="2"
-                                android:textColor="@color/amber_text" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    style="@style/Hmdm.CardTitle"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Matikan Aplikasi Admin Kaspersky di HP target"
-                                    android:textSize="15sp" />
-
-                                <TextView
-                                    style="@style/Hmdm.CardHint"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:lineSpacingMultiplier="1.1"
-                                    android:text="@string/kaspersky_step2"
-                                    android:textSize="13sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <!-- Langkah 3: uninstall -->
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:background="@drawable/bg_status_box"
-                            android:orientation="horizontal"
-                            android:padding="14dp">
-
-                            <TextView
-                                style="@style/Hmdm.Badge"
-                                android:layout_width="28dp"
-                                android:layout_height="28dp"
-                                android:background="@drawable/bg_badge_danger"
-                                android:text="3"
-                                android:textColor="@color/danger" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    style="@style/Hmdm.CardTitle"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="Uninstall Aplikasi Kaspersky"
-                                    android:textSize="15sp" />
-
-                                <TextView
-                                    style="@style/Hmdm.CardHint"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="4dp"
-                                    android:text="Ketuk tombol di bawah dan konfirmasi. Log akan menampilkan &quot;Aplikasi Kaspersky di-uninstall&quot;."
-                                    android:textSize="13sp" />
-
-                                <com.google.android.material.button.MaterialButton
-                                    android:id="@+id/btnUninstallKaspersky"
-                                    style="@style/Widget.Hmdm.Button.DangerFilled"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="40dp"
-                                    android:layout_marginTop="10dp"
-                                    android:minHeight="0dp"
-                                    android:text="Uninstall Aplikasi Kaspersky"
-                                    app:icon="@drawable/ic_block"
-                                    app:iconGravity="textStart"
-                                    app:iconPadding="8dp" />
-                            </LinearLayout>
-                        </LinearLayout>
+                            android:text="@string/auto_action"
+                            app:icon="@drawable/ic_bolt" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Ubah ke Mode Nirkabel (adb tcpip 5555) - hanya tampil di tab USB debugging -->
+                <!-- Pemisah "Lihat Lainnya": menampilkan Informasi Status, Uninstall Kaspersky & TCP/IP -->
                 <LinearLayout
-                    android:id="@+id/cardTcpip"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="@color/outline" />
+
+                    <LinearLayout
+                        android:id="@+id/btnMoreToggle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginEnd="12dp"
+                        android:background="@drawable/bg_chip"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="40dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="10dp">
+
+                        <TextView
+                            android:id="@+id/txtMoreToggle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/more_show"
+                            android:textColor="@color/muted"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/icMoreToggle"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="4dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_expand_more"
+                            app:tint="@color/muted" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"
+                        android:background="@color/outline" />
+                </LinearLayout>
+
+                <!-- Tersembunyi sampai "Lihat Lainnya" diketuk -->
+                <LinearLayout
+                    android:id="@+id/moreContainer"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:visibility="gone">
 
+                    <!-- Informasi Status (dibaca lewat tombol Cek Status) -->
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/appsPill"
+                        style="@style/Widget.Hmdm.Card"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp">
+
+                        <LinearLayout
+                            style="@style/Hmdm.CardBody"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_info"
+                                    app:tint="@color/accent_text" />
+
+                                <TextView
+                                    style="@style/Hmdm.CardTitle"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:layout_weight="1"
+                                    android:text="@string/info_title" />
+
+                                <ImageView
+                                    android:id="@+id/btnModels"
+                                    style="@style/Hmdm.IconButton"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:layout_marginEnd="8dp"
+                                    android:contentDescription="@string/info_models_desc"
+                                    android:src="@drawable/ic_add"
+                                    app:tint="@color/accent_text" />
+
+                                <ImageView
+                                    android:id="@+id/btnSettings"
+                                    style="@style/Hmdm.IconButton"
+                                    android:layout_width="40dp"
+                                    android:layout_height="40dp"
+                                    android:contentDescription="@string/info_settings_desc"
+                                    android:src="@drawable/ic_settings"
+                                    app:tint="@color/accent_text" />
+                            </LinearLayout>
+
+                            <TextView
+                                style="@style/Hmdm.CardHint"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:lineSpacingExtra="2dp"
+                                android:text="@string/info_hint" />
+
+                            <!-- Kotak status (gaya sama dengan Status MDM Mode) -->
+                            <LinearLayout
+                                style="@style/Hmdm.StatusBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:clipToPadding="false"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    style="@style/Hmdm.FieldLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/info_model_label" />
+
+                                <TextView
+                                    android:id="@+id/txtModel"
+                                    style="@style/Hmdm.ChipText"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp"
+                                    android:background="@drawable/bg_chip"
+                                    android:paddingStart="12dp"
+                                    android:paddingTop="8dp"
+                                    android:paddingEnd="14dp"
+                                    android:paddingBottom="8dp"
+                                    android:text="@string/conn_not_connected" />
+
+                                <TextView
+                                    style="@style/Hmdm.FieldLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="16dp"
+                                    android:text="@string/info_install_label" />
+
+                                <LinearLayout
+                                    style="@style/Hmdm.Chip"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp">
+
+                                    <View
+                                        android:id="@+id/appsDot"
+                                        style="@style/Hmdm.Dot"
+                                        android:layout_width="10dp"
+                                        android:layout_height="10dp" />
+
+                                    <TextView
+                                        android:id="@+id/txtApps"
+                                        style="@style/Hmdm.ChipText"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:text="@string/conn_not_connected" />
+                                </LinearLayout>
+
+                                <TextView
+                                    android:id="@+id/txtAppsDetail"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="4dp"
+                                    android:layout_marginTop="8dp"
+                                    android:textColor="@color/muted"
+                                    android:textSize="12sp"
+                                    android:visibility="gone" />
+
+                                <TextView
+                                    style="@style/Hmdm.FieldLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="16dp"
+                                    android:text="@string/info_perm_label" />
+
+                                <LinearLayout
+                                    style="@style/Hmdm.Chip"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="8dp">
+
+                                    <View
+                                        android:id="@+id/permAdminDot"
+                                        style="@style/Hmdm.Dot"
+                                        android:layout_width="10dp"
+                                        android:layout_height="10dp" />
+
+                                    <TextView
+                                        android:id="@+id/txtPermAdmin"
+                                        style="@style/Hmdm.ChipText"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginStart="8dp"
+                                        android:text="@string/conn_not_connected" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnRefreshInfo"
+                                style="@style/Widget.Hmdm.Button.Large"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:layout_marginTop="12dp"
+                                android:contentDescription="@string/owner_recheck"
+                                android:text="@string/info_check"
+                                app:backgroundTint="@color/btn_status" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Uninstall Kaspersky (3 langkah) -->
                     <com.google.android.material.card.MaterialCardView
                         style="@style/Widget.Hmdm.Card"
                         android:layout_width="match_parent"
@@ -1403,180 +1041,340 @@
                         android:layout_marginTop="12dp">
 
                         <LinearLayout
+                            style="@style/Hmdm.CardBody"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
+                            android:layout_height="wrap_content">
 
-                            <TextView
-                                style="@style/Hmdm.CardTitle"
+                            <LinearLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="Aktifkan Mode Nirkabel (TCP/IP)"
-                                android:textSize="15sp" />
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <ImageView
+                                    android:layout_width="22dp"
+                                    android:layout_height="22dp"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/ic_shield"
+                                    app:tint="@color/danger" />
+
+                                <TextView
+                                    style="@style/Hmdm.CardTitle"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="10dp"
+                                    android:text="@string/kaspersky_title" />
+                            </LinearLayout>
 
                             <TextView
                                 style="@style/Hmdm.CardHint"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="4dp"
-                                android:text="Mengalihkan koneksi ADB (Android Debug Bridge) dari kabel USB ke mode nirkabel (TCP/IP) melalui port 5555" />
+                                android:text="@string/kaspersky_hint" />
 
-                            <!-- Status mode TCP/IP (Wi-Fi) di HP target -->
+                            <!-- Langkah 1: hapus data -->
                             <LinearLayout
+                                style="@style/Hmdm.StatusBox"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="10dp"
-                                android:background="@drawable/bg_status_box"
-                                android:gravity="center_vertical"
-                                android:orientation="horizontal"
-                                android:padding="14dp">
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    style="@style/Hmdm.Badge"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="@drawable/bg_badge_danger"
+                                    android:text="1"
+                                    android:textColor="@color/danger" />
 
                                 <LinearLayout
                                     android:layout_width="0dp"
                                     android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
                                     android:layout_weight="1"
                                     android:orientation="vertical">
 
                                     <TextView
-                                        style="@style/Hmdm.SectionLabel"
-                                        android:layout_width="wrap_content"
+                                        style="@style/Hmdm.CardTitle"
+                                        android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:text="STATUS NIRKABEL (TCP/IP)"
-                                        android:textColor="@color/muted" />
+                                        android:text="@string/kaspersky_clear_title"
+                                        android:textSize="15sp" />
 
-                                    <LinearLayout
-                                        android:layout_width="wrap_content"
+                                    <TextView
+                                        style="@style/Hmdm.CardHint"
+                                        android:layout_width="match_parent"
                                         android:layout_height="wrap_content"
-                                        android:layout_marginTop="8dp"
-                                        android:background="@drawable/bg_chip"
-                                        android:gravity="center_vertical"
-                                        android:orientation="horizontal"
-                                        android:paddingStart="12dp"
-                                        android:paddingTop="7dp"
-                                        android:paddingEnd="14dp"
-                                        android:paddingBottom="7dp">
+                                        android:layout_marginTop="4dp"
+                                        android:text="@string/kaspersky_clear_hint"
+                                        android:textSize="13sp" />
 
-                                        <View
-                                            android:id="@+id/tcpipDot"
-                                            android:layout_width="10dp"
-                                            android:layout_height="10dp"
-                                            android:background="@drawable/bg_dot" />
-
-                                        <TextView
-                                            android:id="@+id/txtTcpip"
-                                            android:layout_width="wrap_content"
-                                            android:layout_height="wrap_content"
-                                            android:layout_marginStart="8dp"
-                                            android:maxLines="1"
-                                            android:ellipsize="end"
-                                            android:text="Belum terhubung"
-                                            android:textColor="@color/text"
-                                            android:textSize="14sp" />
-                                    </LinearLayout>
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnClearKaspersky"
+                                        style="@style/Widget.Hmdm.Button.Large.Danger"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="48dp"
+                                        android:layout_marginTop="12dp"
+                                        android:text="@string/kaspersky_clear_title"
+                                        app:icon="@drawable/ic_delete" />
                                 </LinearLayout>
                             </LinearLayout>
 
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnTcpip"
-                                style="@style/Widget.Hmdm.Button.YellowFilled"
+                            <!-- Langkah 2: nonaktifkan admin (manual di HP) -->
+                            <LinearLayout
+                                style="@style/Hmdm.StatusBox"
                                 android:layout_width="match_parent"
-                                android:layout_height="44dp"
-                                android:layout_marginTop="10dp"
-                                android:minHeight="0dp"
-                                android:text="Ubah ke Mode Nirkabel"
-                                android:textSize="14sp" />
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    style="@style/Hmdm.Badge"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="@drawable/bg_badge_amber"
+                                    android:text="2"
+                                    android:textColor="@color/amber_text" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/Hmdm.CardTitle"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/kaspersky_admin_title"
+                                        android:textSize="15sp" />
+
+                                    <TextView
+                                        style="@style/Hmdm.CardHint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:lineSpacingMultiplier="1.1"
+                                        android:text="@string/kaspersky_step2"
+                                        android:textSize="13sp" />
+                                </LinearLayout>
+                            </LinearLayout>
+
+                            <!-- Langkah 3: uninstall -->
+                            <LinearLayout
+                                style="@style/Hmdm.StatusBox"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    style="@style/Hmdm.Badge"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="@drawable/bg_badge_danger"
+                                    android:text="3"
+                                    android:textColor="@color/danger" />
+
+                                <LinearLayout
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="12dp"
+                                    android:layout_weight="1"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/Hmdm.CardTitle"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/kaspersky_title"
+                                        android:textSize="15sp" />
+
+                                    <TextView
+                                        style="@style/Hmdm.CardHint"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="4dp"
+                                        android:text="@string/kaspersky_uninstall_hint"
+                                        android:textSize="13sp" />
+
+                                    <com.google.android.material.button.MaterialButton
+                                        android:id="@+id/btnUninstallKaspersky"
+                                        style="@style/Widget.Hmdm.Button.Large.Danger"
+                                        android:layout_width="match_parent"
+                                        android:layout_height="48dp"
+                                        android:layout_marginTop="12dp"
+                                        android:text="@string/kaspersky_title"
+                                        app:icon="@drawable/ic_block" />
+                                </LinearLayout>
+                            </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
+
+                    <!-- Mode Nirkabel (adb tcpip 5555): hanya tampil di tab USB -->
+                    <LinearLayout
+                        android:id="@+id/cardTcpip"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone">
+
+                        <com.google.android.material.card.MaterialCardView
+                            style="@style/Widget.Hmdm.Card"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp">
+
+                            <LinearLayout
+                                style="@style/Hmdm.CardBody"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content">
+
+                                <TextView
+                                    style="@style/Hmdm.CardTitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/tcpip_title" />
+
+                                <TextView
+                                    style="@style/Hmdm.CardHint"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="4dp"
+                                    android:text="@string/tcpip_hint" />
+
+                                <!-- Status mode TCP/IP (Wi-Fi) di HP target -->
+                                <LinearLayout
+                                    style="@style/Hmdm.StatusBox"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="12dp"
+                                    android:orientation="vertical">
+
+                                    <TextView
+                                        style="@style/Hmdm.FieldLabel"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:text="@string/tcpip_status_label" />
+
+                                    <LinearLayout
+                                        style="@style/Hmdm.Chip"
+                                        android:layout_width="wrap_content"
+                                        android:layout_height="wrap_content"
+                                        android:layout_marginTop="8dp">
+
+                                        <View
+                                            android:id="@+id/tcpipDot"
+                                            style="@style/Hmdm.Dot"
+                                            android:layout_width="10dp"
+                                            android:layout_height="10dp" />
+
+                                        <TextView
+                                            android:id="@+id/txtTcpip"
+                                            style="@style/Hmdm.ChipText"
+                                            android:layout_width="wrap_content"
+                                            android:layout_height="wrap_content"
+                                            android:layout_marginStart="8dp"
+                                            android:text="@string/conn_not_connected" />
+                                    </LinearLayout>
+                                </LinearLayout>
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnTcpip"
+                                    style="@style/Widget.Hmdm.Button.Large.Yellow"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="48dp"
+                                    android:layout_marginTop="12dp"
+                                    android:text="@string/tcpip_action" />
+                            </LinearLayout>
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
                 </LinearLayout>
 
-            </LinearLayout>
-
-            <!-- Log -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingStart="4dp">
-
-                <TextView
-                    android:id="@+id/txtStatus"
-                    style="@style/Hmdm.CardTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Log" />
-
-                <ProgressBar
-                    android:id="@+id/progress"
-                    style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="8dp"
-                    android:indeterminateTint="@color/accent_text"
-                    android:visibility="gone" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnCopyLog"
-                    style="@style/Widget.Hmdm.Button.Text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:minWidth="0dp"
-                    android:text="Salin" 
-                            android:minHeight="0dp"
-                            android:textSize="13sp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnClearLog"
-                    style="@style/Widget.Hmdm.Button.Text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:minWidth="0dp"
-                    android:text="Bersihkan" 
-                            android:minHeight="0dp"
-                            android:textSize="13sp" />
-            </LinearLayout>
-
-            <ScrollView
-                android:id="@+id/logScroll"
-                android:layout_width="match_parent"
-                android:layout_height="280dp"
-                android:layout_marginTop="6dp"
-                android:background="@drawable/log_bg"
-                android:nestedScrollingEnabled="true"
-                android:padding="14dp">
-
-                <TextView
-                    android:id="@+id/txtLog"
+                <!-- ===== Log ===== -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="monospace"
-                    android:lineSpacingMultiplier="1.1"
-                    android:textColor="@color/log_text"
-                    android:textIsSelectable="true"
-                    android:textSize="12sp" />
-            </ScrollView>
+                    android:layout_marginTop="20dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingStart="4dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="8dp"
-                android:gravity="center"
-                android:text="© 2026 PT. Sumber Alfaria Trijaya, Tbk - IT RZ01 Department · Version 5.0"
-                android:textColor="@color/muted"
-                android:textSize="11sp" />
+                    <TextView
+                        android:id="@+id/txtStatus"
+                        style="@style/Hmdm.CardTitle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="@string/log_title" />
+
+                    <ProgressBar
+                        android:id="@+id/progress"
+                        style="?android:attr/progressBarStyleSmall"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginEnd="8dp"
+                        android:indeterminateTint="@color/accent_text"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCopyLog"
+                        style="@style/Widget.Hmdm.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/log_copy" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnClearLog"
+                        style="@style/Widget.Hmdm.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="40dp"
+                        android:minWidth="0dp"
+                        android:minHeight="0dp"
+                        android:text="@string/log_clear" />
+                </LinearLayout>
+
+                <ScrollView
+                    android:id="@+id/logScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/log_bg"
+                    android:nestedScrollingEnabled="true"
+                    android:padding="14dp">
+
+                    <TextView
+                        android:id="@+id/txtLog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="monospace"
+                        android:lineSpacingMultiplier="1.1"
+                        android:textColor="@color/log_text"
+                        android:textIsSelectable="true"
+                        android:textSize="12sp" />
+                </ScrollView>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="8dp"
+                    android:gravity="center"
+                    android:text="@string/footer_copyright"
+                    android:textColor="@color/muted"
+                    android:textSize="11sp" />
             </LinearLayout>
-        </LinearLayout>
-    </ScrollView>
+        </ScrollView>
     </LinearLayout>
 
-    <!-- Tab metode koneksi: melayang di bawah layar -->
+    <!-- ===== Tab metode koneksi: melayang di bawah layar ===== -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/tabBar"
-        android:alpha="1"
         style="@style/Widget.Hmdm.Card"
         android:layout_width="250dp"
         android:layout_height="wrap_content"
@@ -1592,20 +1390,19 @@
             android:id="@+id/tabMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:alpha="1"
             android:background="@color/tab_bar_bg"
             app:tabGravity="fill"
             app:tabIconTint="@color/tab_icon_tint"
-            app:tabInlineLabel="true"
             app:tabIndicator="@drawable/bg_tab_indicator"
+            app:tabIndicatorAnimationMode="elastic"
             app:tabIndicatorColor="@null"
             app:tabIndicatorFullWidth="true"
             app:tabIndicatorGravity="stretch"
-            app:tabIndicatorAnimationMode="elastic"
-            app:tabMode="fixed"
-            app:tabPaddingStart="4dp"
-            app:tabPaddingEnd="4dp"
+            app:tabInlineLabel="true"
             app:tabMaxWidth="0dp"
+            app:tabMode="fixed"
+            app:tabPaddingEnd="4dp"
+            app:tabPaddingStart="4dp"
             app:tabRippleColor="@android:color/transparent"
             app:tabSelectedTextColor="@color/tab_selected_text"
             app:tabTextColor="@color/tab_unselected_text">
@@ -1614,13 +1411,13 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:icon="@drawable/ic_wifi"
-                android:text="Wireless" />
+                android:text="@string/tab_wireless" />
 
             <com.google.android.material.tabs.TabItem
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:icon="@drawable/ic_usb"
-                android:text="USB" />
+                android:text="@string/tab_usb" />
         </com.google.android.material.tabs.TabLayout>
     </com.google.android.material.card.MaterialCardView>
 </FrameLayout>

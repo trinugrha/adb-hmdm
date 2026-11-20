@@ -209,4 +209,89 @@
         <item name="android:textSize">13sp</item>
         <item name="android:textStyle">bold</item>
     </style>
+
+    <!-- ===== Komponen bersama layar utama ===== -->
+
+    <!-- Isi kartu (LinearLayout vertikal) -->
+    <style name="Hmdm.CardBody" parent="">
+        <item name="android:orientation">vertical</item>
+        <item name="android:padding">16dp</item>
+    </style>
+
+    <!-- Tombol utama penuh lebar: tinggi 48dp diatur di layout -->
+    <style name="Widget.Hmdm.Button.Large" parent="Widget.Hmdm.Button">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <style name="Widget.Hmdm.Button.Large.Outlined" parent="Widget.Hmdm.Button.BlueOutlined">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Widget.Hmdm.Button.Large.Danger" parent="Widget.Hmdm.Button.DangerFilled">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:textSize">14sp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="iconPadding">8dp</item>
+    </style>
+
+    <style name="Widget.Hmdm.Button.Large.Yellow" parent="Widget.Hmdm.Button.YellowFilled">
+        <item name="android:minHeight">0dp</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <!-- Kolom isian bertulisan monospace (IP, port, kode) -->
+    <style name="Hmdm.Input" parent="">
+        <item name="android:fontFamily">monospace</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+    </style>
+
+    <!-- Kotak status / langkah -->
+    <style name="Hmdm.StatusBox" parent="">
+        <item name="android:background">@drawable/bg_status_box</item>
+        <item name="android:padding">14dp</item>
+    </style>
+
+    <!-- Label kecil di dalam kotak status -->
+    <style name="Hmdm.FieldLabel" parent="Hmdm.SectionLabel">
+        <item name="android:textColor">@color/muted</item>
+    </style>
+
+    <!-- Chip nilai status (titik + teks) -->
+    <style name="Hmdm.Chip" parent="">
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:paddingStart">12dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingEnd">14dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="Hmdm.ChipText" parent="">
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Hmdm.Dot" parent="">
+        <item name="android:background">@drawable/bg_dot</item>
+    </style>
+
+    <!-- Tombol ikon bulat kecil (area sentuh 40dp) -->
+    <style name="Hmdm.IconButton" parent="">
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackgroundBorderless</item>
+        <item name="android:padding">10dp</item>
+    </style>
 </resources>
