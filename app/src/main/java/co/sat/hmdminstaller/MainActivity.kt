@@ -2026,6 +2026,7 @@ class MainActivity : AppCompatActivity() {
         val dm = if (connected) deviceModel else null
         txtModel.text = when {
             !connected -> "Belum terhubung"
+            total == 0 -> "Daftar aplikasi kosong"
             dm == null -> "Belum diperiksa"
             dm.second != null -> "${dm.first} · ${dm.second}"
             else -> "${dm.first} · tidak dikenal"
