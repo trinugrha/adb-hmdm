@@ -110,8 +110,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         fun detectType(model: String): String? {
             val m = normModel(model)
             if (m.isEmpty()) return null
-            for ((type, list) in DEVICE_MODELS) {
-                for (c in list) {
+            for (type in DEVICE_MODELS.keys) {
+                for (c in ModelStore.models(type)) {
                     val n = normModel(c)
                     if (m == n) return type
                     if (n.startsWith("SM") && m.startsWith(n) && m.length - n.length <= 2 && m.substring(n.length).all { it.isLetter() }) return type

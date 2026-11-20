@@ -1025,6 +1025,19 @@
                             android:text="Informasi Status" />
 
                         <ImageView
+                            android:id="@+id/btnModels"
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_chip"
+                            android:clickable="true"
+                            android:contentDescription="Setting model perangkat"
+                            android:focusable="true"
+                            android:padding="8dp"
+                            android:src="@drawable/ic_add"
+                            app:tint="@color/accent_text" />
+
+                        <ImageView
                             android:id="@+id/btnSettings"
                             android:layout_width="36dp"
                             android:layout_height="36dp"

@@ -617,6 +617,7 @@ class MainActivity : AppCompatActivity() {
         txtSession = findViewById(R.id.txtSession)
         findViewById<View>(R.id.btnLogout).setOnClickListener { confirmExit() }
         findViewById<View>(R.id.btnSettings).setOnClickListener { showVersionSettings() }
+        findViewById<View>(R.id.btnModels).setOnClickListener { showModelSettings() }
         showLock()
 
         restorePickedApks()
@@ -655,6 +656,233 @@ class MainActivity : AppCompatActivity() {
         // Hanya lepas pendengar log milik Activity ini.
         (application as App).logListener = null
         adb.onProgress = null
+    }
+
+    /**
+     * Dialog Setting Model Perangkat: tambah/hapus model (ro.product.model) untuk POS / PDA / TABLET.
+     * Model ini dipakai kartu Informasi Status untuk memilih jenis perangkat otomatis. Disimpan saat menekan Simpan.
+     */
+    private fun showModelSettings() {
+        if (isFinishing) return
+        val types = AdbController.DEVICE_MODELS.keys.toList()
+        val draft = LinkedHashMap<String, MutableList<String>>()
+        for (t in types) draft[t] = ModelStore.models(t).toMutableList()
+        var current = if (deviceType in types) deviceType else types.first()
+
+        val cText = ContextCompat.getColor(this, R.color.accent_text)
+        val cMuted = ContextCompat.getColor(this, R.color.muted)
+        val cSurface = ContextCompat.getColor(this, R.color.surface)
+        val cOutline = ContextCompat.getColor(this, R.color.outline)
+        val cCard = ContextCompat.getColor(this, R.color.chip_bg)
+        val cStroke = ContextCompat.getColor(this, R.color.stroke)
+        val cTab = ContextCompat.getColor(this, R.color.btn_main)
+        val cOnTab = ContextCompat.getColor(this, R.color.on_tab_button)
+        val matchP = ViewGroup.LayoutParams.MATCH_PARENT
+        val wrapP = ViewGroup.LayoutParams.WRAP_CONTENT
+
+        fun rounded(fill: Int, stroke: Int?, r: Int = 10) = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+            cornerRadius = dp(r).toFloat()
+            setColor(fill)
+            if (stroke != null) setStroke(dp(1), stroke)
+        }
+        fun lpTop(top: Int, h: Int = wrapP) = android.widget.LinearLayout.LayoutParams(matchP, h).apply { topMargin = dp(top) }
+
+        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val chips = LinkedHashMap<String, TextView>()
+        lateinit var buildList: () -> Unit
+
+        fun refreshChips() {
+            for ((t, tv) in chips) {
+                val sel = t == current
+                tv.background = if (sel) rounded(cTab, null) else null
+                tv.setTextColor(if (sel) cOnTab else cMuted)
+            }
+        }
+        buildList = {
+            list.removeAllViews()
+            val items = draft.getValue(current)
+            if (items.isEmpty()) {
+                list.addView(TextView(this).apply {
+                    text = "Belum ada model untuk $current"
+                    textSize = 12f
+                    setTextColor(cMuted)
+                }, lpTop(10))
+            }
+            for (m in items.toList()) {
+                val name = TextView(this).apply {
+                    text = m
+                    textSize = 14f
+                    setTypeface(typeface, Typeface.BOLD)
+                    setTextColor(cText)
+                    isSingleLine = true
+                }
+                val del = android.widget.ImageView(this).apply {
+                    setImageResource(R.drawable.ic_delete)
+                    imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
+                    contentDescription = "Hapus $m"
+                    setPadding(dp(8), dp(8), dp(8), dp(8))
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { draft.getValue(current).remove(m); buildList() }
+                }
+                val row = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    background = rounded(cSurface, cStroke, 14)
+                    setPadding(dp(16), dp(6), dp(10), dp(6))
+                    addView(name, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)))
+                }
+                list.addView(row, lpTop(8))
+            }
+        }
+
+        val typeRow = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            background = rounded(cCard, null, 12)
+            setPadding(dp(4), dp(4), dp(4), dp(4))
+            for (t in types) {
+                val tv = TextView(this@MainActivity).apply {
+                    text = t
+                    gravity = android.view.Gravity.CENTER
+                    textSize = 13f
+                    setTypeface(typeface, Typeface.BOLD)
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { if (t != current) { current = t; refreshChips(); buildList() } }
+                }
+                chips[t] = tv
+                addView(tv, android.widget.LinearLayout.LayoutParams(0, dp(38), 1f))
+            }
+        }
+        refreshChips()
+
+        val input = android.widget.EditText(this).apply {
+            hint = "contoh: SM-T225"
+            textSize = 14f
+            setTextColor(cText)
+            setHintTextColor(cMuted)
+            isSingleLine = true
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            background = rounded(cSurface, cOutline)
+            setPadding(dp(12), 0, dp(12), 0)
+        }
+        val btnAddModel = MaterialButton(this).apply {
+            text = "Tambah"
+            setIconResource(R.drawable.ic_add)
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            iconPadding = dp(8)
+            backgroundTintList = ColorStateList.valueOf(cTab)
+            setTextColor(cOnTab)
+            iconTint = ColorStateList.valueOf(cOnTab)
+            setOnClickListener {
+                val m = input.text?.toString()?.trim().orEmpty()
+                val norm = m.uppercase().filter { it.isLetterOrDigit() }
+                val dupType = types.firstOrNull { t -> draft.getValue(t).any { it.uppercase().filter { c -> c.isLetterOrDigit() } == norm } }
+                when {
+                    m.isEmpty() || norm.isEmpty() ->
+                        Toast.makeText(this@MainActivity, "Tambah model gagal: isi nama model, contoh SM-T225", Toast.LENGTH_LONG).show()
+                    dupType != null ->
+                        Toast.makeText(this@MainActivity, "Tambah model gagal: $m sudah ada di daftar $dupType", Toast.LENGTH_LONG).show()
+                    else -> {
+                        draft.getValue(current).add(m)
+                        input.setText("")
+                        buildList()
+                    }
+                }
+            }
+        }
+
+        fun outlined(label: String, icon: Int) = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            text = label
+            setIconResource(icon)
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            iconPadding = dp(6)
+            setTextColor(cText)
+            iconTint = ColorStateList.valueOf(cText)
+            strokeColor = ColorStateList.valueOf(cText)
+            rippleColor = ColorStateList.valueOf(cText)
+        }
+        val btnExportM = outlined("Export", R.drawable.ic_upload_file)
+        val btnImportM = outlined("Import", R.drawable.ic_download)
+        val ioButtons = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            addView(btnExportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+            addView(btnImportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
+        }
+        btnExportM.setOnClickListener {
+            // Ekspor daftar yang sedang tampil di dialog (termasuk perubahan yang belum disimpan).
+            onExportPicked = { uri ->
+                try {
+                    val json = ModelStore.toJson(types, draft)
+                    contentResolver.openOutputStream(uri, "wt")?.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+                        ?: throw java.io.IOException("tidak bisa menulis file")
+                    Toast.makeText(this, "Model perangkat diekspor", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    val msg = "Ekspor model perangkat gagal: file tidak bisa ditulis. Pilih lokasi lain, lalu coba lagi"
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    log(LogLevel.ERR, msg)
+                    log(LogLevel.DETAIL, Fmt.cause(e))
+                }
+            }
+            exportVersionsLauncher.launch("model-perangkat.json")
+        }
+        btnImportM.setOnClickListener {
+            onImportPicked = { uri ->
+                try {
+                    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                        ?: throw java.io.IOException("tidak bisa membaca file")
+                    if (bytes.size > 1_000_000) throw IllegalArgumentException("file terlalu besar")
+                    val parsed = ModelStore.parseJson(String(bytes, Charsets.UTF_8), types)
+                    for ((t, l) in parsed) draft[t] = l.toMutableList()
+                    buildList()
+                    Toast.makeText(this, "Model perangkat diimpor (${parsed.keys.joinToString()}). Ketuk \"Simpan\" untuk menerapkan", Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    val reason = e.message?.takeIf {
+                        e is IllegalArgumentException || (e is java.io.IOException && it.startsWith("tidak bisa"))
+                    } ?: "file tidak bisa dibaca"
+                    val msg = "Impor model perangkat gagal: $reason. Pilih file hasil ekspor model perangkat"
+                    Toast.makeText(this, msg, Toast.LENGTH_LONG).show()
+                    log(LogLevel.ERR, msg)
+                    log(LogLevel.DETAIL, Fmt.cause(e))
+                }
+            }
+            importVersionsLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+        }
+
+        val box = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(0, dp(4), 0, 0)
+            addView(TextView(this@MainActivity).apply {
+                text = "JENIS PERANGKAT"; textSize = 11f; letterSpacing = 0.08f
+                setTypeface(typeface, Typeface.BOLD); setTextColor(cText)
+            })
+            addView(typeRow, lpTop(10))
+            addView(TextView(this@MainActivity).apply {
+                text = "Isi sesuai ro.product.model HP target (huruf besar/kecil tidak dibedakan)."
+                textSize = 12f; setTextColor(cMuted)
+            }, lpTop(12))
+            addView(input, lpTop(8, dp(44)))
+            addView(btnAddModel, lpTop(8, dp(44)))
+            addView(ioButtons, lpTop(8, dp(44)))
+            addView(list)
+        }
+        val scroll = ScrollView(this)
+        scroll.addView(box)
+        buildList()
+
+        showPopup(
+            "Pengaturan Model Perangkat", "Model yang dikenali untuk memilih POS / PDA / TABLET otomatis",
+            icon = R.drawable.ic_add, content = scroll, ownScroll = true, hasInput = true,
+            positive = "Simpan", negative = "Batal"
+        ) {
+            for (t in types) ModelStore.save(t, draft.getValue(t))
+            deviceModel = null
+            refreshApps()
+            Toast.makeText(this, "Daftar model disimpan. Ketuk refresh di Informasi Status untuk membaca ulang", Toast.LENGTH_LONG).show()
+            true
+        }
     }
 
     /**
