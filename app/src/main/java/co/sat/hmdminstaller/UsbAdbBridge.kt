@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Jembatan ADB lewat kabel USB (USB debugging).
  *
- * HP teknisi bertindak sebagai USB host (kabel OTG). Paket ADB dari library (otentikasi RSA, shell, install)
+ * HP ini bertindak sebagai USB host (kabel OTG). Paket ADB dari library (otentikasi RSA, shell, install)
  * dikirim lewat soket TCP loopback 127.0.0.1:<port>, lalu jembatan ini meneruskannya apa adanya ke
  * endpoint bulk USB milik HP target (dan sebaliknya). Dengan begitu seluruh logika ADB yang sudah ada
  * (pair/connect/install/set-device-owner) dipakai ulang tanpa perubahan.
@@ -134,7 +134,7 @@ class UsbAdbBridge(context: Context) {
     fun start(d: UsbDevice): Int {
         stop()
         lastPumpError = ""
-        val itf = findAdbInterface(d) ?: throw IllegalStateException("Interface ADB tidak ditemukan di perangkat USB")
+        val itf = findAdbInterface(d) ?: throw IllegalStateException("Antarmuka ADB tidak ditemukan di perangkat USB")
         var inEp: UsbEndpoint? = null
         var outEp: UsbEndpoint? = null
         for (i in 0 until itf.endpointCount) {
@@ -142,11 +142,11 @@ class UsbAdbBridge(context: Context) {
             if (ep.type != UsbConstants.USB_ENDPOINT_XFER_BULK) continue
             if (ep.direction == UsbConstants.USB_DIR_IN) inEp = ep else outEp = ep
         }
-        if (inEp == null || outEp == null) throw IllegalStateException("Endpoint bulk USB tidak lengkap")
+        if (inEp == null || outEp == null) throw IllegalStateException("Jalur bulk USB tidak lengkap")
         val c = usb.openDevice(d) ?: throw IllegalStateException("Perangkat USB tidak bisa dibuka, izin belum diberikan")
         if (!c.claimInterface(itf, true)) {
             c.close()
-            throw IllegalStateException("Interface ADB tidak bisa diambil, mungkin dipakai aplikasi lain")
+            throw IllegalStateException("Antarmuka ADB tidak bisa diambil, mungkin dipakai aplikasi lain")
         }
         conn = c; iface = itf; epIn = inEp; epOut = outEp; device = d
         val ss = ServerSocket(0, 2, InetAddress.getByName("127.0.0.1"))

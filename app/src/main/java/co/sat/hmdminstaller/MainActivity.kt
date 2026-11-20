@@ -425,19 +425,19 @@ class MainActivity : AppCompatActivity() {
             if (!adb.isConnected) { log(LogLevel.WARN, AdbController.MSG_NOT_CONNECTED); return@setOnClickListener }
             // Hasil cek manual sudah dipakai kartu; jangan dibaca ulang diam-diam (bisa menimpa dengan hasil terpotong).
             skipInfoRefresh = true
-            run("Cek Informasi Status") {
+            run("Cek Status") {
                 // Baca model HP target; bila ada di daftar POS / PDA / TABLET, jenis perangkat dipilih otomatis.
                 val dm = adb.queryDeviceModel()
                 if (dm != null) {
                     deviceModel = dm
                     if (dm.second != null) {
-                        runOnUiThread { log(LogLevel.OK, "Model perangkat: ${dm.first} -> ${dm.second}") }
+                        runOnUiThread { log(LogLevel.OK, "Model perangkat: ${dm.first}, jenis ${dm.second}") }
                         if (dm.second != deviceType) {
                             deviceType = dm.second!!
                             getSharedPreferences("ui_prefs", Context.MODE_PRIVATE).edit().putString("device_type", deviceType).apply()
                         }
                     } else {
-                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} (tidak ada di daftar POS / PDA / TABLET, pilih jenis secara manual)") }
+                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} tidak ada di daftar POS / PDA / TABLET. Pilih jenis secara manual") }
                     }
                 } else {
                     runOnUiThread { log(LogLevel.WARN, "Model perangkat tidak terbaca") }
@@ -519,10 +519,10 @@ class MainActivity : AppCompatActivity() {
                 log(LogLevel.ERR, "Connect USB gagal: tidak ada HP target di port USB. Colok lewat kabel OTG, aktifkan USB debugging di Opsi Developer HP target, dan pilih mode USB \"Transfer file\"")
                 logEnd("Connect USB", false, t0)
                 showConnProblem(
-                    "Connect USB gagal",
+                    "Connect USB Gagal",
                     "Tidak ada HP target yang terdeteksi di port USB.\n\n" +
                         "Periksa:\n" +
-                        "• Kabel (OTG) terpasang kuat ke HP target\n" +
+                        "• Kabel OTG terpasang kuat ke HP target\n" +
                         "• USB debugging aktif di Opsi Developer HP target\n" +
                         "• Mode USB di HP target: \"Transfer file\"\n\n" +
                         "Rincian lengkap ada di log."
@@ -571,7 +571,7 @@ class MainActivity : AppCompatActivity() {
         btnClearKaspersky.setOnClickListener {
             showConfirm(
                 "Hapus Data Aplikasi Kaspersky?",
-                "Semua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah ini lanjut ke Langkah 2: matikan Aplikasi Admin Kaspersky di HP target (manual).\n\nPerintah: adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}",
+                "Semua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah ini lanjut ke Langkah 2: matikan Aplikasi Admin Kaspersky di HP target (manual).",
                 "Hapus"
             ) {
                 // Selesai hapus data: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -581,7 +581,7 @@ class MainActivity : AppCompatActivity() {
         btnUninstallKaspersky.setOnClickListener {
             showConfirm(
                 "Uninstall Aplikasi Kaspersky?",
-                "Aplikasi Kaspersky akan di-uninstall dari HP target.\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.\n\nPerintah: adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}",
+                "Aplikasi Kaspersky akan di-uninstall dari HP target.\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan. Bila belum, uninstall akan ditolak.",
                 "Uninstall"
             ) {
                 // Selesai uninstall: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -710,7 +710,7 @@ class MainActivity : AppCompatActivity() {
                 val d = dupType(m)
                 when {
                     norm(m).isEmpty() -> {
-                        Toast.makeText(this, "Tambah model gagal: isi nama model, contoh SM-T225", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Tambah model gagal: nama model kosong. Isi nama model. Contoh: SM-T225", Toast.LENGTH_LONG).show()
                         false
                     }
                     d != null -> {
@@ -784,7 +784,7 @@ class MainActivity : AppCompatActivity() {
             for (t in types) ModelStore.save(t, draft.getValue(t))
             deviceModel = null
             refreshApps()
-            Toast.makeText(this, "Daftar model disimpan. Ketuk refresh di Informasi Status untuk membaca ulang", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Daftar model disimpan. Ketuk ikon refresh di kartu \"Informasi Status\" untuk membaca ulang", Toast.LENGTH_LONG).show()
             true
         }
     }
@@ -1229,10 +1229,10 @@ class MainActivity : AppCompatActivity() {
             adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, "Penyebab: $it") }
             adb.lastDropDetail.takeIf { it.isNotEmpty() }?.let { log(LogLevel.DETAIL, it) }
             showConnProblem(
-                "Koneksi terputus",
+                "Koneksi Terputus",
                 "Koneksi ke $addr terputus" + (if (cableGone) " karena kabel USB dicabut" else "") + "." +
-                    (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab:\n• $it" } ?: "") +
-                    "\n\nLangkah berikutnya: sambungkan ulang lewat \"Pair\" dan \"Connect\", atau \"Connect USB\"."
+                    (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab:\n• ${it.replaceFirstChar { c -> c.uppercase() }}" } ?: "") +
+                    "\n\nLangkah berikutnya: sambungkan ulang lewat \"Pair\" lalu \"Connect\", atau \"Pilih Perangkat\" di tab \"USB\"."
             )
             showUsbDevice(null)
             lostAddr = addr
@@ -1257,7 +1257,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL }
         }
         val hint2 = TextView(this).apply {
-            text = "HP teknisi dan HP target harus di Wi-Fi yang sama."
+            text = "HP ini dan HP target harus satu jaringan Wi-Fi."
             textSize = 13f
             gravity = android.view.Gravity.CENTER
             setLineSpacing(0f, 1.3f)
@@ -1284,9 +1284,9 @@ class MainActivity : AppCompatActivity() {
                     log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                     logEnd("Pair dengan QR", false, shownAt)
                     showConnProblem(
-                        "Pair dengan QR gagal",
-                        "HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} detik, atau layanan pairing tidak ditemukan.\n\n" +
-                            "Periksa:\n• Layar \"Pair device with QR code\" di HP target terbuka dan kamera diarahkan ke QR\n• HP target dan perangkat ini satu jaringan Wi-Fi (client isolation mati)\n\n" +
+                        "Pair dengan QR Gagal",
+                        "HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} dtk, atau layanan pairing tidak ditemukan.\n\n" +
+                            "Periksa:\n• Layar \"Pair device with QR code\" di HP target terbuka dan kamera diarahkan ke QR\n• HP target dan HP ini satu jaringan Wi-Fi (client isolation mati)\n\n" +
                             "Rincian lengkap ada di log."
                     )
                 }
@@ -1468,7 +1468,7 @@ class MainActivity : AppCompatActivity() {
                     val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "• $name: $why" }
                     val more = if (inst.failed.size > 8) "\n• dan ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
                     showConnProblem(
-                        if (inst.ok == 0) "Semua APK gagal dipasang" else "${inst.failed.size} APK gagal dipasang",
+                        if (inst.ok == 0) "Semua APK Gagal Dipasang" else "${inst.failed.size} APK Gagal Dipasang",
                         "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal.\n\n" +
                             "Penyebab:\n$shown$more\n\n" +
                             "Langkah berikutnya: perbaiki penyebabnya, lalu pasang ulang APK yang gagal." +
@@ -1478,14 +1478,14 @@ class MainActivity : AppCompatActivity() {
                 } else if (!ok) {
                     val isPair = title == "Pair" || title == "Pair dengan QR"
                     val isConn = title == "Connect" || title == "Connect USB"
-                    val popupTitle = "$title gagal"
+                    val popupTitle = "$title Gagal"
                     val hint = when {
-                        title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan perangkat ini satu jaringan Wi-Fi"
-                        isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
+                        title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan HP ini satu jaringan Wi-Fi"
+                        isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan HP ini satu jaringan Wi-Fi"
                         title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
-                        isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
+                        isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan HP ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
                         title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode" -> "Periksa:\n• Layar HP target menyala dan koneksi masih tersambung\n• Penyimpanan HP target cukup\n• Versi APK tidak lebih rendah dari yang sudah terpasang\n• Dialog di HP target (bila muncul) disetujui"
-                        title == "Jadikan MDM Mode" -> "Periksa:\n• Semua akun (Google dan lainnya) di HP target sudah dihapus\n• HP target baru atau habis factory reset\n• Belum ada aplikasi lain yang menjadi device owner"
+                        title == "Jadikan MDM Mode" -> "Periksa:\n• Semua akun (Google dan lainnya) di HP target sudah dihapus\n• HP target baru atau baru direset ke pengaturan pabrik\n• Belum ada aplikasi lain yang menjadi MDM Mode di HP target"
                         title == "Hapus Data Aplikasi Kaspersky" -> "Periksa:\n• Koneksi ke HP target masih tersambung\n• Aplikasi Kaspersky masih terpasang di HP target"
                         title == "Uninstall Aplikasi Kaspersky" -> "Periksa:\n• Aplikasi Admin Kaspersky sudah dimatikan di HP target (Langkah 2)\n• Aplikasi Kaspersky masih terpasang di HP target"
                         title == "Ubah ke Mode Nirkabel" -> "Periksa:\n• Kabel USB masih terpasang kuat\n• Layar HP target menyala dan USB debugging aktif"
@@ -1509,7 +1509,7 @@ class MainActivity : AppCompatActivity() {
                             else "Pairing berhasil, tetapi port connect tidak ditemukan otomatis.\n\nLangkah berikutnya: isi IP dan port connect (layar utama Wireless debugging HP target), lalu ketuk \"Connect\"."
                         "Connect" -> "Berhasil terhubung ke ${connNow ?: "HP target"}.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
                         "Connect USB" -> "Berhasil terhubung ke HP target lewat kabel USB.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
-                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nUntuk menyambung lagi, lakukan \"Pair\" dan \"Connect\", atau \"Connect USB\"."
+                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nLangkah berikutnya: sambungkan ulang lewat \"Pair\" lalu \"Connect\", atau \"Pilih Perangkat\" di tab \"USB\"."
                         "Pasang Aplikasi" -> if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang ke HP target." else "Semua APK berhasil dipasang ke HP target."
                         "Jadikan MDM Mode" -> "HMDM berhasil dijadikan MDM Mode di HP target."
                         "Pasang Aplikasi + Jadikan MDM Mode" -> (if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang" else "Semua APK berhasil dipasang") + " dan HMDM berhasil dijadikan MDM Mode di HP target."
@@ -1518,7 +1518,7 @@ class MainActivity : AppCompatActivity() {
                         "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target.\n\nLangkah berikutnya: cabut kabel, lalu sambungkan lewat tab \"Wireless\" (\"Pair\" lalu \"Connect\")."
                         else -> null
                     }
-                    if (okMsg != null) showConnProblem("$title berhasil", okMsg, ok = true)
+                    if (okMsg != null) showConnProblem("$title Berhasil", okMsg, ok = true)
                 }
             }
         }
@@ -1599,11 +1599,11 @@ class MainActivity : AppCompatActivity() {
                 statusDot.backgroundTintList = ColorStateList.valueOf(colorOf(R.color.status_ok))
             }
             lost != null -> {
-                txtConn.text = "Terputus · $lost, Connect ulang"
+                txtConn.text = "Terputus · $lost, sambungkan ulang"
                 statusDot.backgroundTintList = ColorStateList.valueOf(colorOf(R.color.status_bad))
             }
             else -> {
-                txtConn.text = "Belum terhubung, Pair lalu Connect atau Connect USB"
+                txtConn.text = "Belum terhubung, Pair lalu Connect, atau Pilih Perangkat di tab USB"
                 statusDot.backgroundTintList = ColorStateList.valueOf(colorOf(R.color.status_idle))
             }
         }

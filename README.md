@@ -40,7 +40,7 @@ Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) unt
 Alternatif tanpa Wi-Fi / Pair:
 1. HP target: Opsi Developer › aktifkan **USB debugging** (mode USB: Transfer file).
 2. Colok HP target ke HP teknisi memakai kabel OTG (HP teknisi = USB host).
-3. Di kartu **USB Debugging (Kabel)** ketuk **Connect USB**; izinkan akses USB di HP teknisi, lalu di HP target
+3. Di kartu **USB Debugging (Kabel)** ketuk **Pilih Perangkat**; izinkan akses USB di HP teknisi, lalu di HP target
    setujui dialog "Izinkan USB debugging?" (centang "Selalu izinkan").
 4. Lanjut seperti biasa: Pasang APK, set-device-owner, atau Proses Otomatis.
 Cara kerja: paket ADB dikirim lewat soket loopback lalu diteruskan ke endpoint bulk USB (`UsbAdbBridge.kt`).

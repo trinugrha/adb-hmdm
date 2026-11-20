@@ -49,6 +49,8 @@ package co.sat.hmdminstaller
  * - Teks status di layar (header, progres) memakai "·" hanya untuk label dan durasi; petunjuk dan angka dipisah koma atau "dari".
  * - Kutipan nama tombol, dialog, atau perintah memakai tanda kutip ganda ("..."), di log, popup, maupun Toast; tidak pakai kutip tunggal.
  *   Petunjuk ke tombol memakai kata "ketuk" (bukan "klik") dan nama tombol persis seperti tulisan di layar, mis. ketuk "Cek Status".
+ * - Petunjuk ke tombol memakai label yang benar-benar ada di layar: koneksi kabel ditunjuk dengan "Pilih Perangkat" di tab "USB"
+ *   (bukan "Connect USB", yang hanya nama proses di log dan judul popup). Satuan waktu di popup juga "dtk", bukan "detik".
  * - Jalur menu Android ditulis dengan "›" (Pengaturan › Keamanan), bukan ">".
  * - Penyebab putus koneksi (`AdbController.lastDropReason`) ditulis dalam bahasa sehari-hari karena tampil di popup; nama exception
  *   dan jawaban mentah ada di `lastDropDetail`, hanya untuk baris DETAIL.
@@ -56,6 +58,14 @@ package co.sat.hmdminstaller
  *   Istilah "izin" dipakai untuk permission Android di log, popup, dan Toast; "permission" hanya untuk nama paket atau perintah teknis.
  * - Pesan exception di baris DETAIL ditulis berbahasa Indonesia tanpa panah ("USB ke soket", bukan "USB->soket") dan tanpa kata "Timeout" ("Waktu habis ...").
  * - Popup hasil: ikon dan warna ditentukan parameter `ok` di `showConnProblem`, bukan dari teks judul.
+ *   Judul popup hasil juga berhuruf kapital di tiap kata: "<Proses> Gagal" / "<Proses> Berhasil" (mis. "Connect USB Gagal", "Koneksi Terputus").
+ * - Mode TCP/IP disebut "mode nirkabel (TCP/IP)" di log dan popup, sama dengan kartu di layar; tanda "->" tidak dipakai di pesan log.
+ * - HP yang menjalankan aplikasi ini disebut "HP ini" (bukan "HP teknisi" atau "perangkat ini"), pasangan dari "HP target".
+ * - Urutan koneksi nirkabel ditulis "Pair" lalu "Connect" (bukan "dan"). Petunjuk tombol di teks status juga memakai label layar,
+ *   mis. "Pilih Perangkat" di tab USB, bukan nama proses ("Connect USB", "Pilih Perangkat USB").
+ * - Butir "Penyebab" di popup selalu diawali huruf kapital, juga untuk penyebab putus koneksi (`lastDropReason`, yang di log ditulis huruf kecil).
+ * - Contoh isian di Toast ditulis sebagai kalimat sendiri: "Isi nama model. Contoh: SM-T225".
+ * - Judul proses cek status memakai nama tombol "Cek Status" (bukan "Cek Informasi Status").
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

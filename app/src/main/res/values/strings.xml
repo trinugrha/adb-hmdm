@@ -54,8 +54,8 @@
 
     <!-- Informasi status -->
     <string name="info_title">Informasi Status</string>
-    <string name="cd_model_settings">Setting model perangkat</string>
-    <string name="cd_version_settings">Setting versi aplikasi</string>
+    <string name="cd_model_settings">Pengaturan model perangkat</string>
+    <string name="cd_version_settings">Pengaturan versi aplikasi</string>
     <string name="info_hint">Cek status aplikasi dan izin.</string>
     <string name="info_model_label">MODEL PERANGKAT</string>
     <string name="info_install_label">INSTALLATION STATUS</string>

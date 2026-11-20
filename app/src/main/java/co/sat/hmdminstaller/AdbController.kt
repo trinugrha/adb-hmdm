@@ -131,7 +131,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Penyebab putus bila soket ditutup pihak lain. */
         const val DROP_CLOSED = "koneksi ditutup oleh HP target atau jaringan"
         /** Satu-satunya teks "belum terhubung", dipakai semua tempat agar tidak berbeda-beda. */
-        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Lakukan \"Pair\" lalu \"Connect\", atau \"Connect USB\", terlebih dahulu"
+        const val MSG_NOT_CONNECTED = "Belum terhubung ke HP target. Hubungkan terlebih dahulu lewat \"Pair\" lalu \"Connect\", atau \"Pilih Perangkat\" di tab \"USB\""
     }
 
     private val appContext = context.applicationContext
@@ -155,7 +155,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     @Volatile private var curTotal = 0
     @Volatile private var curName = ""
 
-    // ---- Cegah Wi-Fi / CPU HP teknisi tidur saat operasi panjang (install APK besar) ----
+    // ---- Cegah Wi-Fi / CPU HP ini tidur saat operasi panjang (install APK besar) ----
     private var wifiLock: WifiManager.WifiLock? = null
     private var wakeLock: PowerManager.WakeLock? = null
 
@@ -230,7 +230,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             logCause(e)
             return null
         }
-        logWarn("Bila muncul dialog \"Izinkan USB debugging?\" di HP target: centang \"Selalu izinkan\" lalu OK")
+        logWarn("Bila muncul dialog \"Izinkan USB debugging?\" di HP target: centang \"Selalu izinkan\", lalu ketuk \"OK\"")
         // Percobaan pertama bisa habis waktu selagi dialog di HP target belum disetujui; coba lagi setelah itu.
         var ok = false
         for (attempt in 1..USB_CONNECT_ATTEMPTS) {
@@ -253,7 +253,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     }
 
     /**
-     * Wi-Fi HP teknisi hilang. Sesi wireless tidak mungkin hidup lagi, jadi soket ditutup di thread latar.
+     * Wi-Fi HP ini hilang. Sesi wireless tidak mungkin hidup lagi, jadi soket ditutup di thread latar.
      * Dilewati untuk sesi USB dan loopback (127.0.0.1). Pemantau di Activity lalu menandai koneksi terputus.
      */
     fun onWifiLost() {
@@ -261,7 +261,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (lastAddr?.startsWith("127.0.0.1:") == true) return
         forcedDown = true
         connCache = false
-        setDrop("Wi-Fi HP teknisi hilang")
+        setDrop("Wi-Fi HP ini hilang")
         logWarn("Wi-Fi terputus, koneksi ADB ditutup")
         Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
     }
@@ -844,7 +844,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         apks.forEachIndexed { i, apk ->
             logStep("[${i + 1}/${apks.size}] ${apk.name} (${apk.sizeText})")
             if (!apk.file.exists()) {
-                logErr("Gagal: file tidak ditemukan di penyimpanan sementara. Pilih ulang APK")
+                logErr("Gagal: file tidak ditemukan di penyimpanan sementara. Pilih ulang file APK")
                 failed += apk.name to "file tidak ditemukan"
                 return@forEachIndexed
             }
@@ -957,7 +957,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 out.contains("DELETE_FAILED_DEVICE_POLICY_MANAGER") ->
                     "Kaspersky masih aktif sebagai aplikasi admin perangkat. Ulangi Langkah 2: Pengaturan › Keamanan › Aplikasi admin perangkat › Kaspersky › Nonaktifkan"
                 out.contains("DELETE_FAILED_USER_RESTRICTED") || out.contains("OWNER_BLOCKED") ->
-                    "diblokir kebijakan device owner atau profile owner"
+                    "diblokir kebijakan device owner atau profile owner. Lepas HP target dari konsol KES/MDM, lalu coba lagi"
                 out.contains("Unknown package", ignoreCase = true) || out.contains("not installed", ignoreCase = true) ->
                     "Kaspersky sudah tidak terpasang"
                 else -> "perintah tidak berhasil. Pastikan $KASPERSKY_PACKAGE terpasang di HP target"
@@ -981,7 +981,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return false
         }
         if (queryTcpipActive() == true) {
-            logOk("Mode TCP/IP sudah aktif di HP target, tidak perlu diubah lagi")
+            logOk("Mode nirkabel (TCP/IP) sudah aktif di HP target, tidak perlu diubah lagi")
             return true
         }
         logCmd("adb tcpip $TCPIP_PORT")
@@ -1001,7 +1001,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return false
         }
         // Tanpa output = adbd sudah restart dan menutup stream lebih dulu, tetap dianggap berhasil.
-        logOk("Mode TCP/IP aktif di port $TCPIP_PORT, koneksi USB terputus otomatis")
+        logOk("Mode nirkabel (TCP/IP) aktif di port $TCPIP_PORT, koneksi USB terputus otomatis")
         logStep("Berikutnya: cabut kabel, buka tab \"Wireless\", isi IP HP target dan port $TCPIP_PORT, lalu ketuk \"Connect\"")
         lastAddr = null
         sessionLabel = null
@@ -1107,10 +1107,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val l = out.lowercase()
         return when {
             "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner. Reset HP target ke pengaturan pabrik bila ingin menggantinya"
-            "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
-            "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. Jalankan \"Pasang Aplikasi\" terlebih dahulu"
-            else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
+            "accounts" in l -> "masih ada akun (Google dan lainnya) di HP target. Hapus akun atau reset HP target"
+            "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset HP target ke pengaturan pabrik"
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM belum terpasang di HP target. Jalankan \"Pasang Aplikasi\" terlebih dahulu"
+            else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google dan lainnya)"
         }
     }
 
@@ -1249,7 +1249,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             // Jangan tunggu EOF: device sering tidak menutup stream walau "Success" sudah tercetak (install terlihat menggantung).
             val out = readAll(stream.openInputStream(), pmDone)
             if (out.isBlank() && writeError != null) {
-                return "Error: ${writeError.message ?: "stream closed"}"
+                return "Error: ${writeError.message ?: "aliran ditutup HP target"}"
             }
             return out
         } finally {
