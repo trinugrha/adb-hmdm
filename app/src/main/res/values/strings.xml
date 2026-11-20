@@ -1,0 +1,104 @@
+<resources>
+    <string name="app_name">HMDM Installer</string>
+
+    <!-- Header -->
+    <string name="header_title">HMDM ADB Installer</string>
+    <string name="header_subtitle">Wireless / USB debugging · MDM Mode</string>
+    <string name="action_logout">Keluar</string>
+    <string name="conn_none">Belum terhubung</string>
+    <string name="session_default">Sesi 30:00</string>
+
+    <!-- Koneksi -->
+    <string name="conn_title_wireless">KONEKSI WIRELESS DEBUGGING</string>
+    <string name="pair_title">ADB Pair</string>
+    <string name="pair_hint">HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah</string>
+    <string name="pair_qr">Pair dengan QR code (scan)</string>
+    <string name="hint_pair_ip">IP pairing</string>
+    <string name="hint_port">Port</string>
+    <string name="hint_pair_code">Kode pairing</string>
+    <string name="action_pair">Pair</string>
+    <string name="connect_title">ADB Connect</string>
+    <string name="connect_hint">IP dan port yang tampil di layar utama Wireless debugging</string>
+    <string name="hint_connect_ip">IP connect</string>
+    <string name="action_disconnect">Disconnect</string>
+    <string name="action_connect">Connect</string>
+    <string name="usb_title">USB Debugging (Kabel)</string>
+    <string name="usb_hint">HP target › Opsi Developer › USB debugging aktif, colok ke HP ini lewat kabel, lalu ketuk \"Pilih Perangkat\".</string>
+    <string name="usb_pick_device">Pilih Perangkat</string>
+
+    <!-- Langkah 1: instalasi -->
+    <string name="step_install_label">INSTALASI APLIKASI</string>
+    <string name="apk_title">Pilih File APK (Bisa Banyak)</string>
+    <string name="apk_hint">Pilih satu atau beberapa file APK sekaligus untuk dipasang ke HP target.</string>
+    <string name="apk_drop_title">Pilih File APK Di Sini</string>
+    <string name="apk_drop_sub">Dapat memilih lebih dari satu file APK</string>
+    <string name="action_install">Pasang Aplikasi</string>
+
+    <!-- Langkah 2: MDM mode -->
+    <string name="step_owner_label">ATUR HAK AKSES</string>
+    <string name="owner_title">Jadikan MDM Mode</string>
+    <string name="owner_hint">Jadikan Headwind MDM sebagai MDM Mode penuh di HP target.</string>
+    <string name="owner_status_label">STATUS MDM MODE</string>
+    <string name="owner_unchecked">Belum diperiksa</string>
+    <string name="cd_recheck_status">Cek ulang status</string>
+    <string name="owner_warning"><b>Penting:</b> Hapus terlebih dahulu semua akun Google/Email &amp; akun pengguna lain di HP.</string>
+    <string name="action_owner">Jadikan MDM Mode</string>
+
+    <!-- Proses otomatis -->
+    <string name="auto_title">Proses Otomatis</string>
+    <string name="auto_hint">Pasang APK lalu atur MDM Mode sekaligus dengan sekali ketuk. Perangkat harus terhubung lebih dulu.</string>
+    <string name="action_auto">Pasang Aplikasi + Jadikan MDM Mode</string>
+
+    <!-- Lihat lainnya -->
+    <string name="more_show">Lihat Lainnya</string>
+
+    <!-- Informasi status -->
+    <string name="info_title">Informasi Status</string>
+    <string name="cd_model_settings">Setting model perangkat</string>
+    <string name="cd_version_settings">Setting versi aplikasi</string>
+    <string name="info_hint">Ketuk \"Cek Status\" untuk melihat status aplikasi dan izin.</string>
+    <string name="info_model_label">MODEL PERANGKAT</string>
+    <string name="info_install_label">INSTALLATION STATUS</string>
+    <string name="info_permission_label">PERMISSION STATUS</string>
+    <string name="action_check_status">Cek Status</string>
+
+    <!-- Kaspersky -->
+    <string name="kaspersky_title">Uninstall Aplikasi Kaspersky</string>
+    <string name="kaspersky_hint">Uninstall aplikasi Kaspersky dari HP target. Ikuti urutan langkah berikut agar uninstall tidak ditolak.</string>
+    <string name="kaspersky_step1_title">Hapus Data Aplikasi Kaspersky</string>
+    <string name="kaspersky_step1">Hubungkan HP target terlebih dahulu, lalu ketuk tombol di bawah dan konfirmasi. Log akan menampilkan \"Data aplikasi Kaspersky dihapus\".</string>
+    <string name="kaspersky_step2_title">Matikan Aplikasi Admin Kaspersky di HP target</string>
+    <string name="kaspersky_step2">Buka <b>Pengaturan › Keamanan › Aplikasi admin perangkat</b> (di beberapa merek: <b>Keamanan &amp; privasi › Lainnya</b>), pilih <b>Kaspersky</b>, lalu <b>Nonaktifkan</b>. Jika tidak bisa dinonaktifkan, lepas perangkat dari konsol KES/MDM terlebih dahulu.</string>
+    <string name="kaspersky_step3">Ketuk tombol di bawah dan konfirmasi. Log akan menampilkan \"Aplikasi Kaspersky di-uninstall\".</string>
+
+    <!-- TCP/IP -->
+    <string name="tcpip_title">Aktifkan Mode Nirkabel (TCP/IP)</string>
+    <string name="tcpip_hint">Mengalihkan koneksi ADB (Android Debug Bridge) dari kabel USB ke mode nirkabel (TCP/IP) melalui port 5555</string>
+    <string name="tcpip_status_label">STATUS NIRKABEL (TCP/IP)</string>
+    <string name="action_tcpip">Ubah ke Mode Nirkabel</string>
+
+    <!-- Log -->
+    <string name="log_title">Log</string>
+    <string name="action_copy">Salin</string>
+    <string name="action_clear">Bersihkan</string>
+    <string name="footer">© 2026 PT. Sumber Alfaria Trijaya, Tbk - IT RZ01 Department · Version 5.0</string>
+
+    <!-- Tab -->
+    <string name="tab_wireless">Wireless</string>
+    <string name="tab_usb">USB</string>
+
+    <!-- Popup -->
+    <string name="action_cancel">Batal</string>
+    <string name="action_ok">OK</string>
+
+    <!-- Layar PIN -->
+    <string name="pin_title">Otentikasi Pengguna</string>
+    <string name="pin_subtitle">Silakan login untuk mengakses HMDM Installer</string>
+    <string name="pin_prompt">Masukkan PIN %1$d digit</string>
+    <string name="pin_show">Tampilkan PIN</string>
+    <string name="pin_hide">Sembunyikan PIN</string>
+    <string name="pin_login">Masuk</string>
+    <string name="pin_locked">Terlalu banyak percobaan salah. Coba lagi dalam %1$d:%2$02d</string>
+    <string name="pin_too_short">PIN harus %1$d digit</string>
+    <string name="pin_wrong">PIN salah. Sisa percobaan: %1$d</string>
+</resources>
