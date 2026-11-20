@@ -902,27 +902,29 @@
                                 <ImageView
                                     android:id="@+id/btnModels"
                                     style="@style/Hmdm.IconButton"
-                                    android:layout_width="@dimen/icon_button_size"
-                                    android:layout_height="@dimen/icon_button_size"
+                                    android:layout_width="@dimen/icon_button_small"
+                                    android:layout_height="@dimen/icon_button_small"
                                     android:layout_marginEnd="@dimen/space_sm"
+                                    android:padding="@dimen/icon_button_small_padding"
                                     android:contentDescription="@string/cd_model_settings"
                                     android:src="@drawable/ic_add" />
 
                                 <ImageView
                                     android:id="@+id/btnSettings"
                                     style="@style/Hmdm.IconButton"
-                                    android:layout_width="@dimen/icon_button_size"
-                                    android:layout_height="@dimen/icon_button_size"
+                                    android:layout_width="@dimen/icon_button_small"
+                                    android:layout_height="@dimen/icon_button_small"
+                                    android:padding="@dimen/icon_button_small_padding"
                                     android:contentDescription="@string/cd_version_settings"
                                     android:src="@drawable/ic_settings" />
                             </LinearLayout>
 
-                            <!-- Baris judul setinggi ikon 40dp; margin negatif merapatkan hint ke judul seperti kartu lain -->
+                            <!-- Baris judul setinggi tombol kecil 24dp (judul kartu lain ~22dp), jadi selisihnya dikurangi dari space_xs agar jarak hint sama seperti kartu lain -->
                             <TextView
                                 style="@style/Hmdm.CardHint"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="-6dp"
+                                android:layout_marginTop="@dimen/info_hint_gap"
                                 android:text="@string/info_hint" />
 
                             <!-- Kotak status -->
