@@ -2025,6 +2025,7 @@ class MainActivity : AppCompatActivity() {
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
         val dm = if (connected) deviceModel else null
         txtModel.text = when {
+            !connected -> "Belum terhubung"
             dm == null -> "Belum diperiksa"
             dm.second != null -> "${dm.first} · ${dm.second}"
             else -> "${dm.first} · tidak dikenal"
