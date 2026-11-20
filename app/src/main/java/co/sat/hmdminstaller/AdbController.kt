@@ -94,11 +94,11 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
          */
         val EXPECTED_VERSIONS: Map<String, Map<String, String>> = emptyMap()
 
-        /** Daftar model (ro.product.model) per jenis perangkat; dipakai kartu Informasi Status untuk memilih POS / PDA / TABLET otomatis. */
+        /** Daftar model bawaan (kosong; diisi lewat Pengaturan Model Perangkat) per jenis perangkat; dipakai kartu Informasi Status untuk memilih POS / PDA / TABLET otomatis. */
         val DEVICE_MODELS: Map<String, List<String>> = linkedMapOf(
-            "POS" to listOf("T2s", "HK316T", "HK566G", "178A"),
-            "PDA" to listOf("PM80", "PM75"),
-            "TABLET" to listOf("SM-T225", "SM-T295", "SM-T385", "SM-X110", "SM-X115", "SM-X133", "SM-X135G")
+            "POS" to emptyList(),
+            "PDA" to emptyList(),
+            "TABLET" to emptyList()
         )
 
         private fun normModel(s: String): String = s.uppercase().filter { it.isLetterOrDigit() }
