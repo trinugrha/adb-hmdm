@@ -1548,6 +1548,8 @@ class MainActivity : AppCompatActivity() {
     // ---------- Progress install (inline di halaman, di atas log) ----------
 
     private var progShown = false
+    private var progIdx = -1
+    private var progStartMs = 0L
 
     private fun showInstallProgress(idx: Int, total: Int, name: String, sent: Long, size: Long) {
         if (isFinishing || !busy) return
@@ -1556,6 +1558,9 @@ class MainActivity : AppCompatActivity() {
         val n = findViewById<TextView>(R.id.txtProgName)
         val info = findViewById<TextView>(R.id.txtProgInfo)
         val pctView = findViewById<TextView>(R.id.txtProgPct)
+        val speedView = findViewById<TextView>(R.id.txtProgSpeed)
+        val now = android.os.SystemClock.elapsedRealtime()
+        if (idx != progIdx || sent == 0L) { progIdx = idx; progStartMs = now }
         if (!progShown) {
             progShown = true
             box.visibility = View.VISIBLE
@@ -1566,12 +1571,16 @@ class MainActivity : AppCompatActivity() {
         if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
             pctView.text = "100%"
+            speedView.text = ""
             info.text = "Terkirim ${Fmt.mb(size)}. Menunggu HP target memasang..."
         } else {
             bar.isIndeterminate = false
             val pct = if (size > 0) (sent * 100 / size).toInt() else 0
             bar.progress = if (size > 0) (sent * 1000 / size).toInt() else 0
             pctView.text = "$pct%"
+            val el = now - progStartMs
+            speedView.text = if (el >= 500 && sent > 0)
+                String.format(java.util.Locale.US, "%.1f MB/dtk", sent / 1_048_576.0 / (el / 1000.0)) else ""
             info.text = "${Fmt.mb(sent)} dari ${Fmt.mb(size)}"
         }
     }
@@ -1579,6 +1588,7 @@ class MainActivity : AppCompatActivity() {
     private fun hideInstallProgress() {
         if (!progShown) return
         progShown = false
+        progIdx = -1
         findViewById<View>(R.id.progBox)?.visibility = View.GONE
     }
 
