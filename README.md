@@ -28,7 +28,7 @@ syarat di atas terpenuhi.
 
 ## Pengaturan aplikasi & versi
 Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Installation Status, tanpa build ulang.
-- Ikon **+** di samping gerigi (kartu Informasi Status) membuka Pengaturan Model Perangkat: tambah/hapus model per jenis (disimpan di `ModelStore.kt`), dengan tombol Export/Import JSON (`model-perangkat.json`); hasil Import baru berlaku setelah Simpan.
+- Ikon **+** di samping gerigi (kartu Informasi Status) membuka Pengaturan Model Perangkat (tampilan sama dengan Pengaturan Aplikasi & Versi): tambah/hapus model per jenis (disimpan di `ModelStore.kt`), dengan tombol Export/Import JSON (`model-perangkat.json`); hasil Import baru berlaku setelah Simpan.
 - Saat tombol refresh ditekan, model HP target dibaca (`ro.product.model`) dan jenis dipilih otomatis sesuai daftar di Pengaturan Model Perangkat (daftar bawaan kosong; isi sendiri atau Import). Model di luar daftar ditampilkan "tidak dikenal" dan jenis terakhir tetap dipakai.
 - Pilih jenis perangkat (POS / TABLET / PDA), ubah kolom versionName per aplikasi. Kolom kosong = aplikasi hanya dicek terpasang.
 - **+ Tambah aplikasi**: isi nama paket (mis. `com.contoh.app`) dan versi (boleh kosong).

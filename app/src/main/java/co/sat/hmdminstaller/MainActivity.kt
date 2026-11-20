@@ -669,78 +669,190 @@ class MainActivity : AppCompatActivity() {
         for (t in types) draft[t] = ModelStore.models(t).toMutableList()
         var current = if (deviceType in types) deviceType else types.first()
 
+        // ---- Gaya: disamakan dengan dialog Pengaturan Aplikasi & Versi ----
         val cText = ContextCompat.getColor(this, R.color.accent_text)
         val cMuted = ContextCompat.getColor(this, R.color.muted)
         val cSurface = ContextCompat.getColor(this, R.color.surface)
         val cOutline = ContextCompat.getColor(this, R.color.outline)
         val cCard = ContextCompat.getColor(this, R.color.chip_bg)
         val cStroke = ContextCompat.getColor(this, R.color.stroke)
+        val cAccentText = ContextCompat.getColor(this, R.color.accent_text)
         val cTab = ContextCompat.getColor(this, R.color.btn_main)
         val cOnTab = ContextCompat.getColor(this, R.color.on_tab_button)
         val matchP = ViewGroup.LayoutParams.MATCH_PARENT
         val wrapP = ViewGroup.LayoutParams.WRAP_CONTENT
 
-        fun rounded(fill: Int, stroke: Int?, r: Int = 10) = android.graphics.drawable.GradientDrawable().apply {
-            shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-            cornerRadius = dp(r).toFloat()
-            setColor(fill)
-            if (stroke != null) setStroke(dp(1), stroke)
-        }
+        fun rounded(fill: Int, stroke: Int?): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.RECTANGLE
+                cornerRadius = dp(10).toFloat()
+                setColor(fill)
+                if (stroke != null) setStroke(dp(1), stroke)
+            }
+
         fun lpTop(top: Int, h: Int = wrapP) = android.widget.LinearLayout.LayoutParams(matchP, h).apply { topMargin = dp(top) }
 
-        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
-        val chips = LinkedHashMap<String, TextView>()
-        lateinit var buildList: () -> Unit
+        fun label(s: String, bold: Boolean = false, size: Float = 12f, color: Int = cMuted) = TextView(this).apply {
+            text = s
+            textSize = size
+            setTextColor(color)
+            setLineSpacing(0f, 1.25f)
+            if (bold) setTypeface(typeface, Typeface.BOLD)
+        }
 
+        fun field(placeholder: String, value: String) = android.widget.EditText(this).apply {
+            setText(value)
+            hint = placeholder
+            textSize = 14f
+            setTextColor(cText)
+            setHintTextColor(cMuted)
+            isSingleLine = true
+            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
+            background = rounded(cSurface, cOutline)
+            setPadding(dp(12), 0, dp(12), 0)
+        }
+
+        fun norm(s: String) = s.uppercase().filter { it.isLetterOrDigit() }
+        /** Jenis yang sudah memuat model [m] (kecuali [except] pada jenis [exceptType]), atau null. */
+        fun dupType(m: String, except: String? = null): String? =
+            types.firstOrNull { t -> draft.getValue(t).any { it != except && norm(it) == norm(m) } }
+
+        val scroll = ScrollView(this)
+        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val btnAdd = MaterialButton(this).apply {
+            text = "Tambah model"
+            setIconResource(R.drawable.ic_add)
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            iconPadding = dp(8)
+            backgroundTintList = ColorStateList.valueOf(cTab)
+            setTextColor(cOnTab)
+            iconTint = ColorStateList.valueOf(cOnTab)
+        }
+        fun outlinedButton(text: String, icon: Int) = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
+            this.text = text
+            setIconResource(icon)
+            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
+            iconPadding = dp(6)
+            setTextColor(cAccentText)
+            iconTint = ColorStateList.valueOf(cAccentText)
+            strokeColor = ColorStateList.valueOf(cAccentText)
+            rippleColor = ColorStateList.valueOf(cAccentText)
+        }
+        val btnExportM = outlinedButton("Export", R.drawable.ic_upload_file)
+        val btnImportM = outlinedButton("Import", R.drawable.ic_download)
+        val ioButtons = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            addView(btnExportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
+            addView(btnImportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
+        }
+        val buttons = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.HORIZONTAL
+            addView(btnAdd, android.widget.LinearLayout.LayoutParams(matchP, dp(44)))
+        }
+
+        fun buildList() {
+            list.removeAllViews()
+            val items = draft.getValue(current)
+            list.addView(label("DAFTAR MODEL · ${items.size}", bold = true, size = 11f, color = cAccentText).apply { letterSpacing = 0.08f }, lpTop(24))
+            if (items.isEmpty()) {
+                list.addView(label("Belum ada model untuk $current"), lpTop(10))
+            }
+            for (m in items.toList()) {
+                // Tombol ikon seragam: 40dp, bingkai membulat berwarna lembut, efek ketuk (ripple).
+                fun iconButton(res: Int, tint: Int, desc: String, onClick: () -> Unit) = android.widget.ImageView(this).apply {
+                    setImageResource(res)
+                    imageTintList = ColorStateList.valueOf(tint)
+                    contentDescription = desc
+                    scaleType = android.widget.ImageView.ScaleType.CENTER_INSIDE
+                    setPadding(dp(10), dp(10), dp(10), dp(10))
+                    background = android.graphics.drawable.RippleDrawable(
+                        ColorStateList.valueOf(Color.argb(60, Color.red(tint), Color.green(tint), Color.blue(tint))),
+                        rounded(Color.argb(32, Color.red(tint), Color.green(tint), Color.blue(tint)), null),
+                        null
+                    )
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { onClick() }
+                }
+                val del = iconButton(R.drawable.ic_delete, Color.rgb(220, 38, 38), "Hapus $m") {
+                    draft.getValue(current).remove(m)
+                    buildList()
+                }
+                val name = label(m, bold = true, size = 13f, color = cText).apply {
+                    isSingleLine = true
+                    ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+                }
+                val badge = TextView(this).apply {
+                    text = current
+                    textSize = 11f
+                    setTypeface(typeface, Typeface.BOLD)
+                    setTextColor(cAccentText)
+                    background = rounded(ContextCompat.getColor(this@MainActivity, R.color.accent_text_soft), null).apply { cornerRadius = dp(8).toFloat() }
+                    setPadding(dp(10), dp(4), dp(10), dp(4))
+                }
+                val textCol = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.VERTICAL
+                    addView(name)
+                    addView(badge, android.widget.LinearLayout.LayoutParams(wrapP, wrapP).apply { topMargin = dp(8) })
+                }
+                val card = android.widget.LinearLayout(this).apply {
+                    orientation = android.widget.LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    background = rounded(cSurface, cStroke).apply { cornerRadius = dp(14).toFloat() }
+                    setPadding(dp(16), dp(12), dp(10), dp(12))
+                    addView(textCol, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
+                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)).apply { marginStart = dp(8) })
+                }
+                list.addView(card, lpTop(10))
+            }
+        }
+
+        fun showAddDialog() {
+            val inModel = field("contoh: SM-T225", "")
+            val form = android.widget.LinearLayout(this).apply {
+                orientation = android.widget.LinearLayout.VERTICAL
+                addView(label("Nama model (ro.product.model)", bold = true, color = cText))
+                addView(inModel, lpTop(6, dp(44)))
+                addView(label("Isi sesuai ro.product.model HP target (huruf besar/kecil tidak dibedakan)."), lpTop(10))
+            }
+            showPopup(
+                "Tambah Model ke $current", icon = R.drawable.ic_add, content = form, hasInput = true,
+                positive = "Tambah", negative = "Batal"
+            ) {
+                // Isian belum valid: popup tetap terbuka (return false).
+                val m = inModel.text?.toString()?.trim().orEmpty()
+                val d = dupType(m)
+                when {
+                    norm(m).isEmpty() -> {
+                        Toast.makeText(this, "Tambah model gagal: isi nama model, contoh SM-T225", Toast.LENGTH_LONG).show()
+                        false
+                    }
+                    d != null -> {
+                        Toast.makeText(this, "Tambah model gagal: $m sudah ada di daftar $d", Toast.LENGTH_LONG).show()
+                        false
+                    }
+                    else -> {
+                        draft.getValue(current).add(m)
+                        buildList()
+                        scroll.post { scroll.fullScroll(View.FOCUS_DOWN) }
+                        true
+                    }
+                }
+            }
+        }
+
+        // Pilihan jenis perangkat: tombol segmen (POS / TABLET / PDA).
+        val typeChips = LinkedHashMap<String, TextView>()
         fun refreshChips() {
-            for ((t, tv) in chips) {
+            for ((t, tv) in typeChips) {
                 val sel = t == current
                 tv.background = if (sel) rounded(cTab, null) else null
                 tv.setTextColor(if (sel) cOnTab else cMuted)
             }
         }
-        buildList = {
-            list.removeAllViews()
-            val items = draft.getValue(current)
-            if (items.isEmpty()) {
-                list.addView(TextView(this).apply {
-                    text = "Belum ada model untuk $current"
-                    textSize = 12f
-                    setTextColor(cMuted)
-                }, lpTop(10))
-            }
-            for (m in items.toList()) {
-                val name = TextView(this).apply {
-                    text = m
-                    textSize = 14f
-                    setTypeface(typeface, Typeface.BOLD)
-                    setTextColor(cText)
-                    isSingleLine = true
-                }
-                val del = android.widget.ImageView(this).apply {
-                    setImageResource(R.drawable.ic_delete)
-                    imageTintList = ColorStateList.valueOf(Color.rgb(220, 38, 38))
-                    contentDescription = "Hapus $m"
-                    setPadding(dp(8), dp(8), dp(8), dp(8))
-                    isClickable = true
-                    isFocusable = true
-                    setOnClickListener { draft.getValue(current).remove(m); buildList() }
-                }
-                val row = android.widget.LinearLayout(this).apply {
-                    orientation = android.widget.LinearLayout.HORIZONTAL
-                    gravity = android.view.Gravity.CENTER_VERTICAL
-                    background = rounded(cSurface, cStroke, 14)
-                    setPadding(dp(16), dp(6), dp(10), dp(6))
-                    addView(name, android.widget.LinearLayout.LayoutParams(0, wrapP, 1f))
-                    addView(del, android.widget.LinearLayout.LayoutParams(dp(40), dp(40)))
-                }
-                list.addView(row, lpTop(8))
-            }
-        }
-
         val typeRow = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.HORIZONTAL
-            background = rounded(cCard, null, 12)
+            background = rounded(cCard, null).apply { cornerRadius = dp(12).toFloat() }
             setPadding(dp(4), dp(4), dp(4), dp(4))
             for (t in types) {
                 val tv = TextView(this@MainActivity).apply {
@@ -750,67 +862,19 @@ class MainActivity : AppCompatActivity() {
                     setTypeface(typeface, Typeface.BOLD)
                     isClickable = true
                     isFocusable = true
-                    setOnClickListener { if (t != current) { current = t; refreshChips(); buildList() } }
+                    setOnClickListener {
+                        if (t == current) return@setOnClickListener
+                        current = t
+                        refreshChips()
+                        buildList()
+                    }
                 }
-                chips[t] = tv
+                typeChips[t] = tv
                 addView(tv, android.widget.LinearLayout.LayoutParams(0, dp(38), 1f))
             }
         }
         refreshChips()
-
-        val input = android.widget.EditText(this).apply {
-            hint = "contoh: SM-T225"
-            textSize = 14f
-            setTextColor(cText)
-            setHintTextColor(cMuted)
-            isSingleLine = true
-            inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS or android.text.InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS
-            background = rounded(cSurface, cOutline)
-            setPadding(dp(12), 0, dp(12), 0)
-        }
-        val btnAddModel = MaterialButton(this).apply {
-            text = "Tambah"
-            setIconResource(R.drawable.ic_add)
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            iconPadding = dp(8)
-            backgroundTintList = ColorStateList.valueOf(cTab)
-            setTextColor(cOnTab)
-            iconTint = ColorStateList.valueOf(cOnTab)
-            setOnClickListener {
-                val m = input.text?.toString()?.trim().orEmpty()
-                val norm = m.uppercase().filter { it.isLetterOrDigit() }
-                val dupType = types.firstOrNull { t -> draft.getValue(t).any { it.uppercase().filter { c -> c.isLetterOrDigit() } == norm } }
-                when {
-                    m.isEmpty() || norm.isEmpty() ->
-                        Toast.makeText(this@MainActivity, "Tambah model gagal: isi nama model, contoh SM-T225", Toast.LENGTH_LONG).show()
-                    dupType != null ->
-                        Toast.makeText(this@MainActivity, "Tambah model gagal: $m sudah ada di daftar $dupType", Toast.LENGTH_LONG).show()
-                    else -> {
-                        draft.getValue(current).add(m)
-                        input.setText("")
-                        buildList()
-                    }
-                }
-            }
-        }
-
-        fun outlined(label: String, icon: Int) = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = label
-            setIconResource(icon)
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            iconPadding = dp(6)
-            setTextColor(cText)
-            iconTint = ColorStateList.valueOf(cText)
-            strokeColor = ColorStateList.valueOf(cText)
-            rippleColor = ColorStateList.valueOf(cText)
-        }
-        val btnExportM = outlined("Export", R.drawable.ic_upload_file)
-        val btnImportM = outlined("Import", R.drawable.ic_download)
-        val ioButtons = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.HORIZONTAL
-            addView(btnExportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f))
-            addView(btnImportM, android.widget.LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(8) })
-        }
+        btnAdd.setOnClickListener { showAddDialog() }
         btnExportM.setOnClickListener {
             // Ekspor daftar yang sedang tampil di dialog (termasuk perubahan yang belum disimpan).
             onExportPicked = { uri ->
@@ -854,27 +918,18 @@ class MainActivity : AppCompatActivity() {
         val box = android.widget.LinearLayout(this).apply {
             orientation = android.widget.LinearLayout.VERTICAL
             setPadding(0, dp(4), 0, 0)
-            addView(TextView(this@MainActivity).apply {
-                text = "JENIS PERANGKAT"; textSize = 11f; letterSpacing = 0.08f
-                setTypeface(typeface, Typeface.BOLD); setTextColor(cText)
-            })
+            addView(label("JENIS PERANGKAT", bold = true, size = 11f, color = cAccentText).apply { letterSpacing = 0.08f })
             addView(typeRow, lpTop(10))
-            addView(TextView(this@MainActivity).apply {
-                text = "Isi sesuai ro.product.model HP target (huruf besar/kecil tidak dibedakan)."
-                textSize = 12f; setTextColor(cMuted)
-            }, lpTop(12))
-            addView(input, lpTop(8, dp(44)))
-            addView(btnAddModel, lpTop(8, dp(44)))
+            addView(buttons, lpTop(12, dp(44)))
             addView(ioButtons, lpTop(8, dp(44)))
             addView(list)
         }
-        val scroll = ScrollView(this)
         scroll.addView(box)
         buildList()
 
         showPopup(
             "Pengaturan Model Perangkat", "Model yang dikenali untuk memilih POS / PDA / TABLET otomatis",
-            icon = R.drawable.ic_add, content = scroll, ownScroll = true, hasInput = true,
+            icon = R.drawable.ic_settings, content = scroll, ownScroll = true, hasInput = true,
             positive = "Simpan", negative = "Batal"
         ) {
             for (t in types) ModelStore.save(t, draft.getValue(t))
