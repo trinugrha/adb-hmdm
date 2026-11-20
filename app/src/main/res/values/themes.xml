@@ -97,7 +97,7 @@
         <item name="rippleColor">@color/accent_text</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Hmdm.Button</item>
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:minWidth">0dp</item>
@@ -187,17 +187,17 @@
 
     <style name="Hmdm.CardHint" parent="">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
     <style name="Hmdm.CardHint.Step">
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
     </style>
 
     <style name="Hmdm.SectionLabel" parent="">
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.08</item>
         <item name="android:textAllCaps">true</item>
@@ -219,7 +219,7 @@
         <item name="android:background">@drawable/bg_badge</item>
         <item name="android:gravity">center</item>
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
     </style>
 
@@ -278,13 +278,13 @@
 
     <style name="Widget.Hmdm.Button.DialogNegative" parent="Widget.Material3.Button.TextButton.Dialog">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
     <!-- Teks tab menu (kecil) -->
     <style name="Hmdm.TabText" parent="TextAppearance.Design.Tab">
-        <item name="android:textSize">13sp</item>
+        <item name="android:textSize">14sp</item>
     </style>
 </resources>

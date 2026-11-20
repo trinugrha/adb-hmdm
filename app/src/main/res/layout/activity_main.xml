@@ -1384,7 +1384,7 @@
         <com.google.android.material.tabs.TabLayout
             android:id="@+id/tabMode"
             android:layout_width="match_parent"
-            android:layout_height="42dp"
+            android:layout_height="46dp"
             android:background="@color/tab_bar_bg"
             app:tabGravity="fill"
             app:tabIconTint="@color/tab_icon_tint"
