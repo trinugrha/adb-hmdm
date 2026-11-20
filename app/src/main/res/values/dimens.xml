@@ -13,9 +13,9 @@
     <dimen name="card_gap">12dp</dimen>
     <dimen name="section_gap">20dp</dimen>
     <!-- Ruang kosong di bawah isi agar tidak tertutup tab melayang -->
-    <dimen name="tab_bar_clearance">68dp</dimen>
-    <dimen name="tab_bar_width">196dp</dimen>
-    <dimen name="tab_bar_margin_bottom">12dp</dimen>
+    <dimen name="tab_bar_clearance">78dp</dimen>
+    <dimen name="tab_bar_width">224dp</dimen>
+    <dimen name="tab_bar_margin_bottom">14dp</dimen>
 
     <!-- Ukuran kontrol -->
     <dimen name="control_height">40dp</dimen>
@@ -42,5 +42,5 @@
     <dimen name="radius_lg">14dp</dimen>
     <dimen name="radius_xl">16dp</dimen>
     <dimen name="radius_dialog">24dp</dimen>
-    <dimen name="radius_tab_bar">22dp</dimen>
+    <dimen name="radius_tab_bar">25dp</dimen>
 </resources>

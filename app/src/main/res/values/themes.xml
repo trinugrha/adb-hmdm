@@ -187,7 +187,7 @@
 
     <style name="Hmdm.CardHint" parent="">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">13sp</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
@@ -285,6 +285,6 @@
 
     <!-- Teks tab menu (kecil) -->
     <style name="Hmdm.TabText" parent="TextAppearance.Design.Tab">
-        <item name="android:textSize">12sp</item>
+        <item name="android:textSize">13sp</item>
     </style>
 </resources>
