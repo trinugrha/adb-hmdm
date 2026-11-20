@@ -191,6 +191,10 @@ class MainActivity : AppCompatActivity() {
     /** Model HP target hasil baca di kartu Informasi Status (model, jenis terdeteksi atau null). */
     @Volatile private var deviceModel: Pair<String, String?>? = null
     private lateinit var txtModel: TextView
+    /** True bila model HP target sudah terbaca tetapi tidak ada di daftar Pengaturan Model Perangkat (jenis tidak bisa ditentukan). */
+    private fun modelUnknown(): Boolean = deviceModel?.let { it.second == null } == true
+    /** True hanya bila model HP target terbaca DAN ada di daftar. Selain itu perintah cek instalasi & permission tidak dijalankan. */
+    private fun modelRecognized(): Boolean = deviceModel?.second != null
     /** Jenis perangkat yang dicek untuk [hmdmPerms]; hasil dipakai hanya bila sama dengan jenis yang sedang terceklis. */
     @Volatile private var permType: String? = null
 
@@ -437,18 +441,26 @@ class MainActivity : AppCompatActivity() {
                             getSharedPreferences("ui_prefs", Context.MODE_PRIVATE).edit().putString("device_type", deviceType).apply()
                         }
                     } else {
-                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} tidak ada di daftar POS / PDA / TABLET. Pilih jenis secara manual") }
+                        runOnUiThread { log(LogLevel.WARN, "Model perangkat: ${dm.first} tidak ada di daftar POS / PDA / TABLET. Status instalasi dan permission tidak dicek. Tambahkan model di Pengaturan Model Perangkat, lalu cek ulang") }
                     }
                 } else {
                     runOnUiThread { log(LogLevel.WARN, "Model perangkat tidak terbaca") }
                 }
-                val type = deviceType
-                val r = adb.checkRequiredPackages(type)
-                if (r != null) { appsInstalled = r; appsType = type }
-                // Permission hanya dicek bila com.hmdm.launcher termasuk dalam jenis perangkat yang terceklis.
-                val pr = if (hmdmInType(type)) adb.checkHmdmPermissions() else null
-                if (pr != null) { hmdmPerms = pr; permType = type }
-                r != null || pr != null
+                // Model tidak dikenal / tidak terbaca: jenis perangkat tidak bisa ditentukan, jadi perintah cek Installation Status
+                // dan Permission Status tidak dijalankan sama sekali; kartu tetap "Belum diperiksa" (hasil lama dibuang).
+                if (!modelRecognized()) {
+                    appsInstalled = null; appsType = null
+                    hmdmPerms = null; permType = null
+                    true
+                } else {
+                    val type = deviceType
+                    val r = adb.checkRequiredPackages(type)
+                    if (r != null) { appsInstalled = r; appsType = type }
+                    // Permission hanya dicek bila com.hmdm.launcher termasuk dalam jenis perangkat yang terceklis.
+                    val pr = if (hmdmInType(type)) adb.checkHmdmPermissions() else null
+                    if (pr != null) { hmdmPerms = pr; permType = type }
+                    r != null || pr != null
+                }
             }
         }
         val btnMoreToggle: View = findViewById(R.id.btnMoreToggle)
@@ -1450,7 +1462,7 @@ class MainActivity : AppCompatActivity() {
                     adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
                     adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
                     adb.queryTcpipActive()?.let { tcpipActive = it }
-                    if (!skipInfo) {
+                    if (!skipInfo && modelRecognized()) {
                         val t = deviceType
                         adb.queryRequiredPackages(t)?.let { appsInstalled = it; appsType = t }
                         if (hmdmInType(t)) adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
