@@ -564,7 +564,7 @@ class MainActivity : AppCompatActivity() {
         btnClearKaspersky.setOnClickListener {
             showConfirm(
                 "Hapus Data Aplikasi Kaspersky?",
-                "Perintah: \"adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}\"\n\nSemua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah itu lanjut ke Langkah 2, yaitu mematikan Aplikasi Admin Kaspersky di HP target.",
+                "Semua data dan pengaturan aplikasi Kaspersky di HP target akan dihapus.\n\nSetelah ini lanjut ke Langkah 2: matikan Aplikasi Admin Kaspersky di HP target (manual).\n\nPerintah: adb shell pm clear ${AdbController.KASPERSKY_PACKAGE}",
                 "Hapus"
             ) {
                 // Selesai hapus data: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -574,7 +574,7 @@ class MainActivity : AppCompatActivity() {
         btnUninstallKaspersky.setOnClickListener {
             showConfirm(
                 "Uninstall Aplikasi Kaspersky?",
-                "Perintah: \"adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}\"\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.",
+                "Aplikasi Kaspersky akan di-uninstall dari HP target.\n\nPastikan Langkah 2 (mematikan Aplikasi Admin Kaspersky) sudah dilakukan, jika belum uninstall akan ditolak.\n\nPerintah: adb shell pm uninstall -k --user 0 ${AdbController.KASPERSKY_PACKAGE}",
                 "Uninstall"
             ) {
                 // Selesai uninstall: Informasi Status (instalasi, default launcher, permission) tidak ikut dicek.
@@ -1272,6 +1272,12 @@ class MainActivity : AppCompatActivity() {
                     logHead("Pair dengan QR", shownAt)
                     log(LogLevel.ERR, "Pair dengan QR gagal: HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} dtk atau layanan pairing tidak ditemukan. Pastikan satu Wi-Fi, lalu coba lagi")
                     logEnd("Pair dengan QR", false, shownAt)
+                    showConnProblem(
+                        "Pair dengan QR gagal",
+                        "HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} detik, atau layanan pairing tidak ditemukan.\n\n" +
+                            "Periksa:\n• Layar \"Pair device with QR code\" di HP target terbuka dan kamera diarahkan ke QR\n• HP target dan perangkat ini satu jaringan Wi-Fi (client isolation mati)\n\n" +
+                            "Rincian lengkap ada di log."
+                    )
                 }
                 return@execute
             }
@@ -1466,12 +1472,18 @@ class MainActivity : AppCompatActivity() {
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan perangkat ini satu jaringan Wi-Fi"
                         title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar aplikasi ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
                         isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan perangkat ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
-                        else -> ""
+                        title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode" -> "Periksa:\n• Layar HP target menyala dan koneksi masih tersambung\n• Penyimpanan HP target cukup\n• Versi APK tidak lebih rendah dari yang sudah terpasang\n• Dialog di HP target (bila muncul) disetujui"
+                        title == "Jadikan MDM Mode" -> "Periksa:\n• Semua akun (Google dan lainnya) di HP target sudah dihapus\n• HP target baru atau habis factory reset\n• Belum ada aplikasi lain yang menjadi device owner"
+                        title == "Hapus Data Aplikasi Kaspersky" -> "Periksa:\n• Koneksi ke HP target masih tersambung\n• Aplikasi Kaspersky masih terpasang di HP target"
+                        title == "Uninstall Aplikasi Kaspersky" -> "Periksa:\n• Aplikasi Admin Kaspersky sudah dimatikan di HP target (Langkah 2)\n• Aplikasi Kaspersky masih terpasang di HP target"
+                        title == "Ubah ke Mode Nirkabel" -> "Periksa:\n• Kabel USB masih terpasang kuat\n• Layar HP target menyala dan USB debugging aktif"
+                        title == "Disconnect" -> ""
+                        else -> "Periksa:\n• Koneksi ke HP target masih tersambung"
                     }
                     val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• ${errReason(it)}" }
                     val msg = buildString {
-                        append("Proses \"$title\" tidak berhasil.")
-                        if (reasons.isNotEmpty()) append("\n\nPenyebab:\n").append(reasons)
+                        if (reasons.isNotEmpty()) append("Penyebab:\n").append(reasons)
+                        else append("Proses tidak berhasil dan tidak ada penyebab yang tercatat.")
                         if (hint.isNotEmpty()) append("\n\n").append(hint)
                         append("\n\nRincian lengkap ada di log.")
                     }
@@ -1481,17 +1493,17 @@ class MainActivity : AppCompatActivity() {
                     val okMsg = when (title) {
                         "Pair" -> "Pairing dengan HP target berhasil.\n\nLangkah berikutnya: isi port connect (tampil di layar utama Wireless debugging HP target), lalu ketuk Connect."
                         "Pair dengan QR" ->
-                            if (connNow != null) "Pairing berhasil dan sudah terhubung ke $connNow."
-                            else "Pairing berhasil, tetapi port connect tidak ditemukan otomatis.\n\nIsi IP dan port connect (layar utama Wireless debugging HP target), lalu ketuk Connect."
-                        "Connect" -> "Berhasil terhubung ke ${connNow ?: "HP target"}.\n\nSekarang kamu bisa memasang aplikasi atau menjadikan MDM Mode."
-                        "Connect USB" -> "Berhasil terhubung ke HP target lewat kabel USB.\n\nSekarang kamu bisa memasang aplikasi atau menjadikan MDM Mode."
-                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nPair dan Connect lagi untuk menyambung kembali."
-                        "Pasang Aplikasi" -> "Semua APK berhasil dipasang ke HP target."
+                            if (connNow != null) "Pairing berhasil dan sudah terhubung ke $connNow.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
+                            else "Pairing berhasil, tetapi port connect tidak ditemukan otomatis.\n\nLangkah berikutnya: isi IP dan port connect (layar utama Wireless debugging HP target), lalu ketuk Connect."
+                        "Connect" -> "Berhasil terhubung ke ${connNow ?: "HP target"}.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
+                        "Connect USB" -> "Berhasil terhubung ke HP target lewat kabel USB.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
+                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nUntuk menyambung lagi, lakukan Pair dan Connect atau Connect USB."
+                        "Pasang Aplikasi" -> if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang ke HP target." else "Semua APK berhasil dipasang ke HP target."
                         "Jadikan MDM Mode" -> "HMDM berhasil dijadikan MDM Mode di HP target."
-                        "Pasang Aplikasi + Jadikan MDM Mode" -> "Semua APK berhasil dipasang dan HMDM berhasil dijadikan MDM Mode di HP target."
+                        "Pasang Aplikasi + Jadikan MDM Mode" -> (if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang" else "Semua APK berhasil dipasang") + " dan HMDM berhasil dijadikan MDM Mode di HP target."
                         "Hapus Data Aplikasi Kaspersky" -> "Data dan pengaturan aplikasi Kaspersky berhasil dihapus dari HP target."
                         "Uninstall Aplikasi Kaspersky" -> "Aplikasi Kaspersky berhasil di-uninstall dari HP target."
-                        "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target. Lanjutkan dengan menyambung lewat tab Wireless."
+                        "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target.\n\nLangkah berikutnya: cabut kabel, lalu sambungkan lewat tab Wireless (Pair dan Connect)."
                         else -> null
                     }
                     if (okMsg != null) showConnProblem("$title berhasil", okMsg, ok = true)
