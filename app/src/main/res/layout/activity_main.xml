@@ -508,42 +508,6 @@
 
             </LinearLayout>
 
-            <!-- Progress install (tampil hanya saat memasang APK) -->
-            <LinearLayout
-                android:id="@+id/progBox"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@color/accent_soft"
-                android:orientation="vertical"
-                android:padding="12dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/txtProgName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <ProgressBar
-                    android:id="@+id/barInstall"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:max="1000"
-                    android:progressTint="@color/accent_text"
-                    android:indeterminateTint="@color/accent_text" />
-
-                <TextView
-                    android:id="@+id/txtProgInfo"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textSize="12sp" />
-            </LinearLayout>
-
             <!-- 1. Instalasi aplikasi -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.Hmdm.Card"
@@ -658,6 +622,42 @@
                         app:icon="@drawable/ic_download"
                         app:iconGravity="textStart"
                         app:iconPadding="8dp" />
+
+                    <!-- Progress install (tampil hanya saat memasang APK) -->
+                    <LinearLayout
+                        android:id="@+id/progBox"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@color/accent_soft"
+                        android:orientation="vertical"
+                        android:padding="12dp"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/txtProgName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <ProgressBar
+                            android:id="@+id/barInstall"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:max="1000"
+                            android:progressTint="@color/accent_text"
+                            android:indeterminateTint="@color/accent_text" />
+
+                        <TextView
+                            android:id="@+id/txtProgInfo"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textSize="12sp" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
