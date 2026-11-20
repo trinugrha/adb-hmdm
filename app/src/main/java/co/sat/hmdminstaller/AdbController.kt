@@ -595,7 +595,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logCmd("adb shell appops get $HMDM_PACKAGE SYSTEM_ALERT_WINDOW")
         logCmd("adb shell appops get $HMDM_PACKAGE GET_USAGE_STATS")
         val r = queryHmdmPermissions() ?: run {
-            logErr("Baca permission gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
+            logErr("Baca izin gagal: HP target tidak menjawab. Cek koneksi lalu coba lagi")
             return null
         }
         fun line(name: String, v: Boolean?) = when (v) {
@@ -1066,7 +1066,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner. Reset HP target ke pengaturan pabrik bila ingin menggantinya"
             "accounts" in l -> "masih ada akun (Google/lainnya) di HP target. Hapus akun atau reset HP target"
             "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset ke pengaturan pabrik"
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. jalankan \"Pasang Aplikasi\" terlebih dahulu"
+            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM Launcher belum terpasang di HP target. Jalankan \"Pasang Aplikasi\" terlebih dahulu"
             else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google/lainnya)"
         }
     }

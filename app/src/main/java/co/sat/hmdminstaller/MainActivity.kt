@@ -542,7 +542,7 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             usbDlg = showPopup(
-                "Pilih perangkat USB", "Ketuk HP target yang ingin disambungkan.",
+                "Pilih Perangkat USB", "Ketuk HP target yang ingin disambungkan.",
                 icon = R.drawable.ic_usb, content = usbList, positive = null, negative = "Batal"
             )
         }
@@ -846,7 +846,7 @@ class MainActivity : AppCompatActivity() {
                 addView(inVer, lpTop(6, dp(44)))
             }
             showPopup(
-                "Edit versi", icon = R.drawable.ic_edit, content = form, hasInput = true,
+                "Edit Versi", icon = R.drawable.ic_edit, content = form, hasInput = true,
                 positive = "OK", negative = "Batal"
             ) {
                 val v = inVer.text?.toString()?.trim().orEmpty()
@@ -870,7 +870,7 @@ class MainActivity : AppCompatActivity() {
                 addView(inVer, lpTop(6, dp(44)))
             }
             showPopup(
-                "Tambah aplikasi ke $current", icon = R.drawable.ic_add, content = form, hasInput = true,
+                "Tambah Aplikasi ke $current", icon = R.drawable.ic_add, content = form, hasInput = true,
                 positive = "Tambah", negative = "Batal"
             ) {
                 // Isian belum valid: popup tetap terbuka (return false).
@@ -1001,7 +1001,7 @@ class MainActivity : AppCompatActivity() {
         buildFields()
 
         showPopup(
-            "Setting Aplikasi & Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat",
+            "Pengaturan Aplikasi & Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat",
             icon = R.drawable.ic_settings, content = scroll, ownScroll = true, hasInput = true,
             positive = "Simpan", negative = "Batal"
         ) {
@@ -1144,7 +1144,7 @@ class MainActivity : AppCompatActivity() {
         if (isFinishing) return
         val warn = if (busy) "\n\nPerhatian: masih ada proses yang berjalan dan akan ikut terhenti." else ""
         showConfirm(
-            "Keluar dari aplikasi?",
+            "Keluar dari Aplikasi?",
             "Koneksi ADB akan diputus, layanan latar dihentikan, dan daftar APK dikosongkan.$warn",
             "Keluar", icon = R.drawable.ic_logout, tone = PopupTone.NAVY
         ) { exitApp() }
@@ -1253,7 +1253,7 @@ class MainActivity : AppCompatActivity() {
                 "Koneksi terputus",
                 "Koneksi ke $addr terputus" + (if (cableGone) " karena kabel USB dicabut" else "") + "." +
                     (adb.lastDropReason.takeIf { it.isNotEmpty() }?.let { "\n\nPenyebab:\n• $it" } ?: "") +
-                    "\n\nLangkah berikutnya: sambungkan ulang lewat Pair dan Connect atau Connect USB."
+                    "\n\nLangkah berikutnya: sambungkan ulang lewat \"Pair\" dan \"Connect\", atau \"Connect USB\"."
             )
             showUsbDevice(null)
             lostAddr = addr
@@ -1524,19 +1524,19 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     val connNow = connectedAddr?.takeIf { adb.isConnected }
                     val okMsg = when (title) {
-                        "Pair" -> "Pairing dengan HP target berhasil.\n\nLangkah berikutnya: isi port connect (tampil di layar utama Wireless debugging HP target), lalu ketuk Connect."
+                        "Pair" -> "Pairing dengan HP target berhasil.\n\nLangkah berikutnya: isi port connect (tampil di layar utama Wireless debugging HP target), lalu ketuk \"Connect\"."
                         "Pair dengan QR" ->
                             if (connNow != null) "Pairing berhasil dan sudah terhubung ke $connNow.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
-                            else "Pairing berhasil, tetapi port connect tidak ditemukan otomatis.\n\nLangkah berikutnya: isi IP dan port connect (layar utama Wireless debugging HP target), lalu ketuk Connect."
+                            else "Pairing berhasil, tetapi port connect tidak ditemukan otomatis.\n\nLangkah berikutnya: isi IP dan port connect (layar utama Wireless debugging HP target), lalu ketuk \"Connect\"."
                         "Connect" -> "Berhasil terhubung ke ${connNow ?: "HP target"}.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
                         "Connect USB" -> "Berhasil terhubung ke HP target lewat kabel USB.\n\nLangkah berikutnya: pasang aplikasi atau jadikan MDM Mode."
-                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nUntuk menyambung lagi, lakukan Pair dan Connect atau Connect USB."
+                        "Disconnect" -> "Koneksi ke HP target sudah diputus.\n\nUntuk menyambung lagi, lakukan \"Pair\" dan \"Connect\", atau \"Connect USB\"."
                         "Pasang Aplikasi" -> if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang ke HP target." else "Semua APK berhasil dipasang ke HP target."
                         "Jadikan MDM Mode" -> "HMDM berhasil dijadikan MDM Mode di HP target."
                         "Pasang Aplikasi + Jadikan MDM Mode" -> (if (inst != null && inst.total > 0) "${inst.total} APK berhasil dipasang" else "Semua APK berhasil dipasang") + " dan HMDM berhasil dijadikan MDM Mode di HP target."
                         "Hapus Data Aplikasi Kaspersky" -> "Data dan pengaturan aplikasi Kaspersky berhasil dihapus dari HP target."
                         "Uninstall Aplikasi Kaspersky" -> "Aplikasi Kaspersky berhasil di-uninstall dari HP target."
-                        "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target.\n\nLangkah berikutnya: cabut kabel, lalu sambungkan lewat tab Wireless (Pair dan Connect)."
+                        "Ubah ke Mode Nirkabel" -> "Mode nirkabel (TCP/IP) berhasil diaktifkan di HP target.\n\nLangkah berikutnya: cabut kabel, lalu sambungkan lewat tab \"Wireless\" (\"Pair\" lalu \"Connect\")."
                         else -> null
                     }
                     if (okMsg != null) showConnProblem("$title berhasil", okMsg, ok = true)

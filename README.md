@@ -26,7 +26,7 @@ Syarat device owner: HP target baru / habis factory reset dan belum ada akun (Go
 Satu HP tidak bisa memasang dirinya sendiri sebagai device owner dengan cara ini kecuali IP diisi 127.0.0.1 dan
 syarat di atas terpenuhi.
 
-## Setting aplikasi & versi
+## Pengaturan aplikasi & versi
 Ketuk ikon **gerigi** di kartu **Informasi Status** (pojok kanan atas kartu) untuk mengubah daftar aplikasi dan versi yang diharapkan pada ceklist Installation Status, tanpa build ulang.
 - Pilih jenis perangkat (POS / TABLET / PDA), ubah kolom versionName per aplikasi. Kolom kosong = aplikasi hanya dicek terpasang.
 - **+ Tambah aplikasi**: isi nama paket (mis. `com.contoh.app`) dan versi (boleh kosong).

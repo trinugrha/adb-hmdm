@@ -223,7 +223,7 @@ class UsbAdbBridge(context: Context) {
         while (off < len) {
             val n = minOf(CHUNK, len - off)
             val r = c.bulkTransfer(ep, buf, off, n, 5000)
-            if (r < 0) throw java.io.IOException("Tulis USB gagal")
+            if (r < 0) throw java.io.IOException("Gagal menulis ke USB")
             off += r
         }
     }
@@ -254,7 +254,7 @@ class UsbAdbBridge(context: Context) {
             if (!deviceAttached()) throw java.io.IOException("Kabel USB dicabut")
             val waitingForHeaderStart = off == 0 && idleOk
             if (!waitingForHeaderStart && System.currentTimeMillis() - idleSince > 15_000) {
-                throw java.io.IOException("Timeout baca USB")
+                throw java.io.IOException("Waktu habis saat membaca USB")
             }
         }
     }
@@ -283,7 +283,7 @@ class UsbAdbBridge(context: Context) {
                 }
             }
         } catch (e: Throwable) {
-            if (active === s && running) lastPumpError = "soket->USB: ${Fmt.cause(e)}"
+            if (active === s && running) lastPumpError = "soket ke USB: ${Fmt.cause(e)}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }
@@ -307,7 +307,7 @@ class UsbAdbBridge(context: Context) {
                 out.flush()
             }
         } catch (e: Throwable) {
-            if (active === s && running) lastPumpError = "USB->soket: ${Fmt.cause(e)}"
+            if (active === s && running) lastPumpError = "USB ke soket: ${Fmt.cause(e)}"
         } finally {
             try { s.close() } catch (e: Throwable) { }
         }

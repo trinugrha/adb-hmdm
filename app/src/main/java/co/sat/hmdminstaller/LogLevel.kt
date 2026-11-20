@@ -52,6 +52,9 @@ package co.sat.hmdminstaller
  * - Jalur menu Android ditulis dengan "›" (Pengaturan › Keamanan), bukan ">".
  * - Penyebab putus koneksi (`AdbController.lastDropReason`) ditulis dalam bahasa sehari-hari karena tampil di popup; nama exception
  *   dan jawaban mentah ada di `lastDropDetail`, hanya untuk baris DETAIL.
+ * - Judul popup memakai huruf kapital di tiap kata ("Pilih Perangkat USB", "Keluar dari Aplikasi?"), sama dengan judul proses dan nama tombol.
+ *   Istilah "izin" dipakai untuk permission Android di log, popup, dan Toast; "permission" hanya untuk nama paket atau perintah teknis.
+ * - Pesan exception di baris DETAIL ditulis berbahasa Indonesia tanpa panah ("USB ke soket", bukan "USB->soket") dan tanpa kata "Timeout" ("Waktu habis ...").
  * - Popup hasil: ikon dan warna ditentukan parameter `ok` di `showConnProblem`, bukan dari teks judul.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
