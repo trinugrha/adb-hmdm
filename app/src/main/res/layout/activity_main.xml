@@ -628,7 +628,7 @@
                         android:id="@+id/progBox"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_marginTop="10dp"
                         android:orientation="vertical"
                         android:visibility="gone">
 
@@ -644,18 +644,17 @@
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
                                 android:ellipsize="middle"
-                                android:maxLines="2"
+                                android:maxLines="1"
                                 android:textColor="@color/text"
-                                android:textSize="13sp"
-                                android:textStyle="bold" />
+                                android:textSize="12sp" />
 
                             <TextView
                                 android:id="@+id/txtProgPct"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
+                                android:layout_marginStart="8dp"
                                 android:textColor="@color/accent"
-                                android:textSize="22sp"
+                                android:textSize="13sp"
                                 android:textStyle="bold" />
                         </LinearLayout>
 
@@ -663,8 +662,8 @@
                             android:id="@+id/barInstall"
                             style="?android:attr/progressBarStyleHorizontal"
                             android:layout_width="match_parent"
-                            android:layout_height="14dp"
-                            android:layout_marginTop="8dp"
+                            android:layout_height="6dp"
+                            android:layout_marginTop="6dp"
                             android:indeterminateTint="@color/accent"
                             android:max="1000"
                             android:progressDrawable="@drawable/progress_install" />
@@ -673,9 +672,9 @@
                             android:id="@+id/txtProgInfo"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginTop="4dp"
                             android:textColor="@color/muted"
-                            android:textSize="12sp" />
+                            android:textSize="11sp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
