@@ -336,22 +336,10 @@ class MainActivity : AppCompatActivity() {
         txtTcpip = findViewById(R.id.txtTcpip)
         appsPill = findViewById(R.id.appsPill)
         btnRefreshInfo = findViewById(R.id.btnRefreshInfo)
-        typeChips = mapOf(
-            "POS" to findViewById<android.widget.CheckBox>(R.id.typePos),
-            "TABLET" to findViewById<android.widget.CheckBox>(R.id.typeTablet),
-            "PDA" to findViewById<android.widget.CheckBox>(R.id.typePda)
-        )
+        // Jenis perangkat dipilih otomatis dari model HP target (tidak ada tombol pilih lagi).
+        typeChips = emptyMap()
         val typePrefs = getSharedPreferences("ui_prefs", Context.MODE_PRIVATE)
         deviceType = typePrefs.getString("device_type", "POS")?.takeIf { it in AdbController.DEVICE_PACKAGES } ?: "POS"
-        typeChips.forEach { (type, chip) ->
-            chip.setOnClickListener {
-                if (busy) { chip.isChecked = type == deviceType; return@setOnClickListener }
-                deviceType = type
-                typePrefs.edit().putString("device_type", type).apply()
-                refreshApps()
-                refreshPerms()
-            }
-        }
         txtModel = findViewById(R.id.txtModel)
         appsDot = findViewById(R.id.appsDot)
         txtApps = findViewById(R.id.txtApps)
