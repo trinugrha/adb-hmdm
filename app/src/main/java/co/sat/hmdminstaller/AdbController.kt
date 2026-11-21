@@ -1167,7 +1167,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
-                logWarn("Perintah \"$cmd\" tidak selesai dalam ${Fmt.duration(timeoutMs)}, dilanjutkan")
+                logWarn("Perintah \"$cmd\" tidak selesai dalam ${timeoutMs / 1000} dtk, dilanjutkan")
             }
         }
         error?.let { throw it }

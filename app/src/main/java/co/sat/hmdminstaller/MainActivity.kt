@@ -722,7 +722,7 @@ class MainActivity : AppCompatActivity() {
                 val d = dupType(m)
                 when {
                     norm(m).isEmpty() -> {
-                        Toast.makeText(this, "Tambah model gagal: nama model kosong. Isi nama model. Contoh: SM-T225", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this, "Tambah model gagal: nama model belum diisi. Contoh: SM-T225", Toast.LENGTH_LONG).show()
                         false
                     }
                     d != null -> {
@@ -1454,6 +1454,7 @@ class MainActivity : AppCompatActivity() {
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
         runErrors.clear()
+        runWarns.clear()
         adb.lastInstall = null
         logHead(title, startedAt)
         worker.execute {
@@ -1492,7 +1493,7 @@ class MainActivity : AppCompatActivity() {
                 val isInstall = title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode"
                 if (!ok && isInstall && inst != null && inst.total > 1 && inst.failed.isNotEmpty()) {
                     val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "• $name: $why" }
-                    val more = if (inst.failed.size > 8) "\n• dan ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
+                    val more = if (inst.failed.size > 8) "\n• ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
                     showConnProblem(
                         if (inst.ok == 0) "Semua APK Gagal Dipasang" else "${inst.failed.size} APK Gagal Dipasang",
                         "${inst.ok} dari ${inst.total} APK berhasil dipasang, ${inst.failed.size} gagal.\n\n" +
@@ -1518,7 +1519,10 @@ class MainActivity : AppCompatActivity() {
                         title == "Disconnect" -> ""
                         else -> "Periksa:\n• Koneksi ke HP target masih tersambung"
                     }
-                    val reasons = runErrors.distinct().takeLast(3).joinToString("\n") { "• ${errReason(it)}" }
+                    // Tanpa baris ✗, pakai baris ! terakhir (bukan pesan percobaan ulang) sebagai penyebab.
+                    val reasons = runErrors.distinct().takeLast(3).map { errReason(it) }
+                        .ifEmpty { runWarns.distinct().filter { !it.contains("mencoba lagi") }.takeLast(2) }
+                        .joinToString("\n") { "• ${it.trimEnd('.')}" }
                     val msg = buildString {
                         if (reasons.isNotEmpty()) append("Penyebab:\n").append(reasons)
                         else append("Proses tidak berhasil dan tidak ada penyebab yang tercatat.")
@@ -1979,6 +1983,13 @@ class MainActivity : AppCompatActivity() {
     private val runErrors = mutableListOf<String>()
 
     /**
+     * Baris WARN selama satu proses. Hanya dipakai sebagai butir "Penyebab" bila proses gagal tanpa baris ✗
+     * (mis. "Belum terhubung ke HP target" atau "Isi IP:Port connect terlebih dahulu"), supaya popup tidak
+     * berisi "tidak ada penyebab yang tercatat" padahal log sudah menyebut alasannya.
+     */
+    private val runWarns = mutableListOf<String>()
+
+    /**
      * Isi satu butir "Penyebab" di popup: baris ✗ tanpa awalan "<Aksi> gagal: " / "Gagal: ", karena judul popup
      * sudah memuat aksinya ("Connect USB gagal"). Huruf pertama dibuat kapital.
      */
@@ -1996,6 +2007,7 @@ class MainActivity : AppCompatActivity() {
     private fun log(level: LogLevel, s: String) {
         if (s.isBlank()) return
         if (level == LogLevel.ERR) runErrors.add(s.trim())
+        if (level == LogLevel.WARN) runWarns.add(s.trim())
         val indent = " ".repeat(level.marker.length)
         val body = s.trimEnd().let {
             // Output mentah device (DETAIL) tidak diubah sama sekali.

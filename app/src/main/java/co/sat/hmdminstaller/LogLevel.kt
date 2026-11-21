@@ -68,6 +68,8 @@ package co.sat.hmdminstaller
  * - Judul proses cek status memakai nama tombol "Cek Status" (bukan "Cek Informasi Status").
  * - Klausa berurutan dipisah koma sebelum "lalu" ("Colok ulang kabel, lalu ketuk ..."); urutan dua nama tombol tetap tanpa koma ("Pair" lalu "Connect").
  * - Petunjuk ke HP ini ditulis "layar HP ini", bukan "layar aplikasi ini".
+ * - Popup gagal tanpa baris ✗ memakai baris ! proses itu (maks. 2, kecuali pesan "mencoba lagi") sebagai butir "Penyebab".
+ *   Butir "Penyebab" selalu diawali huruf kapital, tanpa titik di akhir. Satuan detik di pesan batas waktu selalu bilangan bulat ("20 dtk").
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {
