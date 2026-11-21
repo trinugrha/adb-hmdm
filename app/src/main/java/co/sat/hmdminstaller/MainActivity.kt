@@ -195,6 +195,8 @@ class MainActivity : AppCompatActivity() {
     private fun modelUnknown(): Boolean = deviceModel?.let { it.second == null } == true
     /** True hanya bila model HP target terbaca DAN ada di daftar. Selain itu perintah cek instalasi & permission tidak dijalankan. */
     private fun modelRecognized(): Boolean = deviceModel?.second != null
+    /** True bila model HP target dikenali (jenis diketahui) tetapi daftar aplikasi jenis itu kosong: pemeriksaan instalasi & permission dihentikan. */
+    private fun modelAppListEmpty(): Boolean = deviceModel?.second?.let { VersionStore.packages(it).isEmpty() } == true
     /** Jenis perangkat yang dicek untuk [hmdmPerms]; hasil dipakai hanya bila sama dengan jenis yang sedang terceklis. */
     @Volatile private var permType: String? = null
 
@@ -449,6 +451,12 @@ class MainActivity : AppCompatActivity() {
                 // Model tidak dikenal / tidak terbaca: jenis perangkat tidak bisa ditentukan, jadi perintah cek Installation Status
                 // dan Permission Status tidak dijalankan sama sekali; kartu tetap "Belum diperiksa" (hasil lama dibuang).
                 if (!modelRecognized()) {
+                    appsInstalled = null; appsType = null
+                    hmdmPerms = null; permType = null
+                    true
+                } else if (modelAppListEmpty()) {
+                    // Model dikenali tetapi daftar aplikasi jenisnya kosong: stop periksa (instalasi dan permission tidak dijalankan).
+                    runOnUiThread { log(LogLevel.WARN, "Daftar aplikasi untuk ${deviceModel?.second} kosong, pemeriksaan dihentikan. Tambahkan aplikasi lewat ikon gerigi di kartu \"Informasi Status\"") }
                     appsInstalled = null; appsType = null
                     hmdmPerms = null; permType = null
                     true
@@ -1477,7 +1485,7 @@ class MainActivity : AppCompatActivity() {
                     adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
                     adb.queryHmdmInstalled()?.let { hmdmInstalled = it }
                     adb.queryTcpipActive()?.let { tcpipActive = it }
-                    if (!skipInfo && modelRecognized()) {
+                    if (!skipInfo && modelRecognized() && !modelAppListEmpty()) {
                         val t = deviceType
                         adb.queryRequiredPackages(t)?.let { appsInstalled = it; appsType = t }
                         if (hmdmInType(t)) adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
