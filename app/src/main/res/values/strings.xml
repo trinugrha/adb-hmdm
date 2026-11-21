@@ -11,14 +11,14 @@
     <!-- Koneksi -->
     <string name="conn_title_wireless">KONEKSI WIRELESS DEBUGGING</string>
     <string name="pair_title">ADB Pair</string>
-    <string name="pair_hint">HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah</string>
+    <string name="pair_hint">HP target: Opsi Developer › Wireless debugging › Pair device with pairing code, atau pakai tombol QR di bawah.</string>
     <string name="pair_qr">Pair dengan QR code (scan)</string>
     <string name="hint_pair_ip">IP pairing</string>
     <string name="hint_port">Port</string>
     <string name="hint_pair_code">Kode pairing</string>
     <string name="action_pair">Pair</string>
     <string name="connect_title">ADB Connect</string>
-    <string name="connect_hint">IP dan port yang tampil di layar utama Wireless debugging</string>
+    <string name="connect_hint">IP dan port yang tampil di layar utama Wireless debugging.</string>
     <string name="hint_connect_ip">IP connect</string>
     <string name="action_disconnect">Disconnect</string>
     <string name="action_connect">Connect</string>
@@ -73,7 +73,7 @@
 
     <!-- TCP/IP -->
     <string name="tcpip_title">Aktifkan Mode Nirkabel (TCP/IP)</string>
-    <string name="tcpip_hint">Mengalihkan koneksi ADB (Android Debug Bridge) dari kabel USB ke mode nirkabel (TCP/IP) melalui port 5555</string>
+    <string name="tcpip_hint">Mengalihkan koneksi ADB (Android Debug Bridge) dari kabel USB ke mode nirkabel (TCP/IP) melalui port 5555.</string>
     <string name="tcpip_status_label">STATUS NIRKABEL (TCP/IP)</string>
     <string name="action_tcpip">Ubah ke Mode Nirkabel</string>
 

@@ -85,8 +85,8 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
             "POS" to emptyList(),
-            "TABLET" to emptyList(),
-            "PDA" to emptyList()
+            "PDA" to emptyList(),
+            "TABLET" to emptyList()
         )
         /**
          * Versi aplikasi yang diharapkan (versionName) per jenis perangkat. Jenis tanpa daftar versi

@@ -1351,6 +1351,12 @@ class MainActivity : AppCompatActivity() {
                 if (showNext && pairIp.isNotEmpty()) {
                     log(LogLevel.STEP, "IP connect diisi otomatis: $pairIp")
                     log(LogLevel.STEP, "Berikutnya: isi port connect (layar utama Wireless debugging), lalu ketuk \"Connect\"")
+                    // Arahkan input ke kolom port Connect dan buka keyboard, supaya port bisa langsung diketik.
+                    edtConnPort.requestFocus()
+                    edtConnPort.postDelayed({
+                        (getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager)
+                            .showSoftInput(edtConnPort, InputMethodManager.SHOW_IMPLICIT)
+                    }, 300)
                 }
                 refreshHeader()
             }
