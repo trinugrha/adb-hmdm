@@ -279,7 +279,7 @@
     </style>
 
     <style name="Widget.Hmdm.Button.DialogPositive">
-        <item name="android:minHeight">@dimen/control_height_dialog</item>
+        <item name="android:minHeight">@dimen/control_height</item>
         <item name="android:paddingStart">@dimen/space_lg</item>
         <item name="android:paddingEnd">@dimen/space_lg</item>
     </style>

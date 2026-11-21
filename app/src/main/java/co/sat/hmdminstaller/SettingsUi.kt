@@ -64,7 +64,7 @@ internal class SettingsUi(private val ctx: Context) {
     fun lpTop(top: Int, h: Int = wrap) = LinearLayout.LayoutParams(match, h).apply { topMargin = dp(top) }
 
     /** Untuk kolom isian di dalam popup. */
-    fun lpField(top: Int = 6) = lpTop(top, ctx.px(R.dimen.control_height_dialog))
+    fun lpField(top: Int = 6) = lpTop(top, ctx.px(R.dimen.control_height))
 
     fun label(s: String, bold: Boolean = false, size: Float = 12f, color: Int = cMuted) = TextView(ctx).apply {
         text = s
