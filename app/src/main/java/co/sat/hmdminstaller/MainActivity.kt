@@ -1803,8 +1803,7 @@ class MainActivity : AppCompatActivity() {
             allEmpty || typeListEmpty -> "Daftar aplikasi kosong" to grey
             total == 0 -> "Belum diperiksa" to grey
             st == null -> "Belum diperiksa" to grey
-            missing.isEmpty() && wrong.isEmpty() ->
-                (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
+            missing.isEmpty() && wrong.isEmpty() -> "Versi sesuai ✓ ($total/$total)" to green
             // Kuning: semua terpasang tapi ada versi yang berbeda. Merah: ada aplikasi yang belum terpasang.
             missing.isEmpty() -> "Versi belum sesuai ($okCount/$total)" to amber
             else -> "Belum sesuai ($okCount/$total)" to red
