@@ -690,34 +690,6 @@ class MainActivity : AppCompatActivity() {
     internal enum class PopupTone { NAVY, DANGER }
 
     /**
-     * Merapikan teks isi popup: label ("Penyebab:", "Periksa:", "Langkah berikutnya:", "Catatan:", "Perhatian:", "Perintah:")
-     * ditebalkan, perintah adb memakai huruf monospace, dan baris "• " diberi indent gantung supaya baris lanjutan sejajar dengan isi.
-     */
-    private fun formatPopupMessage(text: String): CharSequence {
-        val labelRe = Regex("^(Penyebab|Periksa|Langkah berikutnya|Catatan|Perhatian|Perintah):")
-        val strong = colorOf(R.color.text)
-        val sb = SpannableStringBuilder()
-        val lines = text.split("\n")
-        for ((i, line) in lines.withIndex()) {
-            val start = sb.length
-            sb.append(line)
-            if (i < lines.lastIndex) sb.append('\n')
-            val m = labelRe.find(line)
-            if (m != null) {
-                val labelEnd = start + m.value.length
-                sb.setSpan(StyleSpan(Typeface.BOLD), start, labelEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                sb.setSpan(ForegroundColorSpan(strong), start, labelEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                if (m.groupValues[1] == "Perintah") {
-                    sb.setSpan(android.text.style.TypefaceSpan("monospace"), labelEnd, start + line.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                }
-            } else if (line.startsWith("• ")) {
-                sb.setSpan(LeadingMarginSpan.Standard(0, dp(12)), start, sb.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            }
-        }
-        return sb
-    }
-
-    /**
      * Satu-satunya bentuk popup di aplikasi (layout dialog_popup): ikon bulat, judul di tengah, isi, lalu tombol.
      * Semua popup (hasil, konfirmasi, pilihan, form, QR, pengaturan) lewat sini supaya tampilannya seragam.
      * [tone] NAVY = netral/berhasil, DANGER = gagal/berbahaya. Tombol positif selalu navy.
@@ -1675,19 +1647,6 @@ class MainActivity : AppCompatActivity() {
     private val runWarns = mutableListOf<String>()
 
     /**
-     * Isi satu butir "Penyebab" di popup: baris ✗ tanpa awalan "<Aksi> gagal: " / "Gagal: ", karena judul popup
-     * sudah memuat aksinya ("Connect USB gagal"). Huruf pertama dibuat kapital.
-     */
-    private fun errReason(s: String): String {
-        val stripped = s.replace(Regex("^(?:[^:]{1,60}? )?[Gg]agal: "), "")
-        // Kapitalkan hanya bila awalan benar-benar dibuang; baris seperti "agent.apk: ..." dibiarkan.
-        return plainReason(if (stripped.length != s.length) stripped.replaceFirstChar { it.uppercase() } else s)
-    }
-
-    /** Popup berbahasa sehari-hari: kode teknis install (mis. "(INSTALL_FAILED_...)") hanya tampil di log. */
-    private fun plainReason(s: String): String = s.replace(Regex(" \\(INSTALL_[A-Z_]+\\)"), "")
-
-    /**
      * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
      * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda), dan titik di
      * akhir pesan dibuang supaya semua baris seragam (elipsis "..." dibiarkan).
@@ -1732,20 +1691,6 @@ class MainActivity : AppCompatActivity() {
         LogLevel.WARN -> colorOf(R.color.status_warn)
         LogLevel.ERR, LogLevel.END_ERR -> colorOf(R.color.status_bad)
         LogLevel.DETAIL -> colorOf(R.color.status_idle)
-    }
-
-    private fun clean(s: String) = s.trim().replace("\"", "").replace(" ", "")
-
-    /** Gabung IP + port jadi "ip:port"; toleran bila user menempel "ip:port" di kolom IP. */
-    private fun addr(ipText: String, portText: String): String {
-        var ip = clean(ipText)
-        var port = clean(portText)
-        val i = ip.lastIndexOf(':')
-        if (i > 0 && port.isEmpty()) {
-            port = ip.substring(i + 1)
-            ip = ip.substring(0, i)
-        }
-        return if (ip.isEmpty() || port.isEmpty()) "" else "$ip:$port"
     }
 
     /** Muat ulang APK yang sudah disalin ke cache (mis. setelah proses aplikasi dimatikan sistem). */
