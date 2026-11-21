@@ -1784,10 +1784,12 @@ class MainActivity : AppCompatActivity() {
             st[it] != null && expected[it] != null && !AdbController.versionMatches(expected.getValue(it), st[it])
         }
         val okCount = total - missing.size - wrong.size
-        // Bila daftar aplikasi SEMUA jenis perangkat kosong, tidak ada yang bisa dicek: tampil "Daftar aplikasi kosong" (walau belum terhubung).
-        val allEmpty = AdbController.DEVICE_PACKAGES.keys.all { VersionStore.packages(it).isEmpty() }
+        // Bila model HP target terbaca dan dikenali (jenis perangkat diketahui) tetapi daftar aplikasi jenis itu kosong,
+        // tidak ada yang bisa dicek: tampil "Daftar aplikasi kosong".
+        val knownType = if (connected) deviceModel?.second else null
+        val typeListEmpty = knownType != null && VersionStore.packages(knownType).isEmpty()
         val (text, color) = when {
-            allEmpty -> "Daftar aplikasi kosong" to grey
+            typeListEmpty -> "Daftar aplikasi kosong" to grey
             !connected -> "Belum terhubung" to grey
             total == 0 -> "Belum diperiksa" to grey
             st == null -> "Belum diperiksa" to grey
