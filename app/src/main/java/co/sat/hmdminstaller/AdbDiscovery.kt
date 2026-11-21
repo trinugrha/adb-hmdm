@@ -1,10 +1,10 @@
 package co.sat.hmdminstaller
 
 import android.content.Context
-import android.net.nsd.NsdManager
-import android.net.nsd.NsdServiceInfo
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.net.nsd.NsdManager
+import android.net.nsd.NsdServiceInfo
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter

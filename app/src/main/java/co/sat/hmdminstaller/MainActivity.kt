@@ -1,5 +1,6 @@
 package co.sat.hmdminstaller
 
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -7,35 +8,44 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.provider.OpenableColumns
 import android.text.SpannableString
+import android.text.SpannableStringBuilder
 import android.text.Spanned
+import android.text.TextUtils
 import android.text.style.ForegroundColorSpan
 import android.text.style.LeadingMarginSpan
 import android.text.style.StyleSpan
-import android.graphics.Typeface
-import android.os.SystemClock
 import android.view.GestureDetector
+import android.view.Gravity
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.view.WindowManager
-import android.view.ViewConfiguration
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.activity.OnBackPressedCallback
+import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.ImageButton
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.textfield.TextInputEditText
@@ -43,7 +53,7 @@ import java.io.File
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
-
+import kotlin.math.abs
 class MainActivity : AppCompatActivity() {
 
     /** Swipe horizontal di mana saja pindah ke tab sebelah (Wireless <-> USB), selama tab tujuan tidak terkunci. */
@@ -54,7 +64,7 @@ class MainActivity : AppCompatActivity() {
                 val dx = e2.x - e1.x
                 val dy = e2.y - e1.y
                 val d = resources.displayMetrics.density
-                if (Math.abs(dx) < 80 * d || Math.abs(dx) < 2 * Math.abs(dy) || Math.abs(vx) < 400 * d) return false
+                if (abs(dx) < 80 * d || abs(dx) < 2 * abs(dy) || abs(vx) < 400 * d) return false
                 val target = tabMode.selectedTabPosition + if (dx < 0) 1 else -1
                 val tab = tabMode.getTabAt(target) ?: return false
                 if (!tab.view.isEnabled) return false
@@ -68,7 +78,7 @@ class MainActivity : AppCompatActivity() {
     private var tabKbOffset = 0f
     private var tabHideOffset = 0f
     private var tabHidden = false
-    private var tabAnim: android.animation.ValueAnimator? = null
+    private var tabAnim: ValueAnimator? = null
 
     private fun applyTabOffset() {
         findViewById<View>(R.id.tabBar).translationY = tabKbOffset + tabHideOffset
@@ -81,7 +91,7 @@ class MainActivity : AppCompatActivity() {
         // Cukup jauh agar bar beserta bayangan dan jarak 16dp ke dasar layar ikut hilang.
         val target = if (hide) bar.height + 32 * d else 0f
         tabAnim?.cancel()
-        tabAnim = android.animation.ValueAnimator.ofFloat(tabHideOffset, target).apply {
+        tabAnim = ValueAnimator.ofFloat(tabHideOffset, target).apply {
             duration = 180
             addUpdateListener { tabHideOffset = it.animatedValue as Float; applyTabOffset() }
             start()
@@ -102,8 +112,8 @@ class MainActivity : AppCompatActivity() {
                 kbHandledForGesture = false
             }
             MotionEvent.ACTION_MOVE -> if (!kbHandledForGesture) {
-                val dx = Math.abs(ev.x - touchDownX)
-                val dy = Math.abs(ev.y - touchDownY)
+                val dx = abs(ev.x - touchDownX)
+                val dy = abs(ev.y - touchDownY)
                 if (dy > ViewConfiguration.get(this).scaledTouchSlop && dy > dx) {
                     kbHandledForGesture = true
                     hideKeyboard()
@@ -138,7 +148,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var txtDropSub: TextView
     private lateinit var dropZone: View
     private lateinit var btnRefreshOwner: View
-    private lateinit var apkListBox: android.widget.LinearLayout
+    private lateinit var apkListBox: LinearLayout
     private lateinit var tabMode: TabLayout
     private lateinit var statusDot: View
     private lateinit var ownerDot: View
@@ -185,7 +195,7 @@ class MainActivity : AppCompatActivity() {
     @Volatile private var skipInfoRefresh = false
     /** Jenis perangkat yang dipilih untuk ceklist instalasi: POS / TABLET / PDA (disimpan di preferensi). */
     private var deviceType = "POS"
-    private lateinit var typeChips: Map<String, android.widget.CheckBox>
+    private lateinit var typeChips: Map<String, CheckBox>
     /** Status tiga permission com.hmdm.launcher di HP target: null = belum diketahui. */
     @Volatile private var hmdmPerms: HmdmPermissions? = null
     /** Model HP target hasil baca di kartu Informasi Status (model, jenis terdeteksi atau null). */
@@ -464,8 +474,7 @@ class MainActivity : AppCompatActivity() {
                     val type = deviceType
                     val r = adb.checkRequiredPackages(type)
                     if (r != null) { appsInstalled = r; appsType = type }
-                    // Permission hanya dicek bila com.hmdm.launcher termasuk dalam jenis perangkat yang terceklis.
-                    val pr = if (hmdmInType(type)) adb.checkHmdmPermissions() else null
+                    val pr = adb.checkHmdmPermissions()
                     if (pr != null) { hmdmPerms = pr; permType = type }
                     r != null || pr != null
                 }
@@ -550,14 +559,14 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             var usbDlg: AlertDialog? = null
-            val usbList = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+            val usbList = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
             for ((i, t) in targets.withIndex()) {
                 usbList.addView(
                     MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
                         text = t.label + "\n" + t.device.deviceName
                         setAllCaps(false)
                         textSize = 14f
-                        gravity = android.view.Gravity.START or android.view.Gravity.CENTER_VERTICAL
+                        gravity = Gravity.START or Gravity.CENTER_VERTICAL
                         minHeight = px(R.dimen.list_item_height)
                         setOnClickListener {
                             usbDlg?.dismiss()
@@ -565,7 +574,7 @@ class MainActivity : AppCompatActivity() {
                             run("Connect USB") { doConnectUsb(t) }
                         }
                     },
-                    android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { if (i > 0) topMargin = dp(8) }
+                    LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { if (i > 0) topMargin = dp(8) }
                 )
             }
             usbDlg = showPopup(
@@ -696,7 +705,7 @@ class MainActivity : AppCompatActivity() {
             types.firstOrNull { t -> draft.getValue(t).any { it != except && norm(it) == norm(m) } }
 
         val scroll = ScrollView(this)
-        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val btnAdd = ui.addButton("Tambah model")
         val btnExportM = ui.outlinedButton("Export", R.drawable.ic_upload_file)
         val btnImportM = ui.outlinedButton("Import", R.drawable.ic_download)
@@ -716,8 +725,8 @@ class MainActivity : AppCompatActivity() {
 
         fun showAddDialog() {
             val inModel = ui.field("contoh: SM-T225", "", capitalize = true)
-            val form = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
+            val form = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
                 addView(ui.label("Nama model", bold = true, color = ui.cText))
                 addView(inModel, ui.lpField())
             }
@@ -829,12 +838,12 @@ class MainActivity : AppCompatActivity() {
             draftVers[t] = VersionStore.expected(t).toMutableMap()
         }
         var current = if (deviceType in types) deviceType else types.first()
-        val fields = LinkedHashMap<String, android.widget.EditText>()
+        val fields = LinkedHashMap<String, EditText>()
 
         val ui = SettingsUi(this)
 
         val scroll = ScrollView(this)
-        val list = android.widget.LinearLayout(this).apply { orientation = android.widget.LinearLayout.VERTICAL }
+        val list = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         val btnAdd = ui.addButton("Tambah aplikasi")
         val btnExport = ui.outlinedButton("Export", R.drawable.ic_upload_file)
         val btnImport = ui.outlinedButton("Import", R.drawable.ic_download)
@@ -880,8 +889,8 @@ class MainActivity : AppCompatActivity() {
         fun showEditVersionDialog(pkg: String) {
             commitFields()
             val inVer = ui.field("kosong = tanpa cek versi", draftVers.getValue(current)[pkg].orEmpty())
-            val form = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
+            val form = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
                 addView(ui.label(pkg, bold = true, size = 13f, color = ui.cText))
                 addView(ui.label("Versi (versionName)", bold = true, color = ui.cText), ui.lpTop(16))
                 addView(inVer, ui.lpField())
@@ -902,8 +911,8 @@ class MainActivity : AppCompatActivity() {
         fun showAddDialog() {
             val inPkg = ui.field("com.contoh.app", "")
             val inVer = ui.field("contoh: 1.0.0", "")
-            val form = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
+            val form = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
                 addView(ui.label("Nama paket", bold = true, color = ui.cText))
                 addView(inPkg, ui.lpField())
                 addView(ui.label("Versi (wajib diisi)", bold = true, color = ui.cText), ui.lpTop(16))
@@ -1034,7 +1043,7 @@ class MainActivity : AppCompatActivity() {
     private fun formatPopupMessage(text: String): CharSequence {
         val labelRe = Regex("^(Penyebab|Periksa|Langkah berikutnya|Catatan|Perhatian|Perintah):")
         val strong = colorOf(R.color.text)
-        val sb = android.text.SpannableStringBuilder()
+        val sb = SpannableStringBuilder()
         val lines = text.split("\n")
         for ((i, line) in lines.withIndex()) {
             val start = sb.length
@@ -1082,7 +1091,7 @@ class MainActivity : AppCompatActivity() {
         val v = layoutInflater.inflate(R.layout.dialog_popup, null)
         val danger = tone == PopupTone.DANGER
         v.findViewById<View>(R.id.popupIconBg).setBackgroundResource(if (danger) R.drawable.bg_badge_danger else R.drawable.bg_badge_navy)
-        v.findViewById<android.widget.ImageView>(R.id.popupIcon).apply {
+        v.findViewById<ImageView>(R.id.popupIcon).apply {
             setImageResource(icon)
             imageTintList = ColorStateList.valueOf(colorOf(if (danger) R.color.danger else R.color.accent_text))
         }
@@ -1091,19 +1100,19 @@ class MainActivity : AppCompatActivity() {
         if (message.isNullOrEmpty()) msg.visibility = View.GONE else {
             msg.text = formatPopupMessage(message)
             // Satu kalimat pendek: rata tengah di bawah judul; pesan berparagraf/berdaftar: rata kiri.
-            msg.gravity = if (message.contains("\n")) android.view.Gravity.START else android.view.Gravity.CENTER_HORIZONTAL
+            msg.gravity = if (message.contains("\n")) Gravity.START else Gravity.CENTER_HORIZONTAL
         }
         if (content != null) {
             if (ownScroll) {
-                val body = v.findViewById<android.widget.FrameLayout>(R.id.popupBody)
+                val body = v.findViewById<FrameLayout>(R.id.popupBody)
                 body.removeAllViews()
-                body.addView(content, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                body.addView(content, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             } else {
-                v.findViewById<android.widget.FrameLayout>(R.id.popupContent).apply {
+                v.findViewById<FrameLayout>(R.id.popupContent).apply {
                     visibility = View.VISIBLE
                     // Tanpa teks isi, kolom/daftar langsung di bawah judul dengan jarak kecil.
                     if (message.isNullOrEmpty()) (layoutParams as ViewGroup.MarginLayoutParams).topMargin = dp(8)
-                    addView(content, android.widget.FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+                    addView(content, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
                 }
             }
         }
@@ -1280,21 +1289,21 @@ class MainActivity : AppCompatActivity() {
         val session = AdbDiscovery.newQrSession()
         val cancel = java.util.concurrent.atomic.AtomicBoolean(false)
         val size = px(R.dimen.qr_size)
-        val img = android.widget.ImageView(this).apply {
+        val img = ImageView(this).apply {
             setImageBitmap(AdbDiscovery.qrBitmap(session.payload, size))
-            layoutParams = android.widget.LinearLayout.LayoutParams(size, size).apply { gravity = android.view.Gravity.CENTER_HORIZONTAL }
+            layoutParams = LinearLayout.LayoutParams(size, size).apply { gravity = Gravity.CENTER_HORIZONTAL }
         }
         val hint2 = TextView(this).apply {
             text = "HP ini dan HP target harus satu jaringan Wi-Fi."
             textSize = 13f
-            gravity = android.view.Gravity.CENTER
+            gravity = Gravity.CENTER
             setLineSpacing(0f, 1.3f)
             setTextColor(colorOf(R.color.muted))
         }
-        val box = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
             addView(img)
-            addView(hint2, android.widget.LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
+            addView(hint2, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { topMargin = dp(12) })
         }
         val dialog = showPopup(
             "Scan QR untuk Pair",
@@ -1488,7 +1497,7 @@ class MainActivity : AppCompatActivity() {
                     if (!skipInfo && modelRecognized() && !modelAppListEmpty()) {
                         val t = deviceType
                         adb.queryRequiredPackages(t)?.let { appsInstalled = it; appsType = t }
-                        if (hmdmInType(t)) adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
+                        adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
                     }
                 }
             } catch (e: Throwable) { }
@@ -1758,17 +1767,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** True bila com.hmdm.launcher termasuk dalam daftar aplikasi jenis perangkat [type], atau daftarnya kosong (tidak dibatasi). */
-    @Suppress("UNUSED_PARAMETER")
-    private fun hmdmInType(type: String): Boolean = true
-
     /** Status gabungan tiga permission com.hmdm.launcher (admin perangkat, overlay, riwayat penggunaan). */
     private fun refreshPerms() {
         if (!::txtPermAdmin.isInitialized) return
         val connected = connectedAddr != null && adb.isConnected
         // Hanya tampilkan hasil bila dicek untuk jenis perangkat yang sedang terceklis.
-        val applicable = hmdmInType(deviceType)
-        val p = if (connected && applicable && permType == deviceType) hmdmPerms else null
+        val p = if (connected && permType == deviceType) hmdmPerms else null
         val grey = colorOf(R.color.status_idle)
         val green = colorOf(R.color.status_ok)
         val red = colorOf(R.color.status_bad)
@@ -1926,12 +1930,12 @@ class MainActivity : AppCompatActivity() {
         })
 
         apks.forEachIndexed { i, item ->
-            val row = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.CENTER_VERTICAL
                 setBackgroundResource(R.drawable.bg_chip)
                 setPadding(dp(12), dp(8), dp(4), dp(8))
-                layoutParams = android.widget.LinearLayout.LayoutParams(
+                layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
                 ).apply { if (i > 0) topMargin = dp(6) }
             }
@@ -1942,16 +1946,16 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(colorOf(R.color.accent_text))
                 minWidth = dp(22)
             })
-            val col = android.widget.LinearLayout(this).apply {
-                orientation = android.widget.LinearLayout.VERTICAL
-                layoutParams = android.widget.LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            val col = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
             col.addView(TextView(this).apply {
                 text = item.name
                 textSize = 13f
                 setTextColor(colorOf(R.color.text))
                 maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+                ellipsize = TextUtils.TruncateAt.MIDDLE
             })
             col.addView(TextView(this).apply {
                 text = item.sizeText
@@ -1959,7 +1963,7 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(colorOf(R.color.muted))
             })
             row.addView(col)
-            row.addView(android.widget.ImageButton(this).apply {
+            row.addView(ImageButton(this).apply {
                 id = R.id.apkRemoveTag
                 setImageResource(R.drawable.ic_delete)
                 setColorFilter(colorOf(R.color.danger))
@@ -1969,7 +1973,7 @@ class MainActivity : AppCompatActivity() {
                 isEnabled = canRemove
                 isClickable = canRemove
                 alpha = if (canRemove) 1f else 0.3f
-                layoutParams = px(R.dimen.icon_button_size).let { android.widget.LinearLayout.LayoutParams(it, it) }
+                layoutParams = px(R.dimen.icon_button_size).let { LinearLayout.LayoutParams(it, it) }
                 setOnClickListener {
                     if (busy || !(connectedAddr != null && adb.isConnected)) return@setOnClickListener
                     apks.remove(item)
@@ -2062,7 +2066,7 @@ class MainActivity : AppCompatActivity() {
     private fun trimLog() {
         val cur = txtLog.text
         if (cur.length <= LOG_MAX_CHARS) return
-        val sb = android.text.SpannableStringBuilder(cur)
+        val sb = SpannableStringBuilder(cur)
         val cut = sb.indexOf("\n", sb.length - LOG_KEEP_CHARS)
         sb.delete(0, if (cut < 0) sb.length - LOG_KEEP_CHARS else cut + 1)
         txtLog.text = sb

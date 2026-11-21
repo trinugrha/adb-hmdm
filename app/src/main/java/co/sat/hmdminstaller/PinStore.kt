@@ -1,7 +1,6 @@
 package co.sat.hmdminstaller
 
 import android.content.Context
-import android.os.SystemClock
 import java.security.MessageDigest
 import java.security.SecureRandom
 import javax.crypto.SecretKeyFactory

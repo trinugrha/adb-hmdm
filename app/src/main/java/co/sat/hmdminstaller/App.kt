@@ -7,9 +7,9 @@ import android.net.NetworkCapabilities
 import android.net.NetworkRequest
 import android.os.Looper
 import android.util.Log
-import org.conscrypt.Conscrypt
 import java.io.File
 import java.security.Security
+import org.conscrypt.Conscrypt
 
 class App : Application() {
 
