@@ -70,6 +70,10 @@ package co.sat.hmdminstaller
  * - Petunjuk ke HP ini ditulis "layar HP ini", bukan "layar aplikasi ini".
  * - Popup gagal tanpa baris ✗ memakai baris ! proses itu (maks. 2, kecuali pesan "mencoba lagi") sebagai butir "Penyebab".
  *   Butir "Penyebab" selalu diawali huruf kapital, tanpa titik di akhir. Satuan detik di pesan batas waktu selalu bilangan bulat ("20 dtk").
+ * - Popup berbahasa sehari-hari: kode teknis install ("(INSTALL_FAILED_...)") hanya di log; popup membuangnya lewat `MainActivity.plainReason`.
+ * - Exception dari perintah shell masuk ke output mentah lewat `AdbController.shellError` ("Error: <Kelas>: <pesan>"), selalu sebagai baris DETAIL.
+ * - Toast simpan pengaturan: "Pengaturan <nama> disimpan. Ketuk \"Cek Status\" untuk mengecek ulang"; nama sama dengan judul popup pengaturannya.
+ * - Progres untuk satu APK tidak memakai "1 dari 1" (\"Memasang APK: nama.apk\").
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

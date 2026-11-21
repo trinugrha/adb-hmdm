@@ -46,7 +46,7 @@
 
     <!-- Proses otomatis -->
     <string name="auto_title">Proses Otomatis</string>
-    <string name="auto_hint">Pasang APK lalu atur MDM Mode sekaligus dengan sekali ketuk. Perangkat harus terhubung lebih dulu.</string>
+    <string name="auto_hint">Pasang APK lalu atur MDM Mode sekaligus dengan sekali ketuk.</string>
     <string name="action_auto">Pasang Aplikasi + Jadikan MDM Mode</string>
 
     <!-- Lihat lainnya -->

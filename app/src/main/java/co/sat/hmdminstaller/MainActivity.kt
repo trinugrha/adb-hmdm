@@ -797,7 +797,7 @@ class MainActivity : AppCompatActivity() {
         buildList()
 
         showPopup(
-            "Pengaturan Model Perangkat", "Model yang dikenali untuk memilih POS / PDA / TABLET otomatis",
+            "Pengaturan Model Perangkat", "Model yang dikenali untuk memilih POS / PDA / TABLET otomatis.",
             icon = R.drawable.ic_settings, content = scroll, ownScroll = true, hasInput = true,
             positive = "Simpan", negative = "Batal"
         ) {
@@ -808,7 +808,7 @@ class MainActivity : AppCompatActivity() {
             hmdmPerms = null; permType = null
             refreshApps()
             refreshPerms()
-            Toast.makeText(this, "Daftar model disimpan. Ketuk ikon refresh di kartu \"Informasi Status\" untuk membaca ulang", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Pengaturan model perangkat disimpan. Ketuk \"Cek Status\" untuk mengecek ulang", Toast.LENGTH_LONG).show()
             true
         }
     }
@@ -1004,7 +1004,7 @@ class MainActivity : AppCompatActivity() {
         buildFields()
 
         showPopup(
-            "Pengaturan Aplikasi & Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat",
+            "Pengaturan Aplikasi & Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat.",
             icon = R.drawable.ic_settings, content = scroll, ownScroll = true, hasInput = true,
             positive = "Simpan", negative = "Batal"
         ) {
@@ -1018,7 +1018,7 @@ class MainActivity : AppCompatActivity() {
             hmdmPerms = null; permType = null
             refreshApps()
             refreshPerms()
-            Toast.makeText(this, "Pengaturan versi disimpan. Ketuk \"Cek Status\" untuk mengecek ulang", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Pengaturan aplikasi dan versi disimpan. Ketuk \"Cek Status\" untuk mengecek ulang", Toast.LENGTH_LONG).show()
             true
         }
     }
@@ -1500,7 +1500,7 @@ class MainActivity : AppCompatActivity() {
                 val inst = adb.lastInstall
                 val isInstall = title == "Pasang Aplikasi" || title == "Pasang Aplikasi + Jadikan MDM Mode"
                 if (!ok && isInstall && inst != null && inst.total > 1 && inst.failed.isNotEmpty()) {
-                    val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "• $name: $why" }
+                    val shown = inst.failed.take(8).joinToString("\n") { (name, why) -> "• $name: ${plainReason(why)}" }
                     val more = if (inst.failed.size > 8) "\n• ${inst.failed.size - 8} APK lainnya (lihat log)" else ""
                     showConnProblem(
                         if (inst.ok == 0) "Semua APK Gagal Dipasang" else "${inst.failed.size} APK Gagal Dipasang",
@@ -1583,8 +1583,8 @@ class MainActivity : AppCompatActivity() {
             box.visibility = View.VISIBLE
             // Halaman tidak digulir otomatis; progres juga tampil di kartu loading.
         }
-        n.text = "Memasang APK $idx dari $total: $name"
-        loading.update("Memasang APK $idx dari $total")
+        n.text = if (total > 1) "Memasang APK $idx dari $total: $name" else "Memasang APK: $name"
+        loading.update(if (total > 1) "Memasang APK $idx dari $total" else "Memasang APK")
         if (size > 0 && sent >= size) {
             bar.isIndeterminate = true
             pctView.text = "100%"
@@ -1666,9 +1666,26 @@ class MainActivity : AppCompatActivity() {
         typeChips.forEach { (_, box) -> box.isEnabled = on; box.isClickable = on; box.alpha = if (on) 1f else 0.4f }
     }
 
+    /**
+     * Kolom IP/port/kode Pair dan IP/port Connect dikunci selama ada koneksi aktif.
+     * Isi kolom tetap bisa diubah lewat kode (mis. hasil Pair QR); yang terkunci hanya ketikan pengguna.
+     */
+    private fun applyConnectionFieldsState(connected: Boolean) {
+        if (!::edtPairIp.isInitialized) return
+        listOf(edtPairIp, edtPairPort, edtPairCode, edtConnIp, edtConnPort).forEach { edt ->
+            val on = !connected
+            edt.isEnabled = on
+            if (!on) edt.clearFocus()
+            var p = edt.parent
+            while (p != null && p !is com.google.android.material.textfield.TextInputLayout) p = p.parent
+            (p as? com.google.android.material.textfield.TextInputLayout)?.let { it.isEnabled = on; it.alpha = if (on) 1f else 0.5f }
+        }
+    }
+
     private fun applyButtonState(isBusy: Boolean) {
         applyTypeChipState(isBusy)
         val connected = connectedAddr != null && adb.isConnected
+        applyConnectionFieldsState(connected)
         buttons.forEach { b ->
             // "Pasang Aplikasi" dan "Otomatis (pasang + owner)" tidak bisa ditekan selama daftar APK masih kosong.
             // Hapus Data & Uninstall Kaspersky hanya aktif bila com.kaspersky.kes terdeteksi di HP target.
@@ -2008,8 +2025,11 @@ class MainActivity : AppCompatActivity() {
     private fun errReason(s: String): String {
         val stripped = s.replace(Regex("^(?:[^:]{1,60}? )?[Gg]agal: "), "")
         // Kapitalkan hanya bila awalan benar-benar dibuang; baris seperti "agent.apk: ..." dibiarkan.
-        return if (stripped.length != s.length) stripped.replaceFirstChar { it.uppercase() } else s
+        return plainReason(if (stripped.length != s.length) stripped.replaceFirstChar { it.uppercase() } else s)
     }
+
+    /** Popup berbahasa sehari-hari: kode teknis install (mis. "(INSTALL_FAILED_...)") hanya tampil di log. */
+    private fun plainReason(s: String): String = s.replace(Regex(" \\(INSTALL_[A-Z_]+\\)"), "")
 
     /**
      * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
