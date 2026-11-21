@@ -74,6 +74,9 @@ package co.sat.hmdminstaller
  * - Exception dari perintah shell masuk ke output mentah lewat `AdbController.shellError` ("Error: <Kelas>: <pesan>"), selalu sebagai baris DETAIL.
  * - Toast simpan pengaturan: "Pengaturan <nama> disimpan. Ketuk \"Cek Status\" untuk mengecek ulang"; nama sama dengan judul popup pengaturannya.
  * - Progres untuk satu APK tidak memakai "1 dari 1" (\"Memasang APK: nama.apk\").
+ * - Label kartu status di layar berbahasa Indonesia ("STATUS MDM MODE", "STATUS INSTALASI", "STATUS IZIN"); judul dialog pengaturan
+ *   memakai "dan", bukan "&" ("Pengaturan Aplikasi dan Versi"), sama dengan Toast simpan.
+ * - Daftar "Periksa" yang sama dipakai satu sumber teks (mis. `QR_PAIR_CHECKLIST`), supaya popup tidak berbeda kalimat untuk kegagalan yang sama.
  * - Setiap proses: HEAD → isi → END_OK / END_ERR, lalu satu baris kosong.
  */
 enum class LogLevel(val marker: String, val bold: Boolean = false) {

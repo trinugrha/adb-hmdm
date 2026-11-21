@@ -30,7 +30,7 @@ internal fun Context.px(@DimenRes id: Int): Int = resources.getDimensionPixelSiz
 internal fun Context.colorOf(@ColorRes id: Int): Int = ContextCompat.getColor(this, id)
 
 /**
- * Pembuat komponen untuk dialog pengaturan (Model Perangkat, Aplikasi & Versi) dan daftar yang dibuat lewat kode.
+ * Pembuat komponen untuk dialog pengaturan (Model Perangkat, Aplikasi dan Versi) dan daftar yang dibuat lewat kode.
  * Warna dan ukuran diambil dari resource supaya sama dengan layar utama.
  */
 internal class SettingsUi(private val ctx: Context) {

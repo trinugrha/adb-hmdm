@@ -448,8 +448,8 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     runOnUiThread { log(LogLevel.WARN, "Model perangkat tidak terbaca") }
                 }
-                // Model tidak dikenal / tidak terbaca: jenis perangkat tidak bisa ditentukan, jadi perintah cek Installation Status
-                // dan Permission Status tidak dijalankan sama sekali; kartu tetap "Belum diperiksa" (hasil lama dibuang).
+                // Model tidak dikenal / tidak terbaca: jenis perangkat tidak bisa ditentukan, jadi perintah cek Status Instalasi
+                // dan Status Izin tidak dijalankan sama sekali; kartu tetap "Belum diperiksa" (hasil lama dibuang).
                 if (!modelRecognized()) {
                     appsInstalled = null; appsType = null
                     hmdmPerms = null; permType = null
@@ -933,7 +933,7 @@ class MainActivity : AppCompatActivity() {
                     showConnProblem(
                         "Pair dengan QR Gagal",
                         "HP target tidak memindai QR dalam ${QR_PAIR_TIMEOUT_MS / 1000} dtk, atau layanan pairing tidak ditemukan.\n\n" +
-                            "Periksa:\n• Layar \"Pair device with QR code\" di HP target terbuka dan kamera diarahkan ke QR\n• HP target dan HP ini satu jaringan Wi-Fi (client isolation mati)\n\n" +
+                            "$QR_PAIR_CHECKLIST\n\n" +
                             "Rincian lengkap ada di log."
                     )
                 }
@@ -1134,7 +1134,7 @@ class MainActivity : AppCompatActivity() {
                     val isConn = title == "Connect" || title == "Connect USB"
                     val popupTitle = "$title Gagal"
                     val hint = when {
-                        title == "Pair dengan QR" -> "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan QR terpindai\n• HP target dan HP ini satu jaringan Wi-Fi"
+                        title == "Pair dengan QR" -> QR_PAIR_CHECKLIST
                         isPair -> "Periksa:\n• IP, port pairing, dan kode 6 digit sesuai layar \"Pair device with pairing code\" di HP target\n• Kode belum kedaluwarsa (muncul ulang bila layar ditutup)\n• HP target dan HP ini satu jaringan Wi-Fi"
                         title == "Connect USB" -> "Periksa:\n• Kabel USB terpasang kuat dan tidak terlepas\n• Izin akses USB di layar HP ini dipilih \"Izinkan\"\n• Dialog \"Izinkan USB debugging?\" di HP target disetujui (centang \"Selalu izinkan\")\n• Mode USB di HP target: \"Transfer file\""
                         isConn -> "Periksa:\n• IP dan port sesuai layar Wireless debugging di HP target\n• HP target dan HP ini satu jaringan Wi-Fi\n• Pairing sudah dilakukan bila diminta"
@@ -1618,5 +1618,8 @@ class MainActivity : AppCompatActivity() {
         private const val LOCK_TIMEOUT_MS = 30 * 60_000L
         /** Batas menunggu HP target memindai QR pairing. */
         private const val QR_PAIR_TIMEOUT_MS = 120_000L
+        /** Daftar "Periksa" untuk Pair dengan QR; satu teks dipakai popup waktu habis dan popup proses gagal. */
+        private const val QR_PAIR_CHECKLIST =
+            "Periksa:\n• Layar \"Pair device with QR code\" di HP target masih terbuka dan kamera diarahkan ke QR\n• HP target dan HP ini satu jaringan Wi-Fi (client isolation mati)"
     }
 }

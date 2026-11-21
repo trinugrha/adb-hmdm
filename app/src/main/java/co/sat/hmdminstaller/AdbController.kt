@@ -37,7 +37,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         private const val PROBE_TIMEOUT_S = 6L
         private const val STALL_REPLY_MS = 180_000L
         const val HMDM_PACKAGE = "com.hmdm.launcher"
-        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Installation Status"). */
+        /** Daftar aplikasi wajib per jenis perangkat (dipakai ceklist "Status Instalasi"). */
         val DEVICE_PACKAGES: Map<String, List<String>> = linkedMapOf(
             "POS" to emptyList(),
             "PDA" to emptyList(),

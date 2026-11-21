@@ -7,7 +7,7 @@ import android.widget.ScrollView
 import android.widget.Toast
 
 /*
- * Dialog pengaturan (Model Perangkat, Aplikasi & Versi) yang dipisah dari MainActivity.
+ * Dialog pengaturan (Model Perangkat, Aplikasi dan Versi) yang dipisah dari MainActivity.
  * Dipakai sebagai fungsi ekstensi MainActivity, jadi tetap memakai state dan fungsi Activity yang sama.
  */
 
@@ -137,7 +137,7 @@ internal fun MainActivity.showModelSettings() {
     ) {
         for (t in types) ModelStore.save(t, draft.getValue(t))
         deviceModel = null
-        // Daftar model berubah: hasil cek lama tidak berlaku, Installation Status & Permission Status kembali "Belum diperiksa".
+        // Daftar model berubah: hasil cek lama tidak berlaku, Status Instalasi dan Status Izin kembali "Belum diperiksa".
         appsInstalled = null; appsType = null
         hmdmPerms = null; permType = null
         refreshApps()
@@ -338,7 +338,7 @@ internal fun MainActivity.showVersionSettings() {
     buildFields()
 
     showPopup(
-        "Pengaturan Aplikasi & Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat.",
+        "Pengaturan Aplikasi dan Versi", "Daftar aplikasi dan versi yang dicek per jenis perangkat.",
         icon = R.drawable.ic_settings, content = scroll, ownScroll = true, hasInput = true,
         positive = "Simpan", negative = "Batal"
     ) {
@@ -347,7 +347,7 @@ internal fun MainActivity.showVersionSettings() {
         // Hasil cek lama dibuat tidak berlaku karena daftar/versi berubah; status kembali "Belum diperiksa".
         appsInstalled = null
         appsType = null
-        // Model perangkat dan Permission Status juga kembali "Belum diperiksa".
+        // Model perangkat dan Status Izin juga kembali "Belum diperiksa".
         deviceModel = null
         hmdmPerms = null; permType = null
         refreshApps()

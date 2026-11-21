@@ -39,7 +39,7 @@
     <dimen name="icon_size_small">18dp</dimen>
     <dimen name="icon_size_large">32dp</dimen>
     <dimen name="tab_bar_height">46dp</dimen>
-    <dimen name="tab_bar_elevation">8dp</dimen>
+    <dimen name="tab_bar_elevation">10dp</dimen>
     <dimen name="popup_icon_bg">64dp</dimen>
     <dimen name="popup_icon">30dp</dimen>
     <dimen name="popup_padding_h">24dp</dimen>
