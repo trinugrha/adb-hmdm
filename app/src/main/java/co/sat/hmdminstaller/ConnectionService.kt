@@ -60,9 +60,9 @@ class ConnectionService : Service() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         val adb = (application as App).adb
         Thread {
-            try { adb.close() } catch (e: Throwable) { }
+            quietly { adb.close() }
             // Daftar APK dipulihkan dari cache/picked saat aplikasi dibuka; hapus agar daftar kosong lagi.
-            try { java.io.File(cacheDir, "picked").deleteRecursively() } catch (e: Throwable) { }
+            clearPickedApks()
             handler.post { stopSelf() }
         }.start()
         super.onTaskRemoved(rootIntent)

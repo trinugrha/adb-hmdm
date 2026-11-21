@@ -45,31 +45,31 @@ class App : Application() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         val mainThread = Looper.getMainLooper().thread
         Thread.setDefaultUncaughtExceptionHandler { t, e ->
-            try {
+            quietly {
                 File(filesDir, CRASH_FILE).writeText("${Fmt.stamp(System.currentTimeMillis())}, thread ${t.name}\n${Log.getStackTraceString(e)}")
-            } catch (ignored: Throwable) { }
+            }
             if (t === mainThread) {
                 previous?.uncaughtException(t, e)
             } else {
-                try {
+                quietly {
                     logListener?.invoke(LogLevel.WARN, "Kesalahan tak terduga di thread \"${t.name}\", aplikasi tetap berjalan")
                     logListener?.invoke(LogLevel.DETAIL, Fmt.cause(e))
-                } catch (ignored: Throwable) { }
+                }
             }
         }
     }
 
     /** Wi-Fi hilang = sesi ADB wireless pasti mati: tutup lebih awal, tanpa menunggu timeout soket. */
     private fun watchWifi() {
-        try {
+        quietly {
             val cm = getSystemService(ConnectivityManager::class.java) ?: return
             val req = NetworkRequest.Builder().addTransportType(NetworkCapabilities.TRANSPORT_WIFI).build()
             cm.registerNetworkCallback(req, object : ConnectivityManager.NetworkCallback() {
                 override fun onLost(network: Network) {
-                    try { adb.onWifiLost() } catch (ignored: Throwable) { }
+                    quietly { adb.onWifiLost() }
                 }
             })
-        } catch (ignored: Throwable) { }
+        }
     }
 
     companion object {

@@ -121,7 +121,7 @@ class UsbAdbBridge(context: Context) {
             usb.requestPermission(d, pi)
             latch.await(timeoutSec, TimeUnit.SECONDS)
         } finally {
-            try { appContext.unregisterReceiver(receiver) } catch (e: Throwable) { }
+            quietly { appContext.unregisterReceiver(receiver) }
         }
         return granted || usb.hasPermission(d)
     }
@@ -160,14 +160,14 @@ class UsbAdbBridge(context: Context) {
     @Synchronized
     fun stop() {
         running = false
-        try { active?.close() } catch (e: Throwable) { }
+        quietly { active?.close() }
         active = null
-        try { server?.close() } catch (e: Throwable) { }
+        quietly { server?.close() }
         server = null
         val c = conn
         if (c != null) {
-            try { iface?.let { c.releaseInterface(it) } } catch (e: Throwable) { }
-            try { c.close() } catch (e: Throwable) { }
+            quietly { iface?.let { c.releaseInterface(it) } }
+            quietly { c.close() }
         }
         conn = null; iface = null; epIn = null; epOut = null; device = null
     }
@@ -185,10 +185,10 @@ class UsbAdbBridge(context: Context) {
     private fun acceptLoop(ss: ServerSocket) {
         while (running) {
             val s = try { ss.accept() } catch (e: Throwable) { break }
-            try { active?.close() } catch (e: Throwable) { }
+            quietly { active?.close() }
             active = s
             pumpThreads.forEach { try { it.join(3000) } catch (e: InterruptedException) { } }
-            if (active !== s) { try { s.close() } catch (e: Throwable) { }; continue }
+            if (active !== s) { quietly { s.close() }; continue }
             drainStale()
             s.tcpNoDelay = true
             val up = Thread({ pumpSocketToUsb(s) }, "usb-adb-up").apply { isDaemon = true }
@@ -285,7 +285,7 @@ class UsbAdbBridge(context: Context) {
         } catch (e: Throwable) {
             if (active === s && running) lastPumpError = "soket ke USB: ${Fmt.cause(e)}"
         } finally {
-            try { s.close() } catch (e: Throwable) { }
+            quietly { s.close() }
         }
     }
 
@@ -309,7 +309,7 @@ class UsbAdbBridge(context: Context) {
         } catch (e: Throwable) {
             if (active === s && running) lastPumpError = "USB ke soket: ${Fmt.cause(e)}"
         } finally {
-            try { s.close() } catch (e: Throwable) { }
+            quietly { s.close() }
         }
     }
 }

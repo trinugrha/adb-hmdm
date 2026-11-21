@@ -8,49 +8,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 
-/** Satu APK di daftar: file hasil pilihan user (disalin ke cache). */
-data class ApkItem(val name: String, val file: File, val builtIn: Boolean = false) {
-    val sizeText: String
-        get() = Fmt.size(file.length())
-}
-
-/**
- * Status tiga permission com.hmdm.launcher di HP target. Tiap nilai: true = aktif, false = belum aktif,
- * null = tidak terbaca (mis. timeout).
- */
-data class HmdmPermissions(
-    /** Permission to install as device administrator (admin perangkat aktif). */
-    val admin: Boolean?,
-    /** Permission to overlay on top of other windows (SYSTEM_ALERT_WINDOW). */
-    val overlay: Boolean?,
-    /** Permission to access the use of history (akses penggunaan / GET_USAGE_STATS). */
-    val usage: Boolean?
-) {
-    val allActive: Boolean get() = admin == true && overlay == true && usage == true
-}
-
-/** Status device owner di HP target. */
-sealed class OwnerState {
-    /** Belum terhubung / belum dicek / gagal dicek. */
-    object Unknown : OwnerState()
-    /** Tidak ada device owner (atau bukan HMDM). */
-    object None : OwnerState()
-    /** HMDM (com.hmdm.launcher) adalah device owner. */
-    data class Hmdm(val pkg: String) : OwnerState()
-}
-
-/** Status launcher (home) default di HP target. */
-sealed class HomeState {
-    /** Belum terhubung / belum dicek / gagal dicek. */
-    object Unknown : HomeState()
-    /** Belum ada launcher default (Android akan menampilkan pilihan launcher). */
-    object None : HomeState()
-    /** HMDM launcher adalah default. */
-    data class Hmdm(val component: String) : HomeState()
-    /** Launcher lain yang menjadi default. */
-    data class Other(val component: String) : HomeState()
-}
-
 /**
  * Padanan fungsi ADB di versi Windows: pair, connect, disconnect,
  * install -r, dan dpm set-device-owner. Dipanggil dari thread latar.
@@ -160,7 +117,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     /** Tahan Wi-Fi (performa tinggi) + CPU tetap aktif selama operasi berjalan. Panggil dengan false setelah selesai. */
     @Synchronized
     fun holdLocks(on: Boolean) {
-        try {
+        quietly {
             if (on) {
                 if (wifiLock == null) {
                     val wm = appContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
@@ -179,7 +136,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 if (wifiLock?.isHeld == true) wifiLock?.release()
                 if (wakeLock?.isHeld == true) wakeLock?.release()
             }
-        } catch (e: Throwable) { }
+        }
     }
 
     /** Alamat connect terakhir yang berhasil, dipakai untuk sambung ulang otomatis bila koneksi putus saat install. */
@@ -194,7 +151,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
     /** Jaga proses tetap hidup selama koneksi aktif (tanpa ini Android mematikan proses saat aplikasi ditutup/di background). */
     private fun keepAlive(on: Boolean) {
-        try { if (on) ConnectionService.start(appContext) else ConnectionService.stop(appContext) } catch (e: Throwable) { }
+        quietly { if (on) ConnectionService.start(appContext) else ConnectionService.stop(appContext) }
     }
 
     private val usbBridge by lazy { UsbAdbBridge(appContext) }
@@ -261,7 +218,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         connCache = false
         setDrop("Wi-Fi HP ini hilang")
         logWarn("Wi-Fi terputus, koneksi ADB ditutup")
-        Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
+        Thread { quietly { mgr?.disconnect() } }.apply { isDaemon = true; start() }
     }
 
     /** True bila koneksi lewat USB tetapi kabel sudah dicabut / perangkat hilang dari port. */
@@ -272,9 +229,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
     fun dropUsb() {
         lastAddr = null
         connCache = false
-        try { usbBridge.stop() } catch (e: Throwable) { }
+        quietly { usbBridge.stop() }
         viaUsb = false
-        try { mgr?.disconnect() } catch (e: Throwable) { }
+        quietly { mgr?.disconnect() }
         sessionLabel = null
         keepAlive(false)
     }
@@ -300,10 +257,10 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         connCache = false
         keepAlive(false)
         holdLocks(false)
-        try { usbBridge.stop() } catch (e: Throwable) { }
+        quietly { usbBridge.stop() }
         val m = mgr ?: return
-        try { m.disconnect() } catch (e: Throwable) { }
-        try { m.close() } catch (e: Throwable) { }
+        quietly { m.disconnect() }
+        quietly { m.close() }
     }
 
     /** Menanyakan library langsung. Bisa tertahan lock library saat soket mati: JANGAN dipanggil dari main thread. */
@@ -367,7 +324,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             } finally { done.countDown() }
         }.apply { isDaemon = true; start() }
         val finished = done.await(PROBE_TIMEOUT_S, java.util.concurrent.TimeUnit.SECONDS)
-        Thread { try { holder.get()?.close() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
+        Thread { quietly { holder.get()?.close() } }.apply { isDaemon = true; start() }
         if (!finished) { why.set("HP target tidak menjawab dalam $PROBE_TIMEOUT_S dtk"); whyDetail.set("") }
         val result = finished && ok.get()
         if (!result) setDrop(why.get().ifEmpty { "pemeriksaan koneksi gagal" }, whyDetail.get())
@@ -387,7 +344,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         logWarn("Pemeriksaan koneksi gagal berulang, koneksi ditutup")
         forcedDown = true
         connCache = false
-        Thread { try { mgr?.disconnect() } catch (e: Throwable) { } }.apply { isDaemon = true; start() }
+        Thread { quietly { mgr?.disconnect() } }.apply { isDaemon = true; start() }
     }
 
     /**
@@ -740,7 +697,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         // connect() di library langsung "sukses" bila masih ada koneksi lama (mis. ke IP/port lain),
         // jadi putuskan dulu agar benar-benar menyambung ke alamat yang diminta.
         if (forcedDown || libConnected) {
-            try { manager.disconnect() } catch (e: Throwable) { }
+            quietly { manager.disconnect() }
         }
         if (viaUsb && !addr.startsWith("127.0.0.1:")) { usbBridge.stop(); viaUsb = false }
         val maxAttempts = 2
@@ -770,7 +727,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 } else {
                     reason = "HP target tidak menjawab"
                     advice = "Pastikan sudah di-pair, Wireless debugging aktif, dan port connect benar"
-                    try { manager.disconnect() } catch (e: Throwable) { }
+                    quietly { manager.disconnect() }
                 }
             } catch (e: Throwable) {
                 android.util.Log.e("AdbConnect", "connect $addr", e)
@@ -778,7 +735,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                 advice = "Pastikan satu jaringan Wi-Fi dan Wireless debugging aktif. Port connect berubah setiap Wireless debugging dinyalakan ulang, jadi cek port terbaru"
                 detail = generateSequence(e) { it.cause }.take(4)
                     .joinToString(" <- ") { Fmt.cause(it) }
-                try { manager.disconnect() } catch (e: Throwable) { }
+                quietly { manager.disconnect() }
             }
         }
         lastConnectReason = reason
@@ -1003,9 +960,9 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         lastAddr = null
         sessionLabel = null
         keepAlive(false)
-        try { manager.disconnect() } catch (e: Throwable) { }
+        quietly { manager.disconnect() }
         connCache = false
-        try { usbBridge.stop() } catch (e: Throwable) { }
+        quietly { usbBridge.stop() }
         viaUsb = false
         return true
     }
@@ -1039,80 +996,16 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
      */
     private fun logRaw(out: String, shown: String = "", max: Int = 6) {
         val lines = out.lines().map { it.trim() }
-            .filter { it.isNotEmpty() && !isRawNoise(it) && !restates(it, shown) }
+            .filter { it.isNotEmpty() && !AdbMessages.isRawNoise(it) && !AdbMessages.restates(it, shown) }
             .distinct()
         lines.take(max).forEach { logDetail(it) }
         if (lines.size > max) logDetail("… ${lines.size - max} baris lain tidak ditampilkan")
     }
 
-    private val stackFrameRe = Regex("^at [\\w.$<>/]+\\(.*\\)$")
-    private val moreRe = Regex("^\\.\\.\\. \\d+ more$")
+    private fun installFailureReason(out: String, advice: Boolean = true): String =
+        AdbMessages.installFailureReason(out, advice, stalled = out == stallError, viaUsb = viaUsb)
 
-    private fun isRawNoise(l: String) =
-        l.startsWith("Performing ") || stackFrameRe.matches(l) || moreRe.matches(l)
-
-    private fun restates(line: String, shown: String): Boolean {
-        if (shown.isEmpty()) return false
-        val body = line.removePrefix("Error:").trim()
-        if (body.isNotEmpty() && shown.contains(body, ignoreCase = true)) return true
-        val code = Regex("^Failure \\[([A-Z_]+)").find(line)?.groupValues?.get(1)
-        return code != null && shown.contains(code)
-    }
-
-    private val installReasons = mapOf(
-        "INSTALL_FAILED_ALREADY_EXISTS" to "sudah terpasang",
-        "INSTALL_FAILED_VERSION_DOWNGRADE" to "versi lebih rendah dari yang terpasang",
-        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "tanda tangan berbeda dengan versi terpasang",
-        "INSTALL_FAILED_INSUFFICIENT_STORAGE" to "penyimpanan HP target penuh",
-        "INSTALL_FAILED_INVALID_APK" to "file APK rusak atau tidak valid",
-        "INSTALL_FAILED_NO_MATCHING_ABIS" to "arsitektur CPU tidak cocok",
-        "INSTALL_FAILED_OLDER_SDK" to "versi Android HP target terlalu lama",
-        "INSTALL_FAILED_USER_RESTRICTED" to "pemasangan dibatasi kebijakan HP target",
-        "INSTALL_FAILED_TEST_ONLY" to "APK bertanda test-only"
-    )
-
-    /** Saran perbaikan per kode install; hanya dipakai di baris ✗ akhir, ditulis sebagai kalimat sendiri. */
-    private val installAdvice = mapOf(
-        "INSTALL_FAILED_UPDATE_INCOMPATIBLE" to "Uninstall versi yang terpasang dulu, lalu pasang ulang",
-        "INSTALL_FAILED_INSUFFICIENT_STORAGE" to "Kosongkan penyimpanan HP target, lalu coba lagi"
-    )
-
-    /** Alasan singkat dari keluaran `cmd package install` yang gagal. [advice] = sertakan saran perbaikan (untuk baris ✗ akhir). */
-    private fun installFailureReason(out: String, advice: Boolean = true): String {
-        val code = Regex("INSTALL_[A-Z_]+").find(out)?.value
-        val friendly = code?.let { installReasons[it] }
-        return when {
-            out == stallError ->
-                if (!advice) "pengiriman macet"
-                else if (viaUsb) "pengiriman macet. Cabut-colok kabel USB, lalu ketuk \"Pilih Perangkat\" lagi"
-                else "pengiriman macet. Pastikan HP target menyala dan satu jaringan Wi-Fi, lalu ketuk \"Connect\" lagi"
-            friendly != null -> "$friendly ($code)" + (if (advice) code?.let { installAdvice[it] }?.let { ". $it" }.orEmpty() else "")
-            code != null -> code
-            // Kegagalan kirim tanpa kode install (stream putus, exception): teks mentahnya (sering berbahasa Inggris,
-            // mis. "stream closed") hanya tampil di baris DETAIL, bukan di baris ✗.
-            out.startsWith("Error:") ->
-                if (advice) "pengiriman APK gagal. Cek koneksi ke HP target, lalu coba lagi" else "pengiriman APK gagal"
-            out.isBlank() -> "tidak ada balasan dari HP target"
-            // Baris pertama yang bukan noise ("Performing Streamed Install", stack trace) dan tidak kosong.
-            else -> out.lines().map { it.trim() }
-                .firstOrNull { it.isNotEmpty() && !isRawNoise(it) }
-                ?.removePrefix("Error:")?.trim()?.takeIf { it.isNotEmpty() }
-                ?.let { Fmt.clip(it, 120) }
-                ?: "tidak diketahui"
-        }
-    }
-
-    /** Alasan singkat dari keluaran `dpm set-device-owner` yang gagal. */
-    private fun ownerFailureReason(out: String): String {
-        val l = out.lowercase()
-        return when {
-            "already has a device owner" in l || "device owner is already set" in l -> "HP target sudah memiliki device owner. Reset HP target ke pengaturan pabrik bila ingin menggantinya"
-            "accounts" in l -> "masih ada akun (Google dan lainnya) di HP target. Hapus akun atau reset HP target"
-            "provisioned" in l || "setup" in l -> "HP target sudah melewati setup awal. Reset HP target ke pengaturan pabrik"
-            "unknown admin" in l || "does not exist" in l || "not found" in l -> "HMDM belum terpasang di HP target. Jalankan \"Pasang Aplikasi\" terlebih dahulu"
-            else -> "perintah ditolak HP target. Pastikan HP target baru di-reset dan belum ada akun (Google dan lainnya)"
-        }
-    }
+    private fun ownerFailureReason(out: String): String = AdbMessages.ownerFailureReason(out)
 
     /** Hasil `pm` dianggap lengkap setelah satu baris Success / Failure / Error selesai dibaca. */
     private val pmDone: (String) -> Boolean = { out ->
@@ -1163,7 +1056,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
 
         val finished = done.await(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)
         lastShellTimedOut = !finished
-        try { stream?.close() } catch (e: Throwable) { }
+        quietly { stream?.close() }
         if (!finished) {
             done.await(1, java.util.concurrent.TimeUnit.SECONDS)
             if (!quiet && bos.size() == 0) {
@@ -1198,7 +1091,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
         val stalled = java.util.concurrent.atomic.AtomicBoolean(false)
         // Pengaman: saat mengirim, tidak ada kemajuan 20 dtk = macet. Setelah terkirim, tunggu hasil pm maks. 3 menit.
         val watchdog = Thread {
-            try {
+            quietly {
                 while (true) {
                     Thread.sleep(1000)
                     val idle = System.currentTimeMillis() - lastActivity.get()
@@ -1209,7 +1102,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
                         break
                     }
                 }
-            } catch (e: InterruptedException) { } catch (e: Throwable) { }
+            }
         }.apply { isDaemon = true; start() }
         try {
             var writeError: java.io.IOException? = null
@@ -1254,7 +1147,7 @@ class AdbController(context: Context, @Volatile var sink: (LogLevel, String) -> 
             return out
         } finally {
             watchdog.interrupt()
-            try { stream.close() } catch (e: Throwable) { }
+            quietly { stream.close() }
         }
     }
 

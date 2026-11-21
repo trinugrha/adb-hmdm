@@ -3,7 +3,6 @@ package co.sat.hmdminstaller
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import java.io.File
 
 /**
  * Service ringan (non-foreground) yang hanya menunggu aplikasi digeser dari recent apps.
@@ -16,8 +15,8 @@ class CleanupService : Service() {
     override fun onTaskRemoved(rootIntent: Intent?) {
         val app = application as App
         Thread {
-            try { app.adb.close() } catch (e: Throwable) { }
-            try { File(cacheDir, "picked").deleteRecursively() } catch (e: Throwable) { }
+            quietly { app.adb.close() }
+            clearPickedApks()
             stopSelf()
         }.start()
         super.onTaskRemoved(rootIntent)

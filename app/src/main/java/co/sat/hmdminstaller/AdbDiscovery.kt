@@ -111,7 +111,7 @@ object AdbDiscovery {
             }
         } finally {
             latch.countDown()
-            try { nsd.stopServiceDiscovery(listener) } catch (e: Throwable) { }
+            quietly { nsd.stopServiceDiscovery(listener) }
         }
         return result.get()
     }

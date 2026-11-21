@@ -385,7 +385,7 @@ class MainActivity : AppCompatActivity() {
         // Log (UI thread) → controller memakai callback ini dari thread kerja.
         val app = application as App
         // Pantau penggeseran dari recent apps (putus koneksi + kosongkan daftar APK).
-        try { startService(Intent(this, CleanupService::class.java)) } catch (e: Throwable) { }
+        quietly { startService(Intent(this, CleanupService::class.java)) }
         adb = app.adb
         app.logListener = { level, line -> runOnUiThread { log(level, line) } }
         // Koneksi bisa masih hidup dari Activity sebelumnya: pulihkan tampilan, jangan sambung ulang.
@@ -1170,13 +1170,12 @@ class MainActivity : AppCompatActivity() {
     private fun exitApp() {
         findViewById<View>(R.id.btnLogout).isEnabled = false
         val adbCtl = (application as App).adb
-        val cache = cacheDir
         val done = java.util.concurrent.atomic.AtomicBoolean(false)
         val finishOnce = Runnable { if (done.compareAndSet(false, true)) finishAndRemoveTask() }
         // close() bisa tertahan bila soket sudah mati, jadi jalan di thread latar.
         Thread {
-            try { adbCtl.close() } catch (e: Throwable) { }
-            try { java.io.File(cache, "picked").deleteRecursively() } catch (e: Throwable) { }
+            quietly { adbCtl.close() }
+            clearPickedApks()
             runOnUiThread(finishOnce)
         }.start()
         // Pengaman: tetap tutup aplikasi walau pemutusan macet lebih dari 3 detik.
@@ -1225,7 +1224,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Jalan di thread pemantau tiap 1 detik. */
     private fun pollConnection() {
-        try {
+        quietly {
             val wasBusy = busy
             var alive = adb.syncConnected()
             var cableGone = false
@@ -1253,7 +1252,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             runOnUiThread { applyLiveState(alive, wasBusy, cableGone) }
-        } catch (e: Throwable) { }
+        }
     }
 
     private fun applyLiveState(alive: Boolean, polledWhileBusy: Boolean, cableGone: Boolean = false) {
@@ -1488,7 +1487,7 @@ class MainActivity : AppCompatActivity() {
             // Tepat setelah Connect, Informasi Status (launcher, instalasi, permission) tidak ikut dibaca.
             val skipInfo = skipInfoRefresh
             skipInfoRefresh = false
-            try {
+            quietly {
                 if (adb.isConnected) {
                     val st = adb.queryDeviceOwner(); if (st != OwnerState.Unknown) ownerState = st
                     adb.queryKasperskyInstalled()?.let { kasperskyInstalled = it }
@@ -1500,7 +1499,7 @@ class MainActivity : AppCompatActivity() {
                         adb.queryHmdmPermissions()?.let { hmdmPerms = it; permType = t }
                     }
                 }
-            } catch (e: Throwable) { }
+            }
             runOnUiThread {
                 logEnd(title, ok, startedAt)
                 busy = false
@@ -1687,7 +1686,7 @@ class MainActivity : AppCompatActivity() {
             if (!on) edt.clearFocus()
             var p = edt.parent
             while (p != null && p !is com.google.android.material.textfield.TextInputLayout) p = p.parent
-            (p as? com.google.android.material.textfield.TextInputLayout)?.let { it.isEnabled = on; it.alpha = if (on) 1f else 0.5f }
+            (p as? com.google.android.material.textfield.TextInputLayout)?.let { it.isEnabled = on; it.alpha = if (on) 1f else 0.25f }
         }
     }
 
@@ -2098,8 +2097,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Muat ulang APK yang sudah disalin ke cache (mis. setelah proses aplikasi dimatikan sistem). */
     private fun restorePickedApks() {
-        val dir = File(cacheDir, "picked")
-        val files = dir.listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) } ?: return
+        val files = pickedApksDir().listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) } ?: return
         files.sortedBy { it.name.lowercase() }.forEach { apks.add(ApkItem(it.name, it)) }
         // Parse nama paket di thread latar (bukan UI thread), lalu segarkan status tombol.
         val snapshot = apks.toList()
@@ -2122,7 +2120,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Salin ke cache. Dipanggil dari thread latar (bukan UI thread). */
     private fun copyToCache(uri: Uri, name: String): ApkItem? {
-        val dir = File(cacheDir, "picked").apply { mkdirs() }
+        val dir = pickedApksDir().apply { mkdirs() }
         val f = File(dir, name)
         return try {
             val input = contentResolver.openInputStream(uri) ?: throw java.io.IOException("tidak bisa membuka file")
