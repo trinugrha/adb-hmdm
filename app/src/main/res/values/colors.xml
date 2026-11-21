@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand -->
+    <color name="accent">#0F766E</color>
+    <color name="on_accent">#FFFFFF</color>
+    <color name="accent_soft">#DDF4F0</color>
+    <!-- Navy: tulisan aksen (judul seksi, lencana, versi) dan tombol utama -->
+    <color name="accent_text">#0A1A2F</color>
+    <color name="accent_text_soft">#E3E9F2</color>
+
+    <!-- Permukaan -->
+    <color name="bg">#F4F6F9</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="box_bg">#F8FAFC</color>
+    <color name="chip_bg">#E8EDF3</color>
+    <color name="stroke">#E5E9F0</color>
+    <color name="outline">#CBD5E1</color>
+
+    <!-- Teks -->
+    <color name="text">#0F172A</color>
+    <color name="muted">#64748B</color>
+
+    <!-- Header -->
+    <color name="header_bg">#0A1A2F</color>
+    <color name="header_text">#FFFFFF</color>
+    <color name="header_subtext">#B8C7DB</color>
+    <color name="header_chip">#29FFFFFF</color>
+    <color name="header_divider">#1B3558</color>
+    <color name="header_warning">#FDE047</color>
+
+    <!-- Tombol -->
+    <color name="btn_main">#0A1A2F</color>
+    <color name="on_tab_button">#FFFFFF</color>
+    <color name="btn_status">#17804C</color>
+    <color name="yellow_fill">#FACC15</color>
+    <color name="on_yellow_fill">#422006</color>
+    <color name="danger_fill">#E11D48</color>
+    <color name="on_danger_fill">#FFFFFF</color>
+
+    <!-- Tab melayang -->
+    <color name="tab_bar_bg">#0A1A2F</color>
+    <color name="tab_indicator">#FFFFFF</color>
+    <color name="tab_selected_text">#000000</color>
+    <color name="tab_unselected_text">#FFFFFF</color>
+
+    <!-- Status -->
+    <color name="ok">#15803D</color>
+    <color name="badge_ok_bg">#DCFCE7</color>
+    <color name="danger">#DC2626</color>
+    <color name="badge_danger_bg">#FFE4E6</color>
+    <color name="warn_bg">#FEF2F2</color>
+    <color name="warn_stroke">#FECACA</color>
+    <color name="warn_text">#B91C1C</color>
+    <color name="icon_edit">#F59E0B</color>
+    <color name="amber_text">#92400E</color>
+    <color name="badge_amber_bg">#FEF3C7</color>
+
+    <!-- Titik status (terang, terbaca di atas header gelap maupun kotak terang) -->
+    <color name="status_ok">#4ADE80</color>
+    <color name="status_bad">#F87171</color>
+    <color name="status_warn">#FBBF24</color>
+    <color name="status_idle">#94A3B8</color>
+
+    <!-- Latar redup layar PIN -->
+    <color name="scrim">#F23E4556</color>
+
+    <!-- Log terminal -->
+    <color name="log_bg">#0B1220</color>
+    <color name="log_stroke">#1E293B</color>
+    <color name="log_text">#CBD5E1</color>
+</resources>
