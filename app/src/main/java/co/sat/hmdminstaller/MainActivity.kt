@@ -7,20 +7,12 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
-import android.graphics.Color
 import android.graphics.Typeface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
-import android.provider.OpenableColumns
-import android.text.SpannableString
-import android.text.SpannableStringBuilder
-import android.text.Spanned
 import android.text.TextUtils
-import android.text.style.ForegroundColorSpan
-import android.text.style.LeadingMarginSpan
-import android.text.style.StyleSpan
 import android.view.GestureDetector
 import android.view.Gravity
 import android.view.MotionEvent
@@ -218,9 +210,7 @@ class MainActivity : AppCompatActivity() {
     // ---- Kunci PIN ----
     private lateinit var pinStore: PinStore
     private var lockView: PinLockView? = null
-    private var lastActivityAt = SystemClock.elapsedRealtime()
-    /** Waktu detak timer sesi terakhir; dipakai untuk menahan (pause) hitungan mundur saat operasi berjalan. */
-    private var timerTickAt = SystemClock.elapsedRealtime()
+    private val session = SessionTimer(LOCK_TIMEOUT_MS)
     private lateinit var txtSession: TextView
     private val backWhileLocked = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() { moveTaskToBack(true) }
@@ -335,6 +325,7 @@ class MainActivity : AppCompatActivity() {
         edtConnPort = findViewById(R.id.edtConnPort)
         txtLog = findViewById(R.id.txtLog)
         logScroll = findViewById(R.id.logScroll)
+        logPanel = LogPanel(this, txtLog, logScroll)
         txtConn = findViewById(R.id.txtConn)
         txtStatus = findViewById(R.id.txtStatus)
         txtApkTitle = findViewById(R.id.txtApkTitle)
@@ -657,7 +648,7 @@ class MainActivity : AppCompatActivity() {
         // Kunci ulang bila aplikasi ditinggalkan lebih lama dari batas waktu (koneksi ADB tetap berjalan).
         if (lockView == null && !busy && sessionRemainingMs() <= 0) showLock()
         // Pemantau berhenti saat aplikasi di latar belakang; jangan hitung jeda itu sebagai waktu sibuk.
-        timerTickAt = SystemClock.elapsedRealtime()
+        session.skipGap()
         // Setelah layar HP dibuka kembali, kembalikan posisi tab ke tempat semula.
         tabKbOffset = 0f
         applyTabOffset()
@@ -819,29 +810,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Sisa waktu sesi (ms) sebelum aplikasi terkunci otomatis. Hitung mundur dimulai saat login dan TIDAK direset oleh sentuhan layar. */
-    private fun sessionRemainingMs() = LOCK_TIMEOUT_MS - (SystemClock.elapsedRealtime() - lastActivityAt)
+    private fun sessionRemainingMs() = session.remainingMs()
 
     /** Dipanggil tiap detik dari pemantau. Saat operasi (install dll) berjalan, timer DITAHAN (pause) di sisa waktu terakhir, tidak direset. */
     private fun updateSessionTimer() {
         if (lockView != null) return
-        val now = SystemClock.elapsedRealtime()
-        // Geser titik awal sebesar waktu yang berlalu selama sibuk, sehingga sisa waktu tetap sama lalu lanjut menghitung setelah selesai.
-        if (busy) lastActivityAt += now - timerTickAt
-        timerTickAt = now
+        session.tick(busy)
         val left = sessionRemainingMs()
         if (left <= 0) { showLock(); return }
-        val sec = (left + 999) / 1000
-        txtSession.text = if (sec >= 3600) "Sesi %d:%02d:%02d".format(sec / 3600, sec % 3600 / 60, sec % 60)
-                          else "Sesi %02d:%02d".format(sec / 60, sec % 60)
-        txtSession.setTextColor(if (sec <= 60) colorOf(R.color.header_warning) else colorOf(R.color.header_subtext))
+        val sec = SessionTimer.seconds(left)
+        txtSession.text = SessionTimer.label(sec)
+        txtSession.setTextColor(if (sec <= SessionTimer.WARN_SECONDS) colorOf(R.color.header_warning) else colorOf(R.color.header_subtext))
     }
 
     private fun removeLock() {
         lockView?.let { (it.parent as? ViewGroup)?.removeView(it) }
         lockView = null
         backWhileLocked.isEnabled = false
-        lastActivityAt = SystemClock.elapsedRealtime()
-        timerTickAt = lastActivityAt
+        session.restart()
         updateSessionTimer()
     }
 
@@ -1094,8 +1080,8 @@ class MainActivity : AppCompatActivity() {
         busy = true
         setBusy(true, "Sedang berjalan: $title...")
         val startedAt = System.currentTimeMillis()
-        runErrors.clear()
-        runWarns.clear()
+        logPanel.runErrors.clear()
+        logPanel.runWarns.clear()
         adb.lastInstall = null
         logHead(title, startedAt)
         worker.execute {
@@ -1161,8 +1147,8 @@ class MainActivity : AppCompatActivity() {
                         else -> "Periksa:\n• Koneksi ke HP target masih tersambung"
                     }
                     // Tanpa baris ✗, pakai baris ! terakhir (bukan pesan percobaan ulang) sebagai penyebab.
-                    val reasons = runErrors.distinct().takeLast(3).map { errReason(it) }
-                        .ifEmpty { runWarns.distinct().filter { !it.contains("mencoba lagi") }.takeLast(2) }
+                    val reasons = logPanel.runErrors.distinct().takeLast(3).map { errReason(it) }
+                        .ifEmpty { logPanel.runWarns.distinct().filter { !it.contains("mencoba lagi") }.takeLast(2) }
                         .joinToString("\n") { "• ${it.trimEnd('.')}" }
                     val msg = buildString {
                         if (reasons.isNotEmpty()) append("Penyebab:\n").append(reasons)
@@ -1209,7 +1195,7 @@ class MainActivity : AppCompatActivity() {
         val info = findViewById<TextView>(R.id.txtProgInfo)
         val pctView = findViewById<TextView>(R.id.txtProgPct)
         val speedView = findViewById<TextView>(R.id.txtProgSpeed)
-        val now = android.os.SystemClock.elapsedRealtime()
+        val now = SystemClock.elapsedRealtime()
         if (idx != progIdx || sent == 0L) { progIdx = idx; progStartMs = now }
         if (!progShown) {
             progShown = true
@@ -1518,25 +1504,12 @@ class MainActivity : AppCompatActivity() {
         refreshHeader()
     }
 
-    /** Cache nama paket per file APK (kunci: path + ukuran + waktu ubah) agar file tidak di-parse berulang. */
-    private val apkPkgCache = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val apkStore by lazy { ApkStore(this) }
 
-    /** Nama paket (mis. com.hmdm.launcher) dari file APK; "" bila tidak terbaca. */
-    private fun apkKey(f: File) = "${f.absolutePath}|${f.length()}|${f.lastModified()}"
+    private fun apkPackage(item: ApkItem): String = apkStore.packageName(item)
 
-    private fun apkPackage(item: ApkItem): String {
-        val f = item.file
-        val key = apkKey(f)
-        return apkPkgCache.getOrPut(key) {
-            try {
-                packageManager.getPackageArchiveInfo(f.absolutePath, 0)?.packageName ?: ""
-            } catch (e: Throwable) { "" }
-        }
-    }
-
-    /** Apakah daftar APK yang dipilih berisi com.hmdm.launcher. */
-    /** Hanya membaca cache (aman di UI thread); cache diisi di thread latar oleh [apkPackage]. */
-    private fun hasHmdmApk(): Boolean = apks.any { apkPkgCache[apkKey(it.file)] == AdbController.HMDM_PACKAGE }
+    /** Apakah daftar APK yang dipilih berisi com.hmdm.launcher (hanya membaca cache, aman di UI thread). */
+    private fun hasHmdmApk(): Boolean = apks.any { apkStore.cachedPackage(it) == AdbController.HMDM_PACKAGE }
 
     /** Tampilkan daftar APK yang akan dipasang (urut sesuai nama) lengkap dengan ukuran & tombol hapus. */
     private fun renderApkList() {
@@ -1609,94 +1582,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    /** Pembuka satu proses: "── Judul · 14:02:11". */
-    private fun logHead(title: String, at: Long = System.currentTimeMillis()) {
-        // Pesan lepas (mis. APK dilewati, koneksi terputus) tidak diakhiri baris kosong; pisahkan di sini.
-        val cur = txtLog.text
-        if (cur.isNotEmpty() && !cur.endsWith("\n\n")) logBlank()
-        log(LogLevel.HEAD, "$title · ${Fmt.clock(at)}")
-    }
+    private lateinit var logPanel: LogPanel
 
-    /** Penutup satu proses: "✓ Selesai: Judul · 4.2 dtk" atau "✗ Gagal: Judul · 4.2 dtk", lalu baris kosong pemisah. */
-    private fun logEnd(title: String, ok: Boolean, startedAt: Long) {
-        val took = Fmt.duration(System.currentTimeMillis() - startedAt)
-        if (ok) log(LogLevel.END_OK, "Selesai: $title · $took")
-        else log(LogLevel.END_ERR, "Gagal: $title · $took")
-        logBlank()
-    }
+    /** Tulis satu entri ke panel log (lihat [LogPanel.log]). */
+    internal fun log(level: LogLevel, s: String) = logPanel.log(level, s)
 
-    /** Gulir isi log saja ke bawah, tanpa memindahkan fokus/halaman utama. */
-    private fun scrollLogToEnd() {
-        logScroll.post { logScroll.scrollTo(0, (logScroll.getChildAt(0).height - logScroll.height).coerceAtLeast(0)) }
-    }
+    private fun logHead(title: String, at: Long = System.currentTimeMillis()) = logPanel.logHead(title, at)
 
-    /** Satu baris kosong sebagai pemisah antar proses. */
-    private fun logBlank() {
-        txtLog.append("\n")
-        scrollLogToEnd()
-    }
+    private fun logEnd(title: String, ok: Boolean, startedAt: Long) = logPanel.logEnd(title, ok, startedAt)
 
-    /** Baris ERR selama satu proses, dipakai sebagai isi popup bila proses gagal. */
-    private val runErrors = mutableListOf<String>()
-
-    /**
-     * Baris WARN selama satu proses. Hanya dipakai sebagai butir "Penyebab" bila proses gagal tanpa baris ✗
-     * (mis. "Belum terhubung ke HP target" atau "Isi IP:Port connect terlebih dahulu"), supaya popup tidak
-     * berisi "tidak ada penyebab yang tercatat" padahal log sudah menyebut alasannya.
-     */
-    private val runWarns = mutableListOf<String>()
-
-    /**
-     * Satu entri log berwarna. Warna dan penanda ditentukan oleh [level];
-     * pesan multi-baris dirapikan (baris lanjutan diberi indent selebar penanda), dan titik di
-     * akhir pesan dibuang supaya semua baris seragam (elipsis "..." dibiarkan).
-     */
-    internal fun log(level: LogLevel, s: String) {
-        if (s.isBlank()) return
-        if (level == LogLevel.ERR) runErrors.add(s.trim())
-        if (level == LogLevel.WARN) runWarns.add(s.trim())
-        val indent = " ".repeat(level.marker.length)
-        val body = s.trimEnd().let {
-            // Output mentah device (DETAIL) tidak diubah sama sekali.
-            if (level != LogLevel.DETAIL && it.endsWith(".") && !it.endsWith("..")) it.dropLast(1) else it
-        }
-        val lines = body.lines().map { it.trimEnd() }.map { if (level == LogLevel.DETAIL) Fmt.clip(it) else it }
-        val text = lines.mapIndexed { i, l -> (if (i == 0) level.marker else indent) + l }.joinToString("\n") + "\n"
-        val sp = SpannableString(text)
-        sp.setSpan(ForegroundColorSpan(levelColor(level)), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        if (level.bold) sp.setSpan(StyleSpan(Typeface.BOLD), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        // Hanging indent: baris lanjutan akibat teks panjang sejajar dengan isi pesan, bukan dengan penanda.
-        val hang = (txtLog.paint.measureText("M") * level.marker.length).toInt()
-        if (hang > 0) sp.setSpan(LeadingMarginSpan.Standard(0, hang), 0, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-        txtLog.append(sp)
-        trimLog()
-        scrollLogToEnd()
-    }
-
-    /** Batasi panjang log agar tidak membengkak: buang baris paling lama (dipotong di batas baris). */
-    private fun trimLog() {
-        val cur = txtLog.text
-        if (cur.length <= LOG_MAX_CHARS) return
-        val sb = SpannableStringBuilder(cur)
-        val cut = sb.indexOf("\n", sb.length - LOG_KEEP_CHARS)
-        sb.delete(0, if (cut < 0) sb.length - LOG_KEEP_CHARS else cut + 1)
-        txtLog.text = sb
-    }
-
-    private fun levelColor(level: LogLevel): Int = when (level) {
-        LogLevel.HEAD, LogLevel.SUMMARY -> Color.WHITE
-        LogLevel.STEP -> Color.rgb(252, 211, 77)
-        LogLevel.CMD -> Color.rgb(56, 189, 248)
-        LogLevel.OK, LogLevel.END_OK -> colorOf(R.color.status_ok)
-        LogLevel.WARN -> colorOf(R.color.status_warn)
-        LogLevel.ERR, LogLevel.END_ERR -> colorOf(R.color.status_bad)
-        LogLevel.DETAIL -> colorOf(R.color.status_idle)
-    }
 
     /** Muat ulang APK yang sudah disalin ke cache (mis. setelah proses aplikasi dimatikan sistem). */
     private fun restorePickedApks() {
-        val files = pickedApksDir().listFiles { f -> f.isFile && f.name.endsWith(".apk", ignoreCase = true) } ?: return
-        files.sortedBy { it.name.lowercase() }.forEach { apks.add(ApkItem(it.name, it)) }
+        apks.addAll(apkStore.restore())
         // Parse nama paket di thread latar (bukan UI thread), lalu segarkan status tombol.
         val snapshot = apks.toList()
         io.execute {
@@ -1705,40 +1603,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun displayName(uri: Uri): String {
-        var name = "file-${System.currentTimeMillis()}.apk"
-        try {
-            contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
-                if (c.moveToFirst()) c.getString(0)?.let { name = it }
-            }
-        } catch (e: Exception) { }
-        // Cegah path traversal dari nama file yang aneh.
-        return name.substringAfterLast('/')
-    }
+    private fun displayName(uri: Uri): String = apkStore.displayName(uri)
 
     /** Salin ke cache. Dipanggil dari thread latar (bukan UI thread). */
-    private fun copyToCache(uri: Uri, name: String): ApkItem? {
-        val dir = pickedApksDir().apply { mkdirs() }
-        val f = File(dir, name)
-        return try {
-            val input = contentResolver.openInputStream(uri) ?: throw java.io.IOException("tidak bisa membuka file")
-            input.use { i -> f.outputStream().use { o -> i.copyTo(o) } }
-            ApkItem(name, f)
-        } catch (e: Exception) {
-            f.delete() // jangan tinggalkan file setengah jadi
-            runOnUiThread {
-                log(LogLevel.ERR, "Salin $name gagal: file tidak bisa dibaca atau disimpan. Pilih ulang file APK")
-                log(LogLevel.DETAIL, Fmt.cause(e))
-            }
-            null
+    private fun copyToCache(uri: Uri, name: String): ApkItem? = apkStore.copyToCache(uri, name) { e ->
+        runOnUiThread {
+            log(LogLevel.ERR, "Salin $name gagal: file tidak bisa dibaca atau disimpan. Pilih ulang file APK")
+            log(LogLevel.DETAIL, Fmt.cause(e))
         }
     }
 
     companion object {
         /** Aplikasi dikunci lagi bila ditinggalkan lebih dari ini (ms). */
         private const val LOCK_TIMEOUT_MS = 30 * 60_000L
-        private const val LOG_MAX_CHARS = 60_000
-        private const val LOG_KEEP_CHARS = 40_000
         /** Batas menunggu HP target memindai QR pairing. */
         private const val QR_PAIR_TIMEOUT_MS = 120_000L
     }
