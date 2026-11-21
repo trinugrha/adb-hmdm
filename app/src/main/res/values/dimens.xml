@@ -35,6 +35,21 @@
     <dimen name="pin_box_width">56dp</dimen>
     <dimen name="pin_box_height">62dp</dimen>
 
+    <!-- Ukuran lain yang sebelumnya tertulis langsung di layout -->
+    <dimen name="box_padding">12dp</dimen>
+    <dimen name="icon_size_small">18dp</dimen>
+    <dimen name="icon_size_large">32dp</dimen>
+    <dimen name="tab_bar_height">46dp</dimen>
+    <dimen name="tab_bar_elevation">8dp</dimen>
+    <dimen name="popup_icon_bg">64dp</dimen>
+    <dimen name="popup_icon">30dp</dimen>
+    <dimen name="popup_padding_h">24dp</dimen>
+    <dimen name="popup_padding_top">28dp</dimen>
+
+    <!-- Skala teks: 12 (keterangan) · 14 (isi) · 16 (judul kartu) · 18 (judul dialog) · 20 (judul header) -->
+    <dimen name="text_caption">12sp</dimen>
+    <dimen name="text_body">14sp</dimen>
+
     <!-- Sudut -->
     <dimen name="radius_xs">8dp</dimen>
     <dimen name="radius_sm">10dp</dimen>
@@ -43,4 +58,6 @@
     <dimen name="radius_xl">16dp</dimen>
     <dimen name="radius_dialog">24dp</dimen>
     <dimen name="radius_tab_bar">27dp</dimen>
+    <dimen name="radius_tab_indicator">23dp</dimen>
+    <dimen name="radius_progress">4dp</dimen>
 </resources>

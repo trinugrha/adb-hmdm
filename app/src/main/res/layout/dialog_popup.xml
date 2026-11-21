@@ -4,20 +4,20 @@
     android:layout_height="wrap_content"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingTop="28dp"
-    android:paddingEnd="24dp"
+    android:paddingStart="@dimen/popup_padding_h"
+    android:paddingTop="@dimen/popup_padding_top"
+    android:paddingEnd="@dimen/popup_padding_h"
     android:paddingBottom="@dimen/space_xl">
 
     <FrameLayout
         android:id="@+id/popupIconBg"
-        android:layout_width="64dp"
-        android:layout_height="64dp">
+        android:layout_width="@dimen/popup_icon_bg"
+        android:layout_height="@dimen/popup_icon_bg">
 
         <ImageView
             android:id="@+id/popupIcon"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="@dimen/popup_icon"
+            android:layout_height="@dimen/popup_icon"
             android:layout_gravity="center"
             android:importantForAccessibility="no" />
     </FrameLayout>
@@ -74,7 +74,7 @@
             android:id="@+id/popupCancel"
             style="@style/Widget.Hmdm.Button.Outlined"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="@dimen/control_height"
             android:layout_marginEnd="@dimen/space_md"
             android:layout_weight="1"
             android:text="@string/action_cancel"
@@ -83,7 +83,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/popupOk"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="@dimen/control_height"
             android:layout_weight="1"
             android:text="@string/action_ok" />
     </LinearLayout>

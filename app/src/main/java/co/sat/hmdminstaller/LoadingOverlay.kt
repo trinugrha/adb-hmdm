@@ -69,11 +69,11 @@ class LoadingOverlay(private val activity: Activity) {
 
         val col = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL }
         txtTitle.setTextColor(ctx.colorOf(R.color.text))
-        txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        txtTitle.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
         txtTitle.setTypeface(txtTitle.typeface, android.graphics.Typeface.BOLD)
         txtTitle.maxLines = 2
         txtTime.setTextColor(ctx.colorOf(R.color.muted))
-        txtTime.setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
+        txtTime.setTextSize(TypedValue.COMPLEX_UNIT_SP, 12f)
         txtTime.typeface = android.graphics.Typeface.MONOSPACE
         col.addView(txtTitle)
         col.addView(txtTime)

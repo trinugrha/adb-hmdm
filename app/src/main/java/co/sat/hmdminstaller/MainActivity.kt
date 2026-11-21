@@ -905,7 +905,7 @@ class MainActivity : AppCompatActivity() {
         }
         val hint2 = TextView(this).apply {
             text = "HP ini dan HP target harus satu jaringan Wi-Fi."
-            textSize = 13f
+            textSize = 14f
             gravity = Gravity.CENTER
             setLineSpacing(0f, 1.3f)
             setTextColor(colorOf(R.color.muted))
@@ -1297,7 +1297,7 @@ class MainActivity : AppCompatActivity() {
             if (!on) edt.clearFocus()
             var p = edt.parent
             while (p != null && p !is com.google.android.material.textfield.TextInputLayout) p = p.parent
-            (p as? com.google.android.material.textfield.TextInputLayout)?.let { it.isEnabled = on; it.alpha = if (on) 1f else 0.25f }
+            (p as? com.google.android.material.textfield.TextInputLayout)?.let { it.isEnabled = on; it.alpha = if (on) 1f else 0.75f }
         }
     }
 
@@ -1519,11 +1519,11 @@ class MainActivity : AppCompatActivity() {
 
         apkListBox.addView(TextView(this).apply {
             text = "DAFTAR APLIKASI YANG AKAN DIPASANG (${apks.size})"
-            textSize = 11f
+            textSize = 12f
             setTypeface(typeface, Typeface.BOLD)
             letterSpacing = 0.06f
             setTextColor(colorOf(R.color.muted))
-            setPadding(dp(2), 0, 0, dp(6))
+            setPadding(dp(4), 0, 0, dp(8))
         })
 
         apks.forEachIndexed { i, item ->
@@ -1534,7 +1534,7 @@ class MainActivity : AppCompatActivity() {
                 setPadding(dp(12), dp(8), dp(4), dp(8))
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply { if (i > 0) topMargin = dp(6) }
+                ).apply { if (i > 0) topMargin = dp(8) }
             }
             row.addView(TextView(this).apply {
                 text = "${i + 1}"
@@ -1549,14 +1549,14 @@ class MainActivity : AppCompatActivity() {
             }
             col.addView(TextView(this).apply {
                 text = item.name
-                textSize = 13f
+                textSize = 14f
                 setTextColor(colorOf(R.color.text))
                 maxLines = 2
                 ellipsize = TextUtils.TruncateAt.MIDDLE
             })
             col.addView(TextView(this).apply {
                 text = item.sizeText
-                textSize = 11f
+                textSize = 12f
                 setTextColor(colorOf(R.color.muted))
             })
             row.addView(col)

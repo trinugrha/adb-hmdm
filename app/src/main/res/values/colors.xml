@@ -40,7 +40,7 @@
     <!-- Tab melayang -->
     <color name="tab_bar_bg">#0A1A2F</color>
     <color name="tab_indicator">#FFFFFF</color>
-    <color name="tab_selected_text">#000000</color>
+    <color name="tab_selected_text">#0A1A2F</color>
     <color name="tab_unselected_text">#FFFFFF</color>
 
     <!-- Status -->

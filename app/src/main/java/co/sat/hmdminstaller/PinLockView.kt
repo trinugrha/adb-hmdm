@@ -110,7 +110,7 @@ class PinLockView(
             textSize = 14f
             setTextColor(color(R.color.muted))
             gravity = Gravity.CENTER
-        }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(6) })
+        }, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(8) })
 
         card.addView(TextView(context).apply {
             text = context.getString(R.string.pin_prompt, PinStore.PIN_LENGTH)
@@ -161,12 +161,12 @@ class PinLockView(
         card.addView(input, LinearLayout.LayoutParams(dp(1), dp(1)))
 
         message.apply {
-            textSize = 13f
+            textSize = 14f
             gravity = Gravity.CENTER
             setTextColor(color(R.color.danger))
             visibility = View.GONE
         }
-        card.addView(message, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(10) })
+        card.addView(message, LinearLayout.LayoutParams(-2, -2).apply { topMargin = dp(12) })
 
         // Tampilkan PIN
         val eyeRow = LinearLayout(context).apply {

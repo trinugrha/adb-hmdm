@@ -44,7 +44,7 @@
         <item name="iconTint">@color/on_tab_button</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Hmdm.Button</item>
         <item name="android:textColor">@color/on_tab_button</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:maxLines">1</item>
@@ -63,7 +63,7 @@
         <item name="rippleColor">@color/accent_text</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Hmdm.Button</item>
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:maxLines">1</item>
@@ -97,7 +97,7 @@
         <item name="rippleColor">@color/accent_text</item>
         <item name="shapeAppearance">@style/ShapeAppearance.Hmdm.Button</item>
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:minWidth">0dp</item>
@@ -131,7 +131,7 @@
     <style name="Hmdm.EditText.Mono" parent="">
         <item name="android:fontFamily">monospace</item>
         <item name="android:singleLine">true</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:minHeight">@dimen/control_height</item>
         <item name="android:paddingTop">@dimen/space_sm</item>
         <item name="android:paddingBottom">@dimen/space_sm</item>
@@ -150,7 +150,7 @@
     <!-- Kotak abu-abu berbingkai di dalam kartu (status, langkah) -->
     <style name="Hmdm.StatusBox" parent="">
         <item name="android:background">@drawable/bg_status_box</item>
-        <item name="android:padding">14dp</item>
+        <item name="android:padding">@dimen/box_padding</item>
     </style>
 
     <!-- Lencana pil kecil berisi titik status + teks -->
@@ -159,9 +159,17 @@
         <item name="android:gravity">center_vertical</item>
         <item name="android:orientation">horizontal</item>
         <item name="android:paddingStart">@dimen/space_md</item>
-        <item name="android:paddingEnd">14dp</item>
-        <item name="android:paddingTop">7dp</item>
-        <item name="android:paddingBottom">7dp</item>
+        <item name="android:paddingEnd">@dimen/space_md</item>
+        <item name="android:paddingTop">@dimen/space_sm</item>
+        <item name="android:paddingBottom">@dimen/space_sm</item>
+    </style>
+
+    <!-- Chip berisi teks langsung (tanpa titik status) -->
+    <style name="Hmdm.Chip.Text">
+        <item name="android:textColor">@color/text</item>
+        <item name="android:textSize">@dimen/text_body</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
     </style>
 
     <!-- Tombol ikon bulat kecil (refresh, tambah, pengaturan) -->
@@ -182,22 +190,22 @@
     </style>
 
     <style name="Hmdm.CardTitle.Small">
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
     </style>
 
     <style name="Hmdm.CardHint" parent="">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
 
     <style name="Hmdm.CardHint.Step">
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
     </style>
 
     <style name="Hmdm.SectionLabel" parent="">
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
         <item name="android:letterSpacing">0.08</item>
         <item name="android:textAllCaps">true</item>
@@ -210,7 +218,7 @@
 
     <style name="Hmdm.ChipText" parent="">
         <item name="android:textColor">@color/text</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:maxLines">1</item>
         <item name="android:ellipsize">end</item>
     </style>
@@ -219,7 +227,7 @@
         <item name="android:background">@drawable/bg_badge</item>
         <item name="android:gravity">center</item>
         <item name="android:textColor">@color/accent_text</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
     </style>
 
@@ -252,7 +260,7 @@
 
     <style name="Hmdm.DialogBody" parent="MaterialAlertDialog.Material3.Body.Text">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:lineSpacingExtra">3dp</item>
     </style>
 
@@ -266,25 +274,25 @@
 
     <style name="Hmdm.PopupMessage" parent="">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:lineSpacingExtra">3dp</item>
     </style>
 
     <style name="Widget.Hmdm.Button.DialogPositive">
         <item name="android:minHeight">@dimen/control_height_dialog</item>
-        <item name="android:paddingStart">18dp</item>
-        <item name="android:paddingEnd">18dp</item>
+        <item name="android:paddingStart">@dimen/space_lg</item>
+        <item name="android:paddingEnd">@dimen/space_lg</item>
     </style>
 
     <style name="Widget.Hmdm.Button.DialogNegative" parent="Widget.Material3.Button.TextButton.Dialog">
         <item name="android:textColor">@color/muted</item>
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textAllCaps">false</item>
     </style>
 
     <!-- Teks tab menu (kecil) -->
     <style name="Hmdm.TabText" parent="TextAppearance.Design.Tab">
-        <item name="android:textSize">14sp</item>
+        <item name="android:textSize">@dimen/text_body</item>
     </style>
 </resources>

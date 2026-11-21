@@ -135,7 +135,7 @@ internal class SettingsUi(private val ctx: Context) {
         }
         val badgeView = TextView(ctx).apply {
             text = badge
-            textSize = 11f
+            textSize = 12f
             setTypeface(typeface, Typeface.BOLD)
             setTextColor(if (badgeMuted) cMuted else cText)
             background = rounded(if (badgeMuted) cChip else cSoft, null, R.dimen.radius_xs)
@@ -180,7 +180,7 @@ internal class SettingsUi(private val ctx: Context) {
                 val tv = TextView(ctx).apply {
                     text = t
                     gravity = Gravity.CENTER
-                    textSize = 13f
+                    textSize = 14f
                     setTypeface(typeface, Typeface.BOLD)
                     isClickable = true
                     isFocusable = true
