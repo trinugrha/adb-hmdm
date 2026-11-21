@@ -795,7 +795,11 @@ class MainActivity : AppCompatActivity() {
         ) {
             for (t in types) ModelStore.save(t, draft.getValue(t))
             deviceModel = null
+            // Daftar model berubah: hasil cek lama tidak berlaku, Installation Status & Permission Status kembali "Belum diperiksa".
+            appsInstalled = null; appsType = null
+            hmdmPerms = null; permType = null
             refreshApps()
+            refreshPerms()
             Toast.makeText(this, "Daftar model disimpan. Ketuk ikon refresh di kartu \"Informasi Status\" untuk membaca ulang", Toast.LENGTH_LONG).show()
             true
         }
@@ -1001,7 +1005,11 @@ class MainActivity : AppCompatActivity() {
             // Hasil cek lama dibuat tidak berlaku karena daftar/versi berubah; status kembali "Belum diperiksa".
             appsInstalled = null
             appsType = null
+            // Model perangkat dan Permission Status juga kembali "Belum diperiksa".
+            deviceModel = null
+            hmdmPerms = null; permType = null
             refreshApps()
+            refreshPerms()
             Toast.makeText(this, "Pengaturan versi disimpan. Ketuk \"Cek Status\" untuk mengecek ulang", Toast.LENGTH_LONG).show()
             true
         }
@@ -1766,9 +1774,12 @@ class MainActivity : AppCompatActivity() {
             st[it] != null && expected[it] != null && !AdbController.versionMatches(expected.getValue(it), st[it])
         }
         val okCount = total - missing.size - wrong.size
+        // Bila daftar aplikasi SEMUA jenis perangkat kosong, tidak ada yang bisa dicek: tampil "Daftar aplikasi kosong" (walau belum terhubung).
+        val allEmpty = typeChips.keys.all { VersionStore.packages(it).isEmpty() }
         val (text, color) = when {
+            allEmpty -> "Daftar aplikasi kosong" to grey
             !connected -> "Belum terhubung" to grey
-            total == 0 -> "Daftar aplikasi kosong" to grey
+            total == 0 -> "Belum diperiksa" to grey
             st == null -> "Belum diperiksa" to grey
             missing.isEmpty() && wrong.isEmpty() ->
                 (if (expected.isEmpty()) "Semua terpasang ✓ ($total/$total)" else "Versi sesuai ✓ ($total/$total)") to green
@@ -1779,9 +1790,12 @@ class MainActivity : AppCompatActivity() {
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
         val dm = if (connected) deviceModel else null
+        // Bila daftar model SEMUA jenis perangkat kosong, tidak ada yang bisa dikenali: tampil "Daftar model kosong" (walau belum terhubung).
+        val allModelsEmpty = typeChips.keys.all { ModelStore.models(it).isEmpty() }
         txtModel.text = when {
+            allModelsEmpty -> "Daftar model kosong"
             !connected -> "Belum terhubung"
-            total == 0 -> "Daftar aplikasi kosong"
+            ModelStore.models(deviceType).isEmpty() -> "Belum diperiksa"
             dm == null -> "Belum diperiksa"
             dm.second != null -> "${dm.first} · ${dm.second}"
             else -> "${dm.first} · tidak dikenal"
