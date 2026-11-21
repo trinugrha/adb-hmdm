@@ -1812,10 +1812,10 @@ class MainActivity : AppCompatActivity() {
         txtApps.text = text
         appsDot.backgroundTintList = ColorStateList.valueOf(color)
         val dm = if (connected) deviceModel else null
-        // Bila daftar model SEMUA jenis perangkat kosong, tidak ada yang bisa dikenali: tampil "Daftar model kosong" (walau belum terhubung).
-        val allModelsEmpty = AdbController.DEVICE_MODELS.keys.all { ModelStore.models(it).isEmpty() }
+        // Bila daftar model salah satu jenis perangkat (POS / TABLET / PDA) kosong, model tidak bisa dikenali: tampil "Tidak dikenal" (walau belum terhubung).
+        val anyModelsEmpty = AdbController.DEVICE_MODELS.keys.any { ModelStore.models(it).isEmpty() }
         txtModel.text = when {
-            allModelsEmpty -> "Daftar model kosong"
+            anyModelsEmpty -> "Tidak dikenal"
             !connected -> "Belum terhubung"
             ModelStore.models(deviceType).isEmpty() -> "Belum diperiksa"
             dm == null -> "Belum diperiksa"
